@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
@@ -7,11 +8,12 @@ export const Route = createFileRoute('/clients/$clientId')({
     try { await api('/auth/me') } catch { throw redirect({ to: '/login' }) }
   },
   loader: async ({ params }) => {
-    const [client, sessions] = await Promise.all([
+    const [client, sessions, photos] = await Promise.all([
       api<{ client: Client }>(`/clients/${params.clientId}`),
       api<{ sessions: Session[] }>(`/clients/${params.clientId}/sessions`),
+      api<{ photos: Photo[] }>(`/photos/${params.clientId}`).catch(() => ({ photos: [] })),
     ])
-    return { client: client.client, sessions: sessions.sessions }
+    return { client: client.client, sessions: sessions.sessions, photos: photos.photos }
   },
   component: ClientDetail,
 })
@@ -22,9 +24,26 @@ type Session = {
   exercises: Array<{ warmup: Ex[]; resistance: Ex[]; cardio: Ex[]; cooldown: Ex[] }>; notes: string | null;
 }
 type Ex = { name: string; detail?: string }
+type Photo = { id: string; session_id: string | null; created_at: string }
 
 function ClientDetail() {
-  const { client, sessions } = Route.useLoaderData()
+  const { client, sessions, photos } = Route.useLoaderData()
+  const [msg, setMsg] = useState('')
+
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setMsg('Mengunggah…')
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      const res = await fetch(`/api/photos/${client.id}`, { method: 'POST', body: fd })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'gagal')
+      location.reload()
+    } catch (ex) {
+      setMsg(ex instanceof Error ? `Gagal: ${ex.message}` : 'Gagal upload.')
+    }
+  }
 
   return (
     <main className="bg-bg text-text min-h-dvh p-6 md:p-10">
@@ -55,6 +74,23 @@ function ClientDetail() {
             <p className="text-dim mb-2 text-xs uppercase tracking-wide">RPE</p>
             <Sparkline data={seriesOf(sessions, 'rpe')} unit="" color="oklch(0.7 0.15 250)" />
           </div>
+        </div>
+
+        <h2 className="text-dim mb-3 text-sm font-medium uppercase tracking-wide">Foto</h2>
+        <div className="mb-8">
+          <label className="bg-accent inline-block cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold text-black">
+            + Upload Foto
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onUpload} />
+          </label>
+          {msg && <span className="text-dim ml-3 text-sm">{msg}</span>}
+          {photos.length > 0 && (
+            <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+              {photos.map((p) => (
+                <img key={p.id} src={`/api/photos/raw/${p.id}`} alt={`Foto ${p.created_at.slice(0, 10)}`}
+                  className="border-line h-24 w-24 shrink-0 rounded-xl border object-cover" loading="lazy" />
+              ))}
+            </div>
+          )}
         </div>
 
         <h2 className="text-dim mb-3 text-sm font-medium uppercase tracking-wide">Riwayat Sesi</h2>
