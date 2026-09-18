@@ -38,7 +38,10 @@ function Dashboard() {
               {me.expires_at && ` · exp ${me.expires_at.slice(0, 10)}`}
             </p>
           </div>
-          <button onClick={logout} className="text-dim hover:text-text text-sm">Keluar</button>
+          <div className="flex items-center gap-4">
+            <a href="/clients/new" className="bg-accent rounded-lg px-3 py-1.5 text-sm font-semibold text-black">+ Klien</a>
+            <button onClick={logout} className="text-dim hover:text-text text-sm">Keluar</button>
+          </div>
         </header>
 
         <h2 className="text-dim mb-3 text-sm font-medium uppercase tracking-wide">

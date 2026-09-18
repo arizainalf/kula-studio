@@ -28,7 +28,10 @@ function ClientDetail() {
   return (
     <main className="bg-bg text-text min-h-dvh p-6 md:p-10">
       <div className="mx-auto max-w-3xl">
-        <a href="/" className="text-dim hover:text-text mb-6 inline-block text-sm">← Kembali</a>
+        <div className="mb-6 flex items-center justify-between">
+          <a href="/" className="text-dim hover:text-text text-sm">← Kembali</a>
+          <a href={`/clients/${client.id}/log`} className="bg-accent rounded-lg px-3 py-1.5 text-sm font-semibold text-black">+ Catat Sesi</a>
+        </div>
         <header className="mb-8">
           <h1 className="text-xl font-semibold tracking-tight">{client.name}</h1>
           <p className="text-dim text-sm">
