@@ -47,22 +47,30 @@ function LogSession() {
             name: name.trim(), ...(detail?.trim() ? { detail: detail.trim() } : {}),
           })),
         }))
-      const w = String(f.get('weight') || '').trim()
-      const fp = String(f.get('fat_pct') || '').trim()
+      const num = (v: FormDataEntryValue | null) => {
+        const t = String(v ?? '').trim().replace(',', '.')
+        if (!t) return null
+        const n = Number(t)
+        return Number.isFinite(n) ? n : null
+      }
+      const w = num(f.get('weight'))
+      const fp = num(f.get('fat_pct'))
       await api(`/clients/${client.id}/sessions`, {
         method: 'POST',
         body: JSON.stringify({
-          date: f.get('date'),
-          rpe: Number(f.get('rpe')),
-          weight: w ? Number(w) : null,
-          fat_pct: fp ? Number(fp) : null,
+          date: String(f.get('date') ?? ''),
+          rpe: Number(f.get('rpe') || 0),
+          weight: w,
+          fat_pct: fp,
           notes: String(f.get('notes') || '').trim() || undefined,
           exercises,
         }),
       })
       location.href = `/clients/${client.id}`
     } catch (ex) {
-      err.textContent = ex instanceof Error ? `Gagal: ${ex.message}` : 'Gagal menyimpan.'
+      const detail = (ex as { status?: number }).status === 400
+        ? ' — cek tanggal/RPE (1-10)/angka valid' : ''
+      err.textContent = ex instanceof Error ? `Gagal: ${ex.message}${detail}` : 'Gagal menyimpan.'
       setSaving(false)
     }
   }
