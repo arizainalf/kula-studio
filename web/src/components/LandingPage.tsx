@@ -1,9 +1,10 @@
 import type { User } from '../lib/api'
 import { Check, ArrowRight } from 'lucide-react'
+import { ThemeToggle } from './ThemeToggle'
 
 export function LandingPage({ currentUser }: { currentUser?: User | null }) {
   return (
-    <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-white font-sans antialiased overflow-x-hidden">
+    <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased overflow-x-hidden">
       {/* ── 1. Sticky Navigation Bar ── */}
       <header className="sticky top-0 z-50 bg-bg/85 backdrop-blur-xl border-b border-line">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -31,7 +32,9 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
           </nav>
 
           {/* Right Action CTA */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+
             {currentUser ? (
               <a
                 href="/"

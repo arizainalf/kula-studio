@@ -91,6 +91,52 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+:root {
+  color-scheme: dark;
+}
+
+/* ── White / Light Mode Theme Variables ── */
+html.light,
+[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: oklch(0.975 0.003 285);
+  --color-panel: oklch(1 0 0);
+  --color-panel-elevated: oklch(0.945 0.005 285);
+  --color-line: oklch(0.89 0.006 285);
+  --color-line-subtle: oklch(0.935 0.004 285);
+  --color-text: oklch(0.18 0.015 285);
+  --color-dim: oklch(0.44 0.015 285);
+  --color-muted: oklch(0.62 0.012 285);
+  --color-accent: oklch(0.62 0.16 75);
+  --color-accent-hover: oklch(0.55 0.17 75);
+}
+
+/* Light mode luxury hover and shadow softening */
+html.light .hover-gold-glow:hover,
+[data-theme="light"] .hover-gold-glow:hover {
+  border-color: rgba(181, 133, 20, 0.45);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 0 16px -2px rgba(181, 133, 20, 0.16);
+}
+
+html.light [class*="shadow-[0_8px_"],
+html.light [class*="shadow-[0_12px_"],
+html.light [class*="shadow-[0_20px_"],
+[data-theme="light"] [class*="shadow-[0_8px_"],
+[data-theme="light"] [class*="shadow-[0_12px_"],
+[data-theme="light"] [class*="shadow-[0_20px_"] {
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+html.light [class*="shadow-[0_4px_"],
+[data-theme="light"] [class*="shadow-[0_4px_"] {
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+html.light [class*="shadow-[0_2px_"],
+[data-theme="light"] [class*="shadow-[0_2px_"] {
+  box-shadow: 0 2px 8px -1px rgba(181, 133, 20, 0.18), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

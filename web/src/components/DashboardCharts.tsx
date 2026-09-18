@@ -35,7 +35,7 @@ export function StatCard({
         )}
       </div>
       <div className="flex items-baseline gap-1.5 sm:gap-2 my-1 flex-wrap">
-        <span className="text-xl sm:text-3xl font-extrabold text-text tracking-tight group-hover:text-white transition-colors truncate">
+        <span className="text-xl sm:text-3xl font-extrabold text-text tracking-tight group-hover:text-accent transition-colors truncate">
           {value}
         </span>
         {badge && (
@@ -130,7 +130,7 @@ export function GoalDistributionCard({ clients }: { clients: ClientSummary[] }) 
             <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-400 shrink-0" />
             <span className="truncate">General</span>
           </div>
-          <span className="font-bold text-text text-xs sm:text-sm mt-0.5 group-hover/item:text-white transition-colors truncate">
+          <span className="font-bold text-text text-xs sm:text-sm mt-0.5 group-hover/item:text-accent transition-colors truncate">
             {general} ({generalPct}%)
           </span>
         </div>

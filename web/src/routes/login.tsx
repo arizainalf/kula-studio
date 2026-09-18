@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 import { api } from '../lib/api'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
@@ -29,12 +30,14 @@ function LoginPage() {
   }
 
   return (
-    <main className="bg-bg text-text min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-accent/30 font-sans antialiased">
-      <div className="w-full max-w-sm mb-4">
+    <main className="bg-bg text-text min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-accent/30 selection:text-text font-sans antialiased">
+      <div className="w-full max-w-sm mb-4 flex items-center justify-between">
         <a href="/" className="btn-interactive inline-flex items-center gap-1.5 text-xs font-mono text-dim hover:text-accent transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Kembali ke Beranda</span>
         </a>
+
+        <ThemeToggle />
       </div>
       <form onSubmit={onSubmit} className="bg-panel border border-line w-full max-w-sm rounded-2xl p-6 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.7)] animate-fade-in">
         <div className="flex items-center gap-3 mb-6">

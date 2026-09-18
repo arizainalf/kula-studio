@@ -9,6 +9,7 @@ import {
   type ClientSummary,
 } from '../components/DashboardCharts'
 import { WeeklyScheduleSection } from '../components/WeeklyScheduleSection'
+import { ThemeToggle } from '../components/ThemeToggle'
 import {
   formatDate,
   formatShortDate,
@@ -130,62 +131,110 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
   })
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-white font-sans antialiased">
-      <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
-        {/* ── Top Header & Profile ── */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-5 sm:pb-6 animate-fade-in">
-          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-panel border border-accent/40 flex items-center justify-center text-accent font-extrabold text-base shadow-[0_0_20px_rgba(212,175,55,0.15)] hover:shadow-[0_0_30px_rgba(212,175,55,0.35)] hover:scale-105 transition-all duration-300 cursor-pointer shrink-0">
-              {me.name.slice(0, 2).toUpperCase()}
+    <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased">
+      {/* ── 1. Top Global Navigation Bar ── */}
+      <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-xl border-b border-line">
+        <div className="mx-auto max-w-6xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
+          {/* Brand Identity */}
+          <a href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(212,175,55,0.15)] group-hover:border-accent transition-colors">
+              <span className="font-extrabold text-xs tracking-tighter text-accent">TL</span>
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-text truncate">
-                  Selamat Datang, {me.name}
-                </h1>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Akun Aktif" />
-              </div>
-              <p className="text-dim text-xs font-mono mt-0.5 flex items-center gap-2 flex-wrap">
-                <span className="text-accent uppercase font-bold tracking-wider">{me.role}</span>
-                <span>&bull;</span>
-                <span className="text-text bg-panel px-2 py-0.5 rounded border border-line">
-                  {me.plan_tier ? `${me.plan_tier.toUpperCase()} TIER` : 'STANDARD'}
-                </span>
-                {me.expires_at && (
-                  <>
-                    <span>&bull;</span>
-                    <span className="text-dim">Masa Aktif: {formatDate(me.expires_at)}</span>
-                  </>
-                )}
-              </p>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm sm:text-base tracking-tight leading-none text-text">
+                Train<span className="text-accent">Log</span>
+              </span>
+              <span className="text-[9px] text-dim tracking-wider uppercase font-mono mt-0.5">
+                Pro PT Manager
+              </span>
             </div>
-          </div>
+          </a>
 
-          {/* Action Bar */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
+          {/* Quick Actions (Theme Toggle, Public Landing & Logout) */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <ThemeToggle showLabel={false} />
+
             <a
               href="/landing"
-              className="text-dim hover:text-accent text-xs font-mono px-3 py-2 rounded-lg border border-line hover:border-accent/40 transition-colors hidden sm:flex items-center gap-1.5 btn-interactive"
+              className="btn-interactive text-dim hover:text-accent p-2 sm:px-3 sm:py-1.5 rounded-lg border border-line hover:border-accent/40 transition-colors flex items-center gap-1.5 text-xs font-mono"
+              title="Buka Beranda Publik"
             >
               <Globe className="w-3.5 h-3.5" />
-              <span>Beranda Publik</span>
+              <span className="hidden sm:inline">Beranda Publik</span>
             </a>
-            <a
-              href="/clients/new"
-              className="bg-accent hover:bg-accent/90 rounded-lg px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-black shadow-[0_2px_14px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Klien Baru</span>
-            </a>
+
             <button
               onClick={logout}
-              className="text-dim hover:text-text text-xs sm:text-sm font-medium px-3 py-2 rounded-lg border border-line/40 hover:border-line transition-colors flex items-center gap-1.5 btn-interactive"
+              className="btn-interactive text-dim hover:text-rose-400 p-2 sm:px-3 sm:py-1.5 rounded-lg border border-line hover:border-rose-500/40 transition-colors flex items-center gap-1.5 text-xs font-medium"
+              title="Keluar dari Akun"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Keluar</span>
+              <span className="hidden sm:inline">Keluar</span>
             </button>
           </div>
-        </header>
+        </div>
+      </header>
+
+      {/* ── Main Dashboard Body ── */}
+      <main className="p-3.5 sm:p-8 md:p-10 pt-4 sm:pt-6">
+        <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
+          {/* ── 2. Coach Greeting & Hero Action Card ── */}
+          <div className="hover-gold-glow p-4 sm:p-6 rounded-2xl bg-panel border border-line shadow-[0_4px_24px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 animate-fade-in">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              {/* Coach Avatar with Online Badge */}
+              <div className="relative shrink-0">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-extrabold text-base sm:text-lg shadow-[0_0_20px_rgba(212,175,55,0.18)]">
+                  {me.name.slice(0, 2).toUpperCase()}
+                </div>
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-panel animate-pulse"
+                  title="Akun Aktif"
+                />
+              </div>
+
+              {/* Coach Information & Plan */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] sm:text-xs font-mono text-dim uppercase tracking-wider">
+                    Portal Pelatih
+                  </span>
+                  <span className="text-muted text-[10px] font-mono hidden sm:inline">&bull;</span>
+                  <span className="text-[10px] font-mono text-emerald-400 hidden sm:inline-flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Online
+                  </span>
+                </div>
+                <h1 className="text-base sm:text-xl font-bold tracking-tight text-text truncate mt-0.5">
+                  Selamat Datang, {me.name}
+                </h1>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase">
+                    {me.role}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-bg text-text border border-line">
+                    {me.plan_tier ? `${me.plan_tier.toUpperCase()} TIER` : 'STANDARD'}
+                  </span>
+                  {me.expires_at && (
+                    <span className="text-[10px] font-mono text-muted flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-dim" />
+                      <span>Aktif s/d {formatDate(me.expires_at)}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Primary Action Button */}
+            <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60">
+              <a
+                href="/clients/new"
+                className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 sm:px-5 text-sm font-bold text-black shadow-[0_2px_14px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)] transition-all flex items-center justify-center gap-2"
+              >
+                <UserPlus className="w-4 h-4 stroke-[2.5]" />
+                <span>+ Tambah Klien Baru</span>
+              </a>
+            </div>
+          </div>
 
         {/* ── 4 Executive KPI Stat Cards ── */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 animate-fade-in-up">
@@ -460,6 +509,7 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
         </section>
       </div>
     </main>
+  </div>
   )
 }
 

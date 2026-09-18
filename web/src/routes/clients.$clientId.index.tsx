@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
+import { ThemeToggle } from '../components/ThemeToggle'
 import {
   formatDate,
   formatShortDate,
@@ -370,7 +371,7 @@ function ClientDetail() {
     })
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-white font-sans antialiased">
+    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
       <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
         {/* ── 1. Top Navigation Bar & Actions ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-line/60 animate-fade-in">
@@ -383,6 +384,8 @@ function ClientDetail() {
           </a>
 
           <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
+            <ThemeToggle />
+
             <button
               onClick={exportPdf}
               className="bg-panel hover:bg-panel-elevated text-text border border-line hover:border-accent/40 text-xs px-3 sm:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 btn-interactive"

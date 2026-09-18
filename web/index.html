@@ -7,6 +7,19 @@
     <meta name="theme-color" content="#09090b" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>TrainLog — Personal Trainer & Studio Manager</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('trainlog-theme');
+          if (t === 'light') {
+            document.documentElement.classList.add('light');
+            document.documentElement.setAttribute('data-theme', 'light');
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', '#f8f9fa');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
