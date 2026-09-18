@@ -22,13 +22,13 @@ INSERT INTO clients (pt_id, name, goal, pkg_total, phone, gender, problem) VALUE
 
 INSERT INTO sessions (client_id, pt_id, date, rpe, weight, fat_pct, exercises, notes) VALUES
   ((SELECT id FROM clients WHERE name='Siti Rahma'), (SELECT id FROM users WHERE email='hadi@dev.local'), CURRENT_DATE - 14, 7, 68.5, 32.1,
-   '{"warmup":[{"name":"Dynamic Stretch","detail":"10 mnt"}],"resistance":[{"name":"Leg Press","detail":"3x12 40kg"},{"name":"Row","detail":"3x10 25kg"}],"cardio":[{"name":"Treadmill","detail":"20 mnt jalan cepat"}],"cooldown":[{"name":"Static Stretch","detail":"5 mnt"}]}', 'Sesi perdana'),
+   '[{"warmup":[{"name":"Dynamic Stretch","detail":"10 mnt"}],"resistance":[{"name":"Leg Press","detail":"3x12 40kg"},{"name":"Row","detail":"3x10 25kg"}],"cardio":[{"name":"Treadmill","detail":"20 mnt jalan cepat"}],"cooldown":[{"name":"Static Stretch","detail":"5 mnt"}]}']', 'Sesi perdana'),
   ((SELECT id FROM clients WHERE name='Siti Rahma'), (SELECT id FROM users WHERE email='hadi@dev.local'), CURRENT_DATE - 7, 8, 67.2, 31.4,
-   '{"warmup":[{"name":"Jumping Jack","detail":"3x30"}],"resistance":[{"name":"Goblet Squat","detail":"3x12 16kg"}],"cardio":[{"name":"Elliptical","detail":"15 mnt"}],"cooldown":[]}', 'Progress bagus'),
+   '[{"warmup":[{"name":"Jumping Jack","detail":"3x30"}],"resistance":[{"name":"Goblet Squat","detail":"3x12 16kg"}],"cardio":[{"name":"Elliptical","detail":"15 mnt"}],"cooldown":[]}']', 'Progress bagus'),
   ((SELECT id FROM clients WHERE name='Siti Rahma'), (SELECT id FROM users WHERE email='hadi@dev.local'), CURRENT_DATE - 1, 6, 66.0, 30.8,
-   '{"warmup":[],"resistance":[{"name":"Deadlift","detail":"3x8 50kg"}],"cardio":[{"name":"Bike","detail":"10 mnt"}],"cooldown":[{"name":"Foam Roller","detail":"5 mnt"}]}', NULL),
+   '[{"warmup":[],"resistance":[{"name":"Deadlift","detail":"3x8 50kg"}],"cardio":[{"name":"Bike","detail":"10 mnt"}],"cooldown":[{"name":"Foam Roller","detail":"5 mnt"}]}']', NULL),
   ((SELECT id FROM clients WHERE name='Fajar Satria'), (SELECT id FROM users WHERE email='hadi@dev.local'), CURRENT_DATE - 5, 9, 78.0, 18.0,
-   '{"warmup":[],"resistance":[{"name":"Bench Press","detail":"4x8 60kg"},{"name":"Pull Up","detail":"4x6"}],"cardio":[],"cooldown":[]}', 'PR bench!');
+   '[{"warmup":[],"resistance":[{"name":"Bench Press","detail":"4x8 60kg"},{"name":"Pull Up","detail":"4x6"}],"cardio":[],"cooldown":[]}']', 'PR bench!');
 
 INSERT INTO schedule (client_id, pt_id, date, time, note) VALUES
   ((SELECT id FROM clients WHERE name='Siti Rahma'),   (SELECT id FROM users WHERE email='hadi@dev.local'), CURRENT_DATE,     '07:00', 'Sesi pagi'),

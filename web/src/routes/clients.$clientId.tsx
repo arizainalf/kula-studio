@@ -70,7 +70,7 @@ function ClientDetail() {
                   {s.fat_pct != null && ` · ${s.fat_pct}%`}
                 </span>
               </div>
-              {s.exercises.map((g, i) => {
+              {(Array.isArray(s.exercises) ? s.exercises : [s.exercises]).map((g, i) => {
                 const all = [...g.warmup, ...g.resistance, ...g.cardio, ...g.cooldown]
                 if (!all.length) return null
                 return (
