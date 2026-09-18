@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api } from '../lib/api'
+import { Sparkline, type Point } from '../components/Sparkline'
 
 export const Route = createFileRoute('/clients/$clientId')({
   beforeLoad: async () => {
@@ -40,6 +41,22 @@ function ClientDetail() {
           </p>
         </header>
 
+        <h2 className="text-dim mb-3 mt-8 text-sm font-medium uppercase tracking-wide">Progres</h2>
+        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          <div className="bg-panel border-line rounded-2xl border p-4">
+            <p className="text-dim mb-2 text-xs uppercase tracking-wide">Berat Badan</p>
+            <Sparkline data={seriesOf(sessions, 'weight')} unit="kg" />
+          </div>
+          <div className="bg-panel border-line rounded-2xl border p-4">
+            <p className="text-dim mb-2 text-xs uppercase tracking-wide">Lemak Tubuh</p>
+            <Sparkline data={seriesOf(sessions, 'fat_pct')} unit="%" />
+          </div>
+          <div className="bg-panel border-line rounded-2xl border p-4">
+            <p className="text-dim mb-2 text-xs uppercase tracking-wide">RPE</p>
+            <Sparkline data={seriesOf(sessions, 'rpe')} unit="" color="oklch(0.7 0.15 250)" />
+          </div>
+        </div>
+
         <h2 className="text-dim mb-3 text-sm font-medium uppercase tracking-wide">Riwayat Sesi</h2>
         {sessions.length === 0 && <p className="text-dim text-sm">Belum ada sesi.</p>}
         <ol className="space-y-3">
@@ -69,4 +86,12 @@ function ClientDetail() {
       </div>
     </main>
   )
+}
+
+// sessions urut desc (terbaru dulu) → balik urut + buang null, untuk sparkline
+function seriesOf(sessions: Session[], key: 'weight' | 'fat_pct' | 'rpe'): Point[] {
+  return [...sessions]
+    .filter((s) => s[key] != null)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((s) => ({ date: s.date, value: s[key] as number }))
 }
