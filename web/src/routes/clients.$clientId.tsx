@@ -30,6 +30,36 @@ function ClientDetail() {
   const { client, sessions, photos } = Route.useLoaderData()
   const [msg, setMsg] = useState('')
 
+  function exportPdf() {
+    const rows = [...sessions].sort((a, b) => a.date.localeCompare(b.date))
+      .map((s) => `
+        <tr>
+          <td>${s.date.slice(0, 10)}</td>
+          <td>${s.rpe}</td>
+          <td>${s.weight ?? '—'}</td>
+          <td>${s.fat_pct ?? '—'}</td>
+          <td>${esc(s.notes ?? '')}</td>
+        </tr>`).join('')
+    const w = window.open('', '_blank', 'width=800,height=900')
+    if (!w) { setMsg('Popup diblokir — izinkan popup untuk export.'); return }
+    w.document.write(`<!doctype html><html><head><title>Laporan ${esc(client.name)}</title>
+      <style>
+        body{font-family:system-ui;margin:32px;color:#111}
+        h1{font-size:20px;margin:0 0 4px}
+        .sub{color:#555;font-size:13px;margin-bottom:24px}
+        table{width:100%;border-collapse:collapse;font-size:13px}
+        th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}
+        th{background:#f3f4f6}
+      </style></head><body>
+      <h1>Laporan Latihan — ${esc(client.name)}</h1>
+      <div class="sub">${sessions.length} sesi · ${client.pkg_used}/${client.pkg_total} paket · dicetak ${new Date().toLocaleDateString('id-ID')}</div>
+      <table><thead><tr><th>Tanggal</th><th>RPE</th><th>BB (kg)</th><th>Lemak %</th><th>Catatan</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <script>window.onload=()=>window.print()</` + `script>
+    </body></html>`)
+    w.document.close()
+  }
+
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -50,7 +80,10 @@ function ClientDetail() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-6 flex items-center justify-between">
           <a href="/" className="text-dim hover:text-text text-sm">← Kembali</a>
-          <a href={`/clients/${client.id}/log`} className="bg-accent rounded-lg px-3 py-1.5 text-sm font-semibold text-black">+ Catat Sesi</a>
+          <div className="flex gap-2">
+            <button onClick={exportPdf} className="border-line rounded-lg border px-3 py-1.5 text-sm">Export PDF</button>
+            <a href={`/clients/${client.id}/log`} className="bg-accent rounded-lg px-3 py-1.5 text-sm font-semibold text-black">+ Catat Sesi</a>
+          </div>
         </div>
         <header className="mb-8">
           <h1 className="text-xl font-semibold tracking-tight">{client.name}</h1>
@@ -122,6 +155,10 @@ function ClientDetail() {
       </div>
     </main>
   )
+}
+
+function esc(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 }
 
 // sessions urut desc (terbaru dulu) → balik urut + buang null, untuk sparkline
