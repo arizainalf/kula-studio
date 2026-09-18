@@ -41,7 +41,7 @@ Urutan kerja docs-first. Tiap fase punya definisi selesai; jangan lanjut sebelum
 ## Fase 4 — FE Shell (2–3 hari)
 
 - [ ] Scaffold Vite + TanStack Router + Tailwind v4 (scaffold order dari skill react-spa)
-- [ ] Design token: dark navy `#0a0e14`/`#10151d`, lime `#a3e635`, Archivo + DM Mono (lihat analisa-trainlog.md)
+- [ ] Design token: Luxury Dark Theme — dominan hitam obsidian `#09090b` & abu tua charcoal `#131417`, aksen emas champagne `#d4af37`, Archivo + DM Mono (lihat docs/design-system.md & analisa-trainlog.md)
 - [ ] Layout: login → dashboard → client list → client detail (tab riwayat/jadwal/foto)
 - [ ] Auth flow: login form, guard route, logout
 - [ ] API client typed (fetch wrapper, kontrak dari Fase 3)
@@ -61,7 +61,7 @@ Urutan kerja docs-first. Tiap fase punya definisi selesai; jangan lanjut sebelum
 ## Fase 6 — Tier & Deploy (1–2 hari)
 
 - [ ] Kolom `plan_tier`, `expires_at`; middleware grace logic (expired ≤14 hari → GET only)
-- [ ] Landing page 1 halaman (marketing statis)
+- [x] Landing page 1 halaman (marketing statis) — tema Luxury Noir & Champagne Gold (lihat web/src/components/LandingPage.tsx)
 - [ ] `wrangler deploy` + CF Pages (root dir `web/`)
 - [ ] Custom domain / `.workers.dev` + `.pages.dev`
 

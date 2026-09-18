@@ -41,19 +41,28 @@ Keduanya di-host **Hostinger** (header: `platform: hostinger`, `panel: hpanel`, 
 
 ## Color way / UI design system
 
-Dark-first, tema gelap navy + aksen lime. Palet dari CSS custom properties (`:root`, app.css):
+### 1. Palet Asli trainlog.id (Legacy)
+Dark-first, tema gelap navy + aksen neon lime (sporty-casual). Palet dari CSS custom properties (`:root`, app.css):
+- **Background**: `#0a0e14` → `#10151d` (navy hampir hitam)
+- **Surface**: glassmorphism — `rgba(255,255,255,0.06/0.11/0.16)` + border `rgba(255,255,255,0.08/0.13/0.22)`
+- **Text**: `#f4f6ff` / `#b4bcdb` / `#8792bd` (lavender abu)
+- **Aksen utama**: lime neon `#a3e635` / `#bef264` / `#84cc16` (Tailwind lime 400/300/600)
+- **Status**: green `#10d98c`, red `#f43f5e`, orange `#f59e0b`, teal `#14b8a6`
 
-**Dark (default)**
-- Background: `#0a0e14` → `#10151d` (navy hampir hitam)
-- Surface: glassmorphism — `rgba(255,255,255,0.06/0.11/0.16)` + border `rgba(255,255,255,0.08/0.13/0.22)`
-- Text: `#f4f6ff` / `#b4bcdb` / `#8792bd` (lavender abu; text3 sudah ditingkatkan ke 5.1:1 untuk WCAG AA — ada komentar di CSS)
-- **Aksen utama: lime** `#a3e635` / `#bef264` / `#84cc16` (Tailwind lime 400/300/600)
-- Status: green `#10d98c`, red `#f43f5e`, orange `#f59e0b`, teal `#14b8a6`
-- Gradient: `135deg #65a30d→#3f6212` (lime), `#10d98c→#06b6d4`, `#f43f5e→#f59e0b`
-- Radius: `--r:20px`, `--rm:14px`, `--rs:8px` (soft-rounded)
-- Shadow: `0 8px 32px rgba(0,0,0,0.4)` (dalam, khas dark UI)
+### 2. Arah Desain TrainLog Replica: Luxury Dark (Noir, Charcoal & Champagne Gold)
+Untuk menghadirkan kesan **mewah, elegan, dan eksklusif** (seperti studio private personal trainer high-end / boutique fitness concierge), tema visual ditransformasikan dari kesan neon sporty menjadi **dominan abu tua dan hitam pekat** dengan aksen metallic emas champagne:
 
-**Light**: toggle manual (icon sun/moon), state di `localStorage tl_theme`. Default dark; `theme-color` manifest `#0a0e14`.
+- **Deep Black Background**: `#09090b` (`oklch(0.13 0.005 285)`) — hitam obsidian pekat, tenang, dan tidak memantulkan silau (eye-friendly).
+- **Surface & Panel (Abu Tua Charcoal)**: `#131417` hingga `#18191d` (`oklch(0.18 0.008 285)`) — abu tua pekat bernuansa graphite, memberi kedalaman visual bertingkat yang kokoh dan rapi.
+- **Hairline Borders**: `#27282e` / `rgba(255, 255, 255, 0.08)` (`oklch(0.28 0.008 285)`) — garis batas ultra-tipis khas produk mewah (Apple Pro / Leica UI).
+- **Typography**:
+  - Primary text: `#f4f4f6` (`oklch(0.96 0.005 285)`) — putih mutiara lembut dengan kontras tajam.
+  - Secondary/Dim text: `#9da1aa` (`oklch(0.68 0.012 285)`) — titanium silver yang terkalibrasi rapi.
+- **Aksen Mewah (Champagne Gold / Imperial Amber)**: `#d4af37` / `#c5a059` (`oklch(0.78 0.13 85)`) — menggantikan warna hijau stabilo dengan sentuhan emas berkelas untuk tombol aksi utama, indikator aktif, dan aksen metrik penting.
+- **Shadow & Glow**: `0 12px 36px rgba(0, 0, 0, 0.65)` dengan rim highlight halus `inset 0 1px 0 rgba(255, 255, 255, 0.05)`.
+- Detail implementasi lengkap: lihat [design-system.md](file:///home/arizainalf/Project/trainlog-replica/docs/design-system.md).
+
+**Light**: toggle manual (opsional/secondary). Default dark; `theme-color` manifest `#09090b`.
 
 **Tipografi** (self-hosted woff2 subset: latin, latin-ext, vietnamese)
 - Display/body: **Archivo** (400–800, font-stretch 100%) — grotesque tegap, letter-spacing negatif di heading besar (`-0.03em`), uppercase + tracking lebar (`0.1–0.14em`) untuk label kecil

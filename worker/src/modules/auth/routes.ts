@@ -16,7 +16,7 @@ auth.post('/login', async (c) => {
   const parsed = loginSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
-  const [user] = await db(c.env)`
+  const [user] = await db(c)`
     select id, email, password_hash, name, role, is_active, plan_tier, expires_at
     from users where email = ${parsed.data.email}`;
 

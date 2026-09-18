@@ -1,129 +1,826 @@
 import { useState } from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link, useNavigate } from '@tanstack/react-router'
 import { api } from '../lib/api'
+import { formatDate, formatDateWithDay, getLocalTodayString } from '../lib/date'
+import {
+  ArrowLeft,
+  Copy,
+  Sparkles,
+  AlertTriangle,
+  Flame,
+  Dumbbell,
+  HeartPulse,
+  Wind,
+  Plus,
+  Trash2,
+  Smartphone,
+  Check,
+} from 'lucide-react'
 
 export const Route = createFileRoute('/clients/$clientId/log')({
   beforeLoad: async () => {
-    try { await api('/auth/me') } catch { throw redirect({ to: '/login' }) }
+    try {
+      await api('/auth/me')
+    } catch {
+      throw redirect({ to: '/login' })
+    }
   },
-  loader: async ({ params }) =>
-    api<{ client: { id: string; name: string } }>(`/clients/${params.clientId}`),
+  loader: async ({ params }) => {
+    const [clientRes, sessionsRes] = await Promise.all([
+      api<{ client: Client }>(`/clients/${params.clientId}`),
+      api<{ sessions: Session[] }>(`/clients/${params.clientId}/sessions?limit=5`).catch(() => ({ sessions: [] })),
+    ])
+
+    return {
+      client: clientRes.client,
+      recentSessions: sessionsRes.sessions ?? [],
+    }
+  },
   component: LogSession,
 })
 
-type Ex = { name: string; detail?: string }
-const input = 'border-line bg-bg w-full rounded-lg border px-3 py-2 outline-none focus:border-accent'
+export type Client = {
+  id: string
+  name: string
+  goal: string
+  pkg_total: number
+  pkg_used: number
+  avg_rpe?: number
+  last_session_date?: string | null
+  phone?: string | null
+  notes?: string | null
+  age_bracket?: string | null
+  gender?: 'pria' | 'wanita' | null
+  problem?: 'none' | 'knee' | 'back' | 'shoulder' | string | null
+}
 
-// State form: 4 grup latihan, tiap grup daftar {name, detail}
+export type Ex = { name: string; detail?: string }
+
+export type Session = {
+  id: string
+  date: string
+  rpe: number
+  weight: number | null
+  fat_pct: number | null
+  exercises: Array<{ warmup: Ex[]; resistance: Ex[]; cardio: Ex[]; cooldown: Ex[] }>
+  notes: string | null
+  created_at?: string
+}
+
+// Preset library for instant 1-click workout additions
+const PRESETS: Record<string, Array<{ name: string; detail: string }>> = {
+  warmup: [
+    { name: 'Dynamic Full-Body Stretch', detail: '10 menit' },
+    { name: 'Cat-Cow Mobility', detail: '2 set x 10 reps' },
+    { name: 'Glute Bridge Activation', detail: '2 set x 15 reps' },
+    { name: 'Band Pull-Apart', detail: '2 set x 20 reps' },
+    { name: 'Jumping Jack', detail: '3 set x 30 detik' },
+  ],
+  resistance: [
+    { name: 'Barbell Back Squat', detail: '3 set x 8 reps @ 60kg' },
+    { name: 'Bench Press', detail: '3 set x 10 reps @ 50kg' },
+    { name: 'Lat Pulldown', detail: '3 set x 12 reps @ 45kg' },
+    { name: 'Romanian Deadlift', detail: '3 set x 10 reps @ 60kg' },
+    { name: 'Dumbbell Shoulder Press', detail: '3 set x 10 reps @ 14kg' },
+    { name: 'Leg Press', detail: '3 set x 12 reps @ 90kg' },
+    { name: 'Seated Cable Row', detail: '3 set x 12 reps @ 40kg' },
+  ],
+  cardio: [
+    { name: 'Incline Treadmill Walk', detail: '15 menit (Speed 5.2, Incline 7%)' },
+    { name: 'Stationary Bike (Zone 2)', detail: '15 menit moderate' },
+    { name: 'Rowing Machine HIIT', detail: '10 menit (30s sprint / 30s rest)' },
+    { name: 'Elliptical Trainer', detail: '15 menit resistance 6' },
+  ],
+  cooldown: [
+    { name: 'Static Full-Body Stretch', detail: '5-10 menit' },
+    { name: 'Foam Rolling (Quads & IT Band)', detail: '5 menit' },
+    { name: 'Pigeon Pose (Hip Opener)', detail: '2 set x 30 detik / sisi' },
+    { name: 'Child’s Pose & Breathing', detail: '3 menit regulasi nafas' },
+  ],
+}
+
+const RPE_INFO: Record<number, { title: string; desc: string; color: string; badge: string }> = {
+  1: { title: 'Sangat Ringan', desc: 'Aktivitas pemulihan aktif, nafas santai tanpa usaha berat.', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/30' },
+  2: { title: 'Sangat Ringan', desc: 'Peregangan santai, detak jantung sedikit di atas istirahat.', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/30' },
+  3: { title: 'Ringan', desc: 'Dapat berbicara kalimat penuh tanpa terengah-engah.', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/30' },
+  4: { title: 'Ringan Menuju Sedang', desc: 'Mulai terasa hangat dan berkeringat tipis.', color: 'text-sky-400', badge: 'bg-sky-500/10 border-sky-500/30' },
+  5: { title: 'Sedang (Aerobik)', desc: 'Latihan terasa nyaman, bisa berbicara kalimat pendek.', color: 'text-sky-400', badge: 'bg-sky-500/10 border-sky-500/30' },
+  6: { title: 'Cukup Berat (4 RIR)', desc: '4 repetisi tersisa sebelum failure. Beban mulai menantang.', color: 'text-amber-400', badge: 'bg-amber-500/10 border-amber-500/30' },
+  7: { title: 'Berat (3 RIR)', desc: '3 repetisi tersisa. Beban kerja efektif untuk stimulasi otot.', color: 'text-amber-400', badge: 'bg-amber-500/10 border-amber-500/30' },
+  8: { title: 'Sangat Efektif (2 RIR)', desc: '2 repetisi tersisa. Zona emas hipertrofi & peningkatan kekuatan.', color: 'text-accent', badge: 'bg-accent/15 border-accent/40' },
+  9: { title: 'Sangat Berat (1 RIR)', desc: '1 repetisi tersisa. Usaha sangat tinggi dengan fokus penuh.', color: 'text-orange-400', badge: 'bg-orange-500/10 border-orange-500/30' },
+  10: { title: 'Maksimal / Failure (0 RIR)', desc: 'Beban batas maksimal mutlak, tidak ada repetisi tersisa.', color: 'text-rose-400', badge: 'bg-rose-500/10 border-rose-500/30' },
+}
+
 function LogSession() {
-  const { client } = Route.useLoaderData()
-  const [groups, setGroups] = useState<Record<string, Ex[]>>({
-    warmup: [], resistance: [], cardio: [], cooldown: [],
-  })
+  const { client, recentSessions } = Route.useLoaderData() as {
+    client: Client
+    recentSessions: Session[]
+  }
+  const navigate = useNavigate()
+  const lastSession = recentSessions[0] ?? null
+
+  // Form states
+  const [date, setDate] = useState(getLocalTodayString())
+  const [rpe, setRpe] = useState<number>(lastSession?.rpe ?? 7)
+  const [weight, setWeight] = useState<string>(lastSession?.weight != null ? String(lastSession.weight) : '')
+  const [fatPct, setFatPct] = useState<string>(lastSession?.fat_pct != null ? String(lastSession.fat_pct) : '')
+  const [notes, setNotes] = useState<string>('')
+  const [autoOpenWa, setAutoOpenWa] = useState<boolean>(Boolean(client.phone))
   const [saving, setSaving] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [copyNotice, setCopyNotice] = useState('')
 
-  function addEx(g: string) {
-    setGroups((s) => ({ ...s, [g]: [...s[g], { name: '', detail: '' }] }))
-  }
-  function setEx(g: string, i: number, k: keyof Ex, v: string) {
-    setGroups((s) => ({ ...s, [g]: s[g].map((e, j) => (j === i ? { ...e, [k]: v } : e)) }))
-  }
-  function delEx(g: string, i: number) {
-    setGroups((s) => ({ ...s, [g]: s[g].filter((_, j) => j !== i) }))
+  // 4-Phase Exercise Groups
+  const [groups, setGroups] = useState<{
+    warmup: Ex[]
+    resistance: Ex[]
+    cardio: Ex[]
+    cooldown: Ex[]
+  }>({
+    warmup: [],
+    resistance: [{ name: '', detail: '' }],
+    cardio: [],
+    cooldown: [],
+  })
+
+  // Exercise manipulation helpers
+  function addEx(g: 'warmup' | 'resistance' | 'cardio' | 'cooldown', item?: Ex) {
+    setGroups((prev) => ({
+      ...prev,
+      [g]: [...prev[g], item ?? { name: '', detail: '' }],
+    }))
   }
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function setEx(g: 'warmup' | 'resistance' | 'cardio' | 'cooldown', i: number, field: keyof Ex, value: string) {
+    setGroups((prev) => ({
+      ...prev,
+      [g]: prev[g].map((e, idx) => (idx === i ? { ...e, [field]: value } : e)),
+    }))
+  }
+
+  function delEx(g: 'warmup' | 'resistance' | 'cardio' | 'cooldown', i: number) {
+    setGroups((prev) => ({
+      ...prev,
+      [g]: prev[g].filter((_, idx) => idx !== i),
+    }))
+  }
+
+  // Copy routine from last session
+  function handleCopyFromLastSession() {
+    if (!lastSession) return
+    const eg = Array.isArray(lastSession.exercises) ? lastSession.exercises[0] : lastSession.exercises
+    if (eg) {
+      setGroups({
+        warmup: eg.warmup?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
+        resistance: eg.resistance?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
+        cardio: eg.cardio?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
+        cooldown: eg.cooldown?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
+      })
+      if (lastSession.weight != null) setWeight(String(lastSession.weight))
+      if (lastSession.fat_pct != null) setFatPct(String(lastSession.fat_pct))
+      setCopyNotice('Gerakan dari sesi terakhir berhasil disalin!')
+      setTimeout(() => setCopyNotice(''), 3500)
+    }
+  }
+
+  // Quick evaluation note injection
+  function addQuickNote(tag: string) {
+    setNotes((prev) => {
+      const trimmed = prev.trim()
+      if (!trimmed) return tag
+      if (trimmed.includes(tag)) return trimmed
+      return `${trimmed} • ${tag}`
+    })
+  }
+
+  // Form Submit Handler
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const f = new FormData(e.currentTarget)
-    const err = document.getElementById('err')!
-    err.textContent = ''
+    setErrorMsg('')
+
+    if (!date) {
+      setErrorMsg('Tanggal latihan harus diisi.')
+      return
+    }
+
+    if (rpe < 1 || rpe > 10) {
+      setErrorMsg('Nilai RPE harus di antara 1 dan 10.')
+      return
+    }
+
     setSaving(true)
     try {
-      // exercises = [grup]; grup kosong difilter. weight/fat_pct kosong → null
-      const exercises = Object.entries(groups)
-        .filter(([, list]) => list.some((x) => x.name.trim()))
-        .map(([g, list]) => ({
-          [g]: list.filter((x) => x.name.trim()).map(({ name, detail }) => ({
-            name: name.trim(), ...(detail?.trim() ? { detail: detail.trim() } : {}),
-          })),
-        }))
-      const num = (v: FormDataEntryValue | null) => {
-        const t = String(v ?? '').trim().replace(',', '.')
-        if (!t) return null
-        const n = Number(t)
+      const num = (val: string) => {
+        const cleaned = val.trim().replace(',', '.')
+        if (!cleaned) return null
+        const n = Number(cleaned)
         return Number.isFinite(n) ? n : null
       }
-      const w = num(f.get('weight'))
-      const fp = num(f.get('fat_pct'))
+
+      const formattedExercises = [
+        {
+          warmup: groups.warmup
+            .filter((x) => x.name.trim())
+            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
+          resistance: groups.resistance
+            .filter((x) => x.name.trim())
+            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
+          cardio: groups.cardio
+            .filter((x) => x.name.trim())
+            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
+          cooldown: groups.cooldown
+            .filter((x) => x.name.trim())
+            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
+        },
+      ]
+
       await api(`/clients/${client.id}/sessions`, {
         method: 'POST',
         body: JSON.stringify({
-          date: String(f.get('date') ?? ''),
-          rpe: Number(f.get('rpe') || 0),
-          weight: w,
-          fat_pct: fp,
-          notes: String(f.get('notes') || '').trim() || undefined,
-          exercises,
+          date,
+          rpe: Number(rpe),
+          weight: num(weight),
+          fat_pct: num(fatPct),
+          notes: notes.trim() || undefined,
+          exercises: formattedExercises,
         }),
       })
-      location.href = `/clients/${client.id}`
+
+      // If WhatsApp option enabled and phone available, open WhatsApp with summary
+      if (autoOpenWa && client.phone) {
+        const waText = generateWaMessage(
+          client.name,
+          date,
+          rpe,
+          num(weight),
+          num(fatPct),
+          groups,
+          notes
+        )
+        const cleanPhone = client.phone.replace(/\D/g, '')
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`, '_blank')
+      }
+
+      navigate({ to: '/clients/$clientId', params: { clientId: client.id } })
     } catch (ex) {
-      const detail = (ex as { status?: number }).status === 400
-        ? ' — cek tanggal/RPE (1-10)/angka valid' : ''
-      err.textContent = ex instanceof Error ? `Gagal: ${ex.message}${detail}` : 'Gagal menyimpan.'
+      const err = ex as { message?: string; status?: number }
+      const detail = err.status === 400 ? ' — periksa kembali tanggal, RPE (1-10), atau input angka.' : ''
+      setErrorMsg(ex instanceof Error ? `Gagal menyimpan: ${ex.message}${detail}` : 'Terjadi kesalahan saat menyimpan sesi.')
       setSaving(false)
     }
   }
 
-  const labels: Record<string, string> = {
-    warmup: 'Pemanasan', resistance: 'Resistance', cardio: 'Cardio', cooldown: 'Cooldown',
-  }
+  const currentRpe = RPE_INFO[rpe] ?? RPE_INFO[7]
+  const currentSessionNumber = client.pkg_used + 1
+  const remainingQuota = client.pkg_total - client.pkg_used
+  const isUrgentRenewal = client.pkg_total > 0 && remainingQuota <= 3
+
+  const phaseConfig = [
+    {
+      key: 'warmup' as const,
+      name: 'Pemanasan',
+      sub: 'Aktivasi Otot & Mobilitas Sendi',
+      icon: <Flame className="w-4 h-4 text-emerald-400" />,
+      accent: 'emerald',
+      presets: PRESETS.warmup,
+    },
+    {
+      key: 'resistance' as const,
+      name: 'Latihan Utama (Resistance)',
+      sub: 'Beban, Hipertrofi & Kekuatan',
+      icon: <Dumbbell className="w-4 h-4 text-accent" />,
+      accent: 'amber',
+      presets: PRESETS.resistance,
+    },
+    {
+      key: 'cardio' as const,
+      name: 'Kardio / Kondisi Jantung',
+      sub: 'Stamina & Pembakaran Kalori',
+      icon: <HeartPulse className="w-4 h-4 text-sky-400" />,
+      accent: 'sky',
+      presets: PRESETS.cardio,
+    },
+    {
+      key: 'cooldown' as const,
+      name: 'Pendinginan & Stretching',
+      sub: 'Regulasi Nafas & Relaksasi Otot',
+      icon: <Wind className="w-4 h-4 text-purple-400" />,
+      accent: 'purple',
+      presets: PRESETS.cooldown,
+    },
+  ]
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-6 md:p-10">
-      <form onSubmit={onSubmit} className="bg-panel border-line mx-auto max-w-md rounded-2xl border p-6">
-        <h1 className="mb-1 text-lg font-semibold">Catat Sesi</h1>
-        <p className="text-dim mb-6 text-sm">{client.name}</p>
+    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-white font-sans antialiased">
+      <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
+        {/* ── Top Header & Breadcrumb ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-line/60">
+          <div className="flex items-center gap-3.5">
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId: client.id }}
+              className="btn-interactive px-3.5 py-2 rounded-xl bg-panel border border-line text-dim hover:text-text hover:border-accent/40 text-xs font-semibold transition-all flex items-center gap-2 shadow-sm shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali</span>
+            </Link>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-2xl font-black tracking-tight text-text truncate">Catat Sesi Latihan</h1>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-bold bg-accent/15 text-accent border border-accent/30 shrink-0">
+                  Sesi #{currentSessionNumber}
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-dim mt-0.5 truncate">
+                Dokumentasikan 4 fase latihan, metrik tubuh, dan intensitas RPE
+              </p>
+            </div>
+          </div>
 
-        <label className="text-dim mb-1 block text-sm">Tanggal</label>
-        <input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} className={`${input} mb-4`} />
-
-        <div className="mb-4 grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-dim mb-1 block text-sm">RPE (1-10)</label>
-            <input name="rpe" type="number" min={1} max={10} required defaultValue={7} className={input} />
-          </div>
-          <div>
-            <label className="text-dim mb-1 block text-sm">BB (kg)</label>
-            <input name="weight" type="number" step="0.1" min={0} max={500} className={input} />
-          </div>
-          <div>
-            <label className="text-dim mb-1 block text-sm">Lemak %</label>
-            <input name="fat_pct" type="number" step="0.1" min={0} max={100} className={input} />
-          </div>
+          {lastSession && (
+            <button
+              type="button"
+              onClick={handleCopyFromLastSession}
+              className="btn-interactive self-stretch sm:self-auto px-3.5 py-2 rounded-xl bg-panel hover:bg-panel-elevated border border-accent/30 text-accent hover:border-accent text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-2"
+              title="Salin daftar gerakan dari sesi latihan sebelumnya"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Salin dari Sesi Terakhir</span>
+            </button>
+          )}
         </div>
 
-        {Object.keys(labels).map((g) => (
-          <fieldset key={g} className="border-line mb-4 rounded-xl border p-3">
-            <legend className="text-dim px-1 text-sm">{labels[g]}</legend>
-            {groups[g].map((ex, i) => (
-              <div key={i} className="mb-2 flex gap-2">
-                <input placeholder="Latihan" value={ex.name} onChange={(e) => setEx(g, i, 'name', e.target.value)} className={input} />
-                <input placeholder="Detail (3x10 60kg)" value={ex.detail ?? ''} onChange={(e) => setEx(g, i, 'detail', e.target.value)} className={input} />
-                <button type="button" onClick={() => delEx(g, i)} className="text-dim hover:text-red-400 shrink-0">✕</button>
-              </div>
-            ))}
-            <button type="button" onClick={() => addEx(g)} className="text-accent text-sm">+ Tambah</button>
-          </fieldset>
-        ))}
+        {/* Copy notification toast */}
+        {copyNotice && (
+          <div className="p-3.5 rounded-xl bg-accent/15 border border-accent/40 text-accent text-xs font-medium flex items-center gap-2 animate-fade-in shadow-[0_0_20px_rgba(212,175,55,0.15)]">
+            <Sparkles className="w-4 h-4" />
+            <span>{copyNotice}</span>
+          </div>
+        )}
 
-        <label className="text-dim mb-1 block text-sm">Catatan</label>
-        <textarea name="notes" rows={2} maxLength={2000} className={`${input} mb-4`} />
-        <p id="err" className="text-red-400 mb-3 min-h-5 text-sm"></p>
-        <button type="submit" disabled={saving} className="bg-accent hover:opacity-90 w-full rounded-lg py-2 font-semibold text-black disabled:opacity-50">
-          {saving ? 'Menyimpan…' : 'Simpan Sesi'}
-        </button>
-      </form>
+        {/* ── Client Identity & Context Banner ── */}
+        <div className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line shadow-[0_4px_20px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#1a1b20] to-[#121316] border border-accent/40 flex items-center justify-center font-bold text-accent text-base sm:text-lg shadow-inner shrink-0">
+              {client.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm sm:text-base text-text truncate">{client.name}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-bg border border-line text-accent shrink-0">
+                  {goalLabel(client.goal)}
+                </span>
+                {client.gender && (
+                  <span className="text-xs text-dim capitalize">({client.gender})</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3 text-xs text-dim mt-1 flex-wrap">
+                <span>
+                  Sisa Kuota:{' '}
+                  <strong className={isUrgentRenewal ? 'text-amber-400 font-bold' : 'text-text'}>
+                    {remainingQuota} sesi
+                  </strong>{' '}
+                  dari {client.pkg_total}
+                </span>
+                {lastSession && (
+                  <span className="hidden sm:inline">
+                    • Terakhir latihan: {formatDate(lastSession.date)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Medical / Injury Alert if present */}
+          {client.problem && client.problem !== 'none' && (
+            <div className="px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2.5 max-w-sm">
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+              <div>
+                <strong className="block font-bold">Perhatian: {injuryLabel(client.problem)}</strong>
+                <span className="text-[11px] opacity-80">
+                  {injuryTip(client.problem)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Main Workout Log Form ── */}
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8 animate-fade-in-up">
+          {/* Section 1: Session Metrics & Interactive RPE */}
+          <div className="hover-gold-glow p-4 sm:p-6 rounded-2xl bg-panel border border-line space-y-5 sm:space-y-6 shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-all duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-line/60">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-dim flex items-center gap-2 font-mono">
+                <span>01</span>
+                <span className="text-text">Metrik & Parameter Sesi</span>
+              </h2>
+              <span className="text-[11px] text-muted font-mono">Wajib diisi</span>
+            </div>
+
+            {/* Date, Weight, Body Fat % inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-dim mb-1.5">
+                  Tanggal Latihan <span className="text-accent">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3.5 py-2.5 outline-none text-base sm:text-sm font-mono transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-dim mb-1.5 flex items-center justify-between">
+                  <span>Berat Badan (kg)</span>
+                  {lastSession?.weight != null && (
+                    <span className="text-[10px] text-muted font-mono">Lalu: {lastSession.weight}kg</span>
+                  )}
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="500"
+                  placeholder="Contoh: 72.5"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3.5 py-2.5 outline-none text-base sm:text-sm font-mono transition-colors placeholder:text-muted"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-dim mb-1.5 flex items-center justify-between">
+                  <span>Lemak Tubuh (%)</span>
+                  {lastSession?.fat_pct != null && (
+                    <span className="text-[10px] text-muted font-mono">Lalu: {lastSession.fat_pct}%</span>
+                  )}
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="Contoh: 24.2"
+                  value={fatPct}
+                  onChange={(e) => setFatPct(e.target.value)}
+                  className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3.5 py-2.5 outline-none text-base sm:text-sm font-mono transition-colors placeholder:text-muted"
+                />
+              </div>
+            </div>
+
+            {/* Interactive RPE Intensity Slider & Badges */}
+            <div className="pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
+                <label className="text-xs font-semibold text-dim flex items-center gap-2">
+                  <span>Intensitas Latihan — RPE (Rate of Perceived Exertion)</span>
+                  <span className="text-accent">*</span>
+                </label>
+                <span className="text-xs font-mono font-bold text-accent">
+                  Skala Terpilih: {rpe} / 10
+                </span>
+              </div>
+
+              {/* 1-10 Button Selector */}
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => {
+                  const isSelected = rpe === val
+                  let activeClass = 'bg-bg text-dim border-line hover:border-line-subtle'
+                  if (isSelected) {
+                    if (val <= 4) activeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500 shadow-sm font-bold scale-105'
+                    else if (val <= 6) activeClass = 'bg-sky-500/20 text-sky-300 border-sky-500 shadow-sm font-bold scale-105'
+                    else if (val <= 8) activeClass = 'bg-accent/25 text-accent border-accent shadow-sm font-bold scale-105'
+                    else activeClass = 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-sm font-bold scale-105'
+                  }
+                  return (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setRpe(val)}
+                      className={`btn-interactive h-11 rounded-xl border text-sm font-mono transition-all flex flex-col items-center justify-center hover:scale-105 active:scale-95 ${activeClass}`}
+                    >
+                      <span>{val}</span>
+                      <span className="text-[9px] opacity-70">
+                        {val === 10 ? 'MAX' : val >= 7 ? `${10 - val}RIR` : ''}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* RPE Live Explanation Card */}
+              <div className={`mt-3 p-3.5 rounded-xl border ${currentRpe.badge} transition-all duration-300 animate-fade-in`}>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                  <span className={`text-xs font-bold ${currentRpe.color}`}>
+                    RPE {rpe}: {currentRpe.title}
+                  </span>
+                </div>
+                <p className="text-xs text-dim mt-1 leading-relaxed">
+                  {currentRpe.desc}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: 4-Phase Workout Builder */}
+          <div className="space-y-5">
+            <div className="flex items-center justify-between pb-2 border-b border-line/60">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-dim flex items-center gap-2 font-mono">
+                <span>02</span>
+                <span className="text-text">Struktur 4 Fase Latihan (TrainLog Signature)</span>
+              </h2>
+              <span className="text-xs text-muted">Bisa dikosongkan jika fase tidak dilakukan</span>
+            </div>
+
+            <div className="space-y-4">
+              {phaseConfig.map((phase) => {
+                const list = groups[phase.key]
+                return (
+                  <div
+                    key={phase.key}
+                    className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line shadow-[0_4px_16px_rgba(0,0,0,0.3)] transition-all duration-300"
+                  >
+                    {/* Phase Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-line/60 mb-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">{phase.icon}</span>
+                        <div>
+                          <h3 className="font-bold text-sm text-text flex items-center gap-2">
+                            <span>{phase.name}</span>
+                            <span className="text-[10px] font-mono font-normal px-2 py-0.5 rounded-md bg-bg border border-line text-dim">
+                              {list.length} gerakan
+                            </span>
+                          </h3>
+                          <p className="text-[11px] text-dim">{phase.sub}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => addEx(phase.key)}
+                        className="btn-interactive self-start sm:self-auto text-xs px-3 py-1.5 rounded-lg bg-bg border border-line hover:border-accent/40 text-accent font-medium transition-all flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah Gerakan</span>
+                      </button>
+                    </div>
+
+                    {/* Quick Preset Chips */}
+                    <div className="mb-3.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] text-muted uppercase font-mono mr-1">Rekomendasi Cepat:</span>
+                        {phase.presets.map((preset, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => addEx(phase.key, { name: preset.name, detail: preset.detail })}
+                            className="btn-interactive text-[11px] px-2.5 py-1 rounded-lg bg-bg/80 border border-line/70 hover:border-accent/50 text-dim hover:text-text transition-all"
+                            title={`Tambahkan ${preset.name} (${preset.detail})`}
+                          >
+                            + {preset.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Exercise items list */}
+                    {list.length === 0 ? (
+                      <div className="py-4 text-center rounded-xl bg-bg/40 border border-dashed border-line/50 text-muted text-xs">
+                        Belum ada gerakan di fase {phase.name}. Klik tombol tambah atau pilih rekomendasi di atas.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {list.map((item, i) => (
+                          <div key={i} className="animate-fade-in flex items-center gap-2 group">
+                            <span className="w-6 text-center font-mono text-[11px] text-muted shrink-0">
+                              {i + 1}.
+                            </span>
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                placeholder="Nama Latihan (misal: Barbell Squat)"
+                                value={item.name}
+                                onChange={(e) => setEx(phase.key, i, 'name', e.target.value)}
+                                className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3 py-2 outline-none text-base sm:text-xs transition-colors placeholder:text-muted"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Detail (3 set x 10 reps @ 60kg)"
+                                value={item.detail ?? ''}
+                                onChange={(e) => setEx(phase.key, i, 'detail', e.target.value)}
+                                className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3 py-2 outline-none text-base sm:text-xs font-mono transition-colors placeholder:text-muted"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => delEx(phase.key, i)}
+                              className="btn-interactive w-8 h-8 rounded-xl border border-line bg-bg text-dim hover:text-rose-400 hover:border-rose-500/40 flex items-center justify-center text-xs transition-all shrink-0"
+                              title="Hapus gerakan ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Section 3: Coach Evaluation & Notes */}
+          <div className="hover-gold-glow p-4 sm:p-6 rounded-2xl bg-panel border border-line space-y-4 shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-all duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-line/60">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-dim flex items-center gap-2 font-mono">
+                <span>03</span>
+                <span className="text-text">Catatan & Evaluasi Coach</span>
+              </h2>
+              <span className="text-[11px] text-muted">Opsional</span>
+            </div>
+
+            {/* Quick Note Tags */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-dim font-medium">Tag Cepat:</span>
+              {[
+                'PR Beban Baru 🏆',
+                'Form Sempurna ✨',
+                'Fokus Mobilitas Panggul 🎯',
+                'Tingkatkan Hidrasi 💧',
+                'Tidur Kurang / Lelah ⚠️',
+                'Pola Nafas Terjaga 🔥',
+              ].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => addQuickNote(tag)}
+                  className="btn-interactive text-xs px-2.5 py-1 rounded-lg bg-bg border border-line hover:border-accent/40 text-dim hover:text-text transition-all"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              rows={3}
+              maxLength={2000}
+              placeholder="Tuliskan evaluasi teknik, feedback perkembangan klien, atau PR yang dicapai hari ini..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl p-3.5 outline-none text-base sm:text-sm transition-colors placeholder:text-muted leading-relaxed"
+            />
+          </div>
+
+          {/* Section 4: WhatsApp Recap Automation */}
+          {client.phone && (
+            <div className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg shrink-0">
+                  <Smartphone className="w-5 h-5" />
+                </span>
+                <div>
+                  <label className="text-sm font-bold text-text block cursor-pointer" htmlFor="autoWa">
+                    Kirim Rekap Sesi ke WhatsApp Klien
+                  </label>
+                  <p className="text-xs text-dim">
+                    Otomatis membuka WhatsApp dengan format ringkasan sesi latihan ({client.phone})
+                  </p>
+                </div>
+              </div>
+              <input
+                id="autoWa"
+                type="checkbox"
+                checked={autoOpenWa}
+                onChange={(e) => setAutoOpenWa(e.target.checked)}
+                className="w-5 h-5 accent-accent rounded cursor-pointer self-start sm:self-center"
+              />
+            </div>
+          )}
+
+          {/* Error Message display */}
+          {errorMsg && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Section 5: Action & Submission Buttons */}
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 pt-4 border-t border-line/60">
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId: client.id }}
+              className="btn-interactive w-full sm:w-auto px-6 py-3 rounded-xl border border-line bg-bg hover:bg-panel text-dim hover:text-text text-sm font-semibold text-center transition-all"
+            >
+              Batal
+            </Link>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-interactive w-full sm:w-auto px-8 py-3 rounded-xl bg-accent hover:bg-accent-hover text-black font-bold text-sm transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] hover:shadow-[0_0_28px_rgba(212,175,55,0.4)] disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                  <span>Menyimpan Sesi…</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>Simpan & Selesaikan Sesi</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   )
+}
+
+function goalLabel(g: string) {
+  return { fat_loss: 'Fat Loss', muscle_gain: 'Muscle Gain', general: 'General Fitness' }[g] ?? g
+}
+
+function injuryLabel(p?: string | null) {
+  if (!p || p === 'none') return 'Normal'
+  if (p === 'knee') return 'Cedera Lutut'
+  if (p === 'back') return 'Cedera Pinggang'
+  if (p === 'shoulder') return 'Cedera Bahu'
+  return p
+}
+
+function injuryTip(p?: string | null) {
+  if (p === 'knee') return 'Batasi fleksi lutut dalam berlebih & hindari gerakan eksplosif tanpa pemanasan sendi.'
+  if (p === 'back') return 'Jaga kurvatura lumbal netral & hindari gerakan shearing spinal.'
+  if (p === 'shoulder') return 'Batasi rotasi internal bahu ekstrem dan overhead pressing berat.'
+  return 'Perhatikan instruksi dan kenyamanan klien selama latihan.'
+}
+
+function generateWaMessage(
+  clientName: string,
+  date: string,
+  rpe: number,
+  weight: number | null,
+  fatPct: number | null,
+  groups: { warmup: Ex[]; resistance: Ex[]; cardio: Ex[]; cooldown: Ex[] },
+  notes: string
+) {
+  let text = `*Halo ${clientName}!* 💪\n`
+  text += `Berikut ringkasan sesi latihan kita pada tanggal *${formatDateWithDay(date)}*:\n\n`
+  text += `📊 *Intensitas (RPE):* ${rpe}/10\n`
+  if (weight != null) text += `⚖️ *Berat Badan:* ${weight} kg\n`
+  if (fatPct != null) text += `📉 *Lemak Tubuh:* ${fatPct}%\n\n`
+
+  if (groups.warmup.some((x) => x.name.trim())) {
+    text +=
+      `🟢 *Warm-up:*\n` +
+      groups.warmup
+        .filter((x) => x.name.trim())
+        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
+        .join('\n') +
+      `\n\n`
+  }
+
+  if (groups.resistance.some((x) => x.name.trim())) {
+    text +=
+      `🟡 *Resistance:*\n` +
+      groups.resistance
+        .filter((x) => x.name.trim())
+        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
+        .join('\n') +
+      `\n\n`
+  }
+
+  if (groups.cardio.some((x) => x.name.trim())) {
+    text +=
+      `🔵 *Cardio:*\n` +
+      groups.cardio
+        .filter((x) => x.name.trim())
+        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
+        .join('\n') +
+      `\n\n`
+  }
+
+  if (groups.cooldown.some((x) => x.name.trim())) {
+    text +=
+      `🟣 *Cool-down:*\n` +
+      groups.cooldown
+        .filter((x) => x.name.trim())
+        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
+        .join('\n') +
+      `\n\n`
+  }
+
+  if (notes.trim()) {
+    text += `📝 *Catatan Coach:* "${notes.trim()}"\n\n`
+  }
+
+  text += `Terus jaga konsistensi, nutrisi harian, dan waktu istirahat yang cukup. Sampai jumpa di sesi latihan berikutnya! 🔥`
+  return text
 }

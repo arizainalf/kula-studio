@@ -1,10 +1,107 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: oklch(0.16 0.02 260);
-  --color-panel: oklch(0.21 0.02 260);
-  --color-line: oklch(0.30 0.02 260);
-  --color-text: oklch(0.95 0.01 260);
-  --color-dim: oklch(0.68 0.02 260);
-  --color-accent: oklch(0.84 0.19 125);
+  --color-bg: oklch(0.13 0.005 285);
+  --color-panel: oklch(0.18 0.008 285);
+  --color-panel-elevated: oklch(0.22 0.008 285);
+  --color-line: oklch(0.28 0.008 285);
+  --color-line-subtle: oklch(0.22 0.005 285);
+  --color-text: oklch(0.96 0.005 285);
+  --color-dim: oklch(0.68 0.012 285);
+  --color-muted: oklch(0.48 0.012 285);
+  --color-accent: oklch(0.78 0.13 85);
+  --color-accent-hover: oklch(0.82 0.12 85);
+
+  --animate-fade-in: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in-up: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-scale-in: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-gold-pulse: goldPulse 3s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.5s infinite linear;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes goldPulse {
+    0%, 100% {
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.12);
+      border-color: rgba(212, 175, 55, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 28px rgba(212, 175, 55, 0.32);
+      border-color: rgba(212, 175, 55, 0.65);
+    }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 }
+
+/* Stagger animation utilities */
+.animate-delay-75 {
+  animation-delay: 75ms;
+}
+.animate-delay-150 {
+  animation-delay: 150ms;
+}
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+.animate-delay-500 {
+  animation-delay: 500ms;
+}
+
+/* Luxury card hover glow utility */
+.hover-gold-glow {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-gold-glow:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), 0 0 16px -2px rgba(212, 175, 55, 0.15);
+}
+
+/* Button interactive active state */
+.btn-interactive {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-interactive:active {
+  transform: scale(0.97);
+}
+
+/* Mobile-friendly scrolling & tap behavior */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+

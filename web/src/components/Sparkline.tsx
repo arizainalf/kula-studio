@@ -1,5 +1,6 @@
 // Sparkline SVG mini — tanpa lib chart. Data urut menaik (terlama→terbaru).
 // ponytail: tanpa sumbu/tooltip; upgrade ke recharts kalau butuh interaksi.
+import { formatDate } from '../lib/date'
 
 export type Point = { date: string; value: number }
 
@@ -39,7 +40,7 @@ export function Sparkline({ data, unit, color = 'var(--color-accent)' }: {
         <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         <circle cx={x(data.length - 1)} cy={y(last)} r={3} fill={color} />
       </svg>
-      <p className="text-dim text-xs">{data[0].date.slice(0, 10)} → {data[data.length - 1].date.slice(0, 10)} · {data.length} sesi tercatat</p>
+      <p className="text-dim text-xs">{formatDate(data[0].date)} → {formatDate(data[data.length - 1].date)} · {data.length} sesi tercatat</p>
     </div>
   )
 }

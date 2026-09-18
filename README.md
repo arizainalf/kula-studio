@@ -22,8 +22,9 @@ trainlog-replica/
 │  └─ wrangler.jsonc
 └─ docs/
    ├─ plan.md            # roadmap eksekusi
+   ├─ design-system.md   # spesifikasi warna luxury noir, charcoal & gold
    ├─ erd.md             # skema Postgres relasional (redisain)
-   ├─ analisa-trainlog.md    # hasil analisa stack asli (bagian 1)
+   ├─ analisa-trainlog.md    # hasil analisa stack asli & color way
    ├─ analisa-app.md         # eksplorasi dalam app (bagian 2)
    └─ erd-asli.md            # ERD rekonstruksi TrainLog asli (document-store)
 ```
@@ -47,7 +48,7 @@ Diluar scope MVP (later): generate program AI, import PDF, template sesi, integr
 
 - Docs-first: PRD/ERD/API contract sebelum generate kode
 - Keamanan di server: validasi zod di trust boundary, role check per endpoint — FE guard hanya UX
-- Anti-slop: tidak ada abstraksi tanpa dua implementasi, UI mengikuti design token (dark navy + lime, lihat analisa)
+- Anti-slop: tidak ada abstraksi tanpa dua implementasi, UI mengikuti design token (Luxury Dark: hitam obsidian, abu tua charcoal + aksen emas champagne, lihat docs/design-system.md)
 - Semua tabel milik `owner` — akun PT tidak pernah baca data PT lain (pengganti RLS di lapisan Hono)
 
 ## Status

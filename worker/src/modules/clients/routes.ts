@@ -25,14 +25,38 @@ clients.get('/', async (c) => {
   const u = c.get('user');
   const sql = db(c);
   const rows = u.role === 'pt'
-    ? await sql`select * from clients where pt_id = ${u.id} order by created_at desc`
+    ? await sql`
+        select c.*,
+               coalesce(count(s.id), 0)::int as pkg_used,
+               coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
+               max(s.date) as last_session_date
+        from clients c
+        left join sessions s on s.client_id = c.id
+        where c.pt_id = ${u.id}
+        group by c.id
+        order by c.created_at desc`
     : u.role === 'manager'
-      ? await sql`select c.* from clients c
-                  join users p on p.id = c.pt_id
-                  left join staff_profile sp on sp.user_id = p.id
-                  where c.pt_id = ${u.id} or sp.manager_id = ${u.id}
-                  order by c.created_at desc`
-      : await sql`select * from clients order by created_at desc`;
+      ? await sql`
+        select c.*,
+               coalesce(count(s.id), 0)::int as pkg_used,
+               coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
+               max(s.date) as last_session_date
+        from clients c
+        join users p on p.id = c.pt_id
+        left join staff_profile sp on sp.user_id = p.id
+        left join sessions s on s.client_id = c.id
+        where c.pt_id = ${u.id} or sp.manager_id = ${u.id}
+        group by c.id
+        order by c.created_at desc`
+      : await sql`
+        select c.*,
+               coalesce(count(s.id), 0)::int as pkg_used,
+               coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
+               max(s.date) as last_session_date
+        from clients c
+        left join sessions s on s.client_id = c.id
+        group by c.id
+        order by c.created_at desc`;
   return c.json({ clients: rows });
 });
 
@@ -65,7 +89,15 @@ clients.get('/:id', async (c) => {
   const id = c.req.param('id');
   const sql = db(c);
   if (!(await canAccessClient(sql, id, c.get('user')))) return c.json({ error: 'forbidden' }, 403);
-  const [row] = await sql`select * from clients where id = ${id}`;
+  const [row] = await sql`
+    select c.*,
+           coalesce(count(s.id), 0)::int as pkg_used,
+           coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
+           max(s.date) as last_session_date
+    from clients c
+    left join sessions s on s.client_id = c.id
+    where c.id = ${id}
+    group by c.id`;
   return row ? c.json({ client: row }) : c.json({ error: 'not_found' }, 404);
 });
 
