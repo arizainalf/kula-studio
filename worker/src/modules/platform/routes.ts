@@ -10,6 +10,20 @@ export const platform = new Hono<{ Bindings: Env }>();
 // 0. GET /platform/settings — Publik untuk Landing Page & Identitas Aplikasi
 platform.get('/settings', async (c) => {
   const sql = db(c);
+  // Auto-migrate legacy 'TrainLog' default data to 'Kula Studio'
+  try {
+    await sql`
+      update platform_settings set
+        app_name = case when app_name ilike '%trainlog%' then 'Kula Studio' else app_name end,
+        app_initials = case when app_initials = 'TL' then 'KS' else app_initials end,
+        contact_email = case when contact_email ilike '%trainlog%' then 'support@kula-studio.my.id' else contact_email end,
+        footer_copyright = case when footer_copyright ilike '%trainlog%' then 'Kula Studio. Hak Cipta Dilindungi.' else footer_copyright end
+      where id = 'default' and (app_name ilike '%trainlog%' or contact_email ilike '%trainlog%' or app_initials = 'TL' or footer_copyright ilike '%trainlog%')
+    `;
+  } catch (migErr) {
+    console.error('Error auto-migrating platform settings:', migErr);
+  }
+
   const [row] = await sql`select * from platform_settings where id = 'default'`;
   if (!row) {
     return c.json({ error: 'settings_not_found' }, 404);
@@ -21,15 +35,26 @@ platform.get('/settings', async (c) => {
 platform.get('/trainers', async (c) => {
   const sql = db(c);
   try {
+    await sql`alter table users add column if not exists phone text`.catch(() => {});
+    await sql`alter table studios add column if not exists gmaps_url text`.catch(() => {});
+
     await sql`
       update users
-      set youtube_url = 'https://www.youtube.com/watch?v=aclHkVaku9U'
-      where role = 'pt' and (youtube_url is null or trim(youtube_url) = '') and (email = 'hadi@dev.local' or name ilike '%hadi%')
+      set youtube_url = 'https://www.youtube.com/watch?v=aclHkVaku9U',
+          phone = coalesce(phone, '6287884241516'),
+          studio_id = coalesce(studio_id, '00000000-0000-0000-0000-000000000001')
+      where role = 'pt' and (email = 'hadi@dev.local' or name ilike '%hadi%')
+    `.catch(() => {});
+
+    await sql`
+      update studios
+      set gmaps_url = 'https://maps.google.com/?q=FitZone+Studio+Jakarta'
+      where gmaps_url is null or trim(gmaps_url) = ''
     `.catch(() => {});
 
     const rows = await sql`
-      select u.id, u.name, u.avatar_url, u.youtube_url, u.role,
-             sp.spec, s.name as studio_name, s.slug as studio_slug
+      select u.id, u.name, u.avatar_url, u.youtube_url, u.role, u.phone,
+             sp.spec, s.name as studio_name, s.slug as studio_slug, s.address as studio_address, s.gmaps_url as studio_gmaps_url
       from users u
       left join staff_profile sp on sp.user_id = u.id
       left join studios s on s.id = u.studio_id
@@ -39,25 +64,6 @@ platform.get('/trainers', async (c) => {
     `;
     return c.json({ trainers: rows });
   } catch (err: any) {
-    // Jika kolom youtube_url belum terbuat di Supabase production, tambahkan otomatis
-    if (err?.message?.includes('youtube_url') || err?.code === '42703') {
-      try {
-        await sql`alter table users add column if not exists youtube_url text`;
-        const retryRows = await sql`
-          select u.id, u.name, u.avatar_url, u.youtube_url, u.role,
-                 sp.spec, s.name as studio_name, s.slug as studio_slug
-          from users u
-          left join staff_profile sp on sp.user_id = u.id
-          left join studios s on s.id = u.studio_id
-          where u.role = 'pt' and u.is_active = true
-          order by case when u.youtube_url is not null and trim(u.youtube_url) != '' then 0 else 1 end, u.created_at desc
-          limit 12
-        `;
-        return c.json({ trainers: retryRows });
-      } catch (innerErr) {
-        console.error('Failed auto-migrating youtube_url:', innerErr);
-      }
-    }
     console.error('Error fetching trainers:', err);
     return c.json({ trainers: [] });
   }
@@ -206,6 +212,7 @@ platform.get('/studios', async (c) => {
       s.slug,
       s.address,
       s.phone,
+      s.gmaps_url,
       s.plan_tier,
       s.is_active,
       s.subscription_expires_at,
@@ -232,6 +239,7 @@ const createStudioSchema = z.object({
   slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'Slug hanya boleh huruf kecil, angka, dan strip (-)'),
   address: z.string().max(255).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
+  gmaps_url: z.string().max(500).optional().nullable(),
   plan_tier: z.enum(['starter', 'standard', 'pro', 'enterprise']).default('standard'),
   subscription_expires_at: z.string().date().optional().nullable(),
   admin_name: z.string().min(2).max(100),
@@ -258,8 +266,8 @@ platform.post('/studios', async (c) => {
 
   // Buat studio baru
   const [newStudio] = await sql`
-    insert into studios (name, slug, address, phone, plan_tier, subscription_expires_at, is_active)
-    values (${d.name}, ${d.slug}, ${d.address ?? null}, ${d.phone ?? null}, ${d.plan_tier}, ${d.subscription_expires_at ?? null}, true)
+    insert into studios (name, slug, address, phone, gmaps_url, plan_tier, subscription_expires_at, is_active)
+    values (${d.name}, ${d.slug}, ${d.address ?? null}, ${d.phone ?? null}, ${d.gmaps_url ?? null}, ${d.plan_tier}, ${d.subscription_expires_at ?? null}, true)
     returning *
   `;
 
@@ -286,6 +294,7 @@ const updateStudioSchema = z.object({
   slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/).optional(),
   address: z.string().max(255).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
+  gmaps_url: z.string().max(500).optional().nullable(),
   plan_tier: z.enum(['starter', 'standard', 'pro', 'enterprise']).optional(),
   is_active: z.boolean().optional(),
   subscription_expires_at: z.string().date().optional().nullable(),
@@ -312,6 +321,7 @@ platform.patch('/studios/:id', async (c) => {
       slug = coalesce(${d.slug ?? null}, slug),
       address = ${d.address !== undefined ? d.address : sql`address`},
       phone = ${d.phone !== undefined ? d.phone : sql`phone`},
+      gmaps_url = ${d.gmaps_url !== undefined ? d.gmaps_url : sql`gmaps_url`},
       plan_tier = coalesce(${d.plan_tier ?? null}, plan_tier),
       is_active = coalesce(${d.is_active ?? null}, is_active),
       subscription_expires_at = ${d.subscription_expires_at !== undefined ? d.subscription_expires_at : sql`subscription_expires_at`}

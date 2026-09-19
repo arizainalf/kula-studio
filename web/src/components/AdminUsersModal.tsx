@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { api, type User } from '../lib/api'
 import { UserAvatar, getInitials } from './UserAvatar'
+import { ImageCropModal } from './ImageCropModal'
 import {
   X,
   Users,
@@ -37,6 +38,7 @@ export function AdminUsersModal({
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [editPhone, setEditPhone] = useState('')
   const [editRole, setEditRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [editSpec, setEditSpec] = useState('')
   const [editPlanTier, setEditPlanTier] = useState<'standard' | 'pro'>('standard')
@@ -50,6 +52,7 @@ export function AdminUsersModal({
   const [isAddingUser, setIsAddingUser] = useState(false)
   const [addName, setAddName] = useState('')
   const [addEmail, setAddEmail] = useState('')
+  const [addPhone, setAddPhone] = useState('')
   const [addPassword, setAddPassword] = useState('')
   const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [addStudioId, setAddStudioId] = useState('')
@@ -72,6 +75,9 @@ export function AdminUsersModal({
   }, [isOpen, currentUser.role])
 
   const isAdmin = currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [rawCropImage, setRawCropImage] = useState<string | null>(null)
+  const [cropSetter, setCropSetter] = useState<((url: string) => void) | null>(null)
 
   function handleFileChange(file: File | undefined, setter: (url: string) => void) {
     if (!file) return
@@ -81,33 +87,13 @@ export function AdminUsersModal({
     }
     const reader = new FileReader()
     reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_SIZE = 360
-        let w = img.width
-        let h = img.height
-        if (w > h) {
-          if (w > MAX_SIZE) {
-            h = Math.round((h * MAX_SIZE) / w)
-            w = MAX_SIZE
-          }
-        } else {
-          if (h > MAX_SIZE) {
-            w = Math.round((w * MAX_SIZE) / h)
-            h = MAX_SIZE
-          }
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, w, h)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
-        setter(compressedDataUrl)
-      }
-      img.src = event.target?.result as string
+      setRawCropImage(event.target?.result as string)
+      setCropSetter(() => setter)
+      setCropModalOpen(true)
     }
     reader.readAsDataURL(file)
+    if (fileInputAddRef.current) fileInputAddRef.current.value = ''
+    if (fileInputEditRef.current) fileInputEditRef.current.value = ''
   }
 
   async function loadUsers() {
@@ -137,6 +123,7 @@ export function AdminUsersModal({
     setEditingUser(u)
     setEditName(u.name)
     setEditEmail(u.email)
+    setEditPhone(u.phone || '')
     setEditRole((u.role === 'admin_studio' || (u.role as string) === 'admin' || (u.role as string) === 'platform_admin' ? 'admin_studio' : u.role) as any)
     setEditSpec(u.spec || '')
     setEditPlanTier((u.plan_tier as any) || 'standard')
@@ -158,6 +145,7 @@ export function AdminUsersModal({
       const payload: Record<string, any> = {
         name: editName.trim(),
         email: editEmail.trim().toLowerCase(),
+        phone: editPhone.trim() || null,
         spec: editSpec.trim() || null,
         plan_tier: editPlanTier,
         is_active: editIsActive,
@@ -211,6 +199,7 @@ export function AdminUsersModal({
       const payload: Record<string, any> = {
         name: addName.trim(),
         email: addEmail.trim().toLowerCase(),
+        phone: addPhone.trim() || null,
         password: addPassword,
         role: currentUser.role === 'platform_admin'
           ? addRole
@@ -233,6 +222,7 @@ export function AdminUsersModal({
       setIsAddingUser(false)
       setAddName('')
       setAddEmail('')
+      setAddPhone('')
       setAddPassword('')
       setAddStudioId('')
       setAddSpec('')
@@ -502,6 +492,23 @@ export function AdminUsersModal({
                 />
               </div>
 
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                  <span>Nomor WhatsApp PT / Telepon</span>
+                  <span className="text-[10px] text-accent lowercase">opsional</span>
+                </label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="Contoh: 628123456789 atau 08123456789"
+                  className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                />
+                <p className="text-[10px] text-dim mt-1">
+                  Nomor ini digunakan untuk tombol "Latihan Bareng" di landing page agar calon klien bisa langsung menghubungi PT via WhatsApp.
+                </p>
+              </div>
+
               {/* Reset Password by Admin */}
               <div className="p-3.5 rounded-xl bg-bg border border-line/70 space-y-2">
                 <label className="text-accent font-semibold font-mono uppercase text-[11px] flex items-center gap-1.5">
@@ -755,6 +762,23 @@ export function AdminUsersModal({
                 />
               </div>
 
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                  <span>Nomor WhatsApp PT / Telepon</span>
+                  <span className="text-[10px] text-accent lowercase">opsional</span>
+                </label>
+                <input
+                  type="text"
+                  value={addPhone}
+                  onChange={(e) => setAddPhone(e.target.value)}
+                  placeholder="Contoh: 628123456789 atau 08123456789"
+                  className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                />
+                <p className="text-[10px] text-dim mt-1">
+                  Nomor ini digunakan untuk tombol "Latihan Bareng" di landing page agar calon klien bisa langsung menghubungi PT via WhatsApp.
+                </p>
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
                 <button
                   type="button"
@@ -932,6 +956,7 @@ export function AdminUsersModal({
 
                             <div className="flex items-center gap-3 text-xs text-dim font-mono mt-0.5 flex-wrap">
                               <span className="truncate">{u.email}</span>
+                              {u.phone && <span className="text-accent">&bull; WA: {u.phone}</span>}
                               {u.spec && <span>&bull; {u.spec}</span>}
                               {u.role === 'pt' && (
                                 <span className="text-text font-semibold">
@@ -978,6 +1003,21 @@ export function AdminUsersModal({
           </div>
         )}
       </div>
+
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={rawCropImage}
+        cropShape="round"
+        title="Potong Foto Pengguna (1:1)"
+        onCrop={(dataUrl) => {
+          if (cropSetter) cropSetter(dataUrl)
+        }}
+        onClose={() => {
+          setCropModalOpen(false)
+          setRawCropImage(null)
+          setCropSetter(null)
+        }}
+      />
     </div>
   )
 }

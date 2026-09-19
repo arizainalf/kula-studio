@@ -7,8 +7,8 @@
     "ENV": "dev"
   },
   "d1_databases": [],
-  // Aktifkan jika sudah membuat bucket 'trainlog-photos' di Cloudflare R2:
-  // "r2_buckets": [{ "binding": "PHOTOS_BUCKET", "bucket_name": "trainlog-photos" }],
+  // Aktifkan jika sudah membuat bucket 'kulastudio-photos' di Cloudflare R2:
+  // "r2_buckets": [{ "binding": "PHOTOS_BUCKET", "bucket_name": "kulastudio-photos" }],
   "r2_buckets": [],
   "workers_dev": true,
   "preview_urls": true,

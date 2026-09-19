@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { api, extractYouTubeId, getYouTubeThumbnailUrl, type User } from '../lib/api'
 import { UserAvatar, getInitials } from './UserAvatar'
+import { ImageCropModal } from './ImageCropModal'
 import {
   X,
   User as UserIcon,
@@ -56,6 +57,8 @@ export function EditProfileModal({
   const [fetching, setFetching] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [rawCropImage, setRawCropImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load fresh profile details when modal opens
@@ -70,7 +73,7 @@ export function EditProfileModal({
     async function fetchFreshProfile() {
       setFetching(true)
       try {
-        const res = await api<{ user: User }>('/auth/profile')
+        const res = await api<{ user: User }>('/auth/me')
         if (!isMounted) return
         const u = res.user
         setName(u.name || '')
@@ -79,18 +82,12 @@ export function EditProfileModal({
         setPhone(u.phone || '')
         setSpec(u.spec || '')
         setYoutubeUrl(u.youtube_url || '')
-        setGender((u.gender as any) || '')
+        setGender(u.gender || '')
         setAgeBracket(u.age_bracket || '')
         setProblem(u.problem || 'none')
         setNotes(u.notes || '')
-      } catch (err) {
-        // Fallback to currentUser if fetch failed
-        setName(currentUser.name || '')
-        setEmail(currentUser.email || '')
-        setAvatarUrl(currentUser.avatar_url || '')
-        setPhone(currentUser.phone || '')
-        setSpec(currentUser.spec || '')
-        setYoutubeUrl(currentUser.youtube_url || '')
+      } catch {
+        // Fallback to prop
       } finally {
         if (isMounted) setFetching(false)
       }
@@ -111,33 +108,11 @@ export function EditProfileModal({
     }
     const reader = new FileReader()
     reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_SIZE = 160
-        let w = img.width
-        let h = img.height
-        if (w > h) {
-          if (w > MAX_SIZE) {
-            h = Math.round((h * MAX_SIZE) / w)
-            w = MAX_SIZE
-          }
-        } else {
-          if (h > MAX_SIZE) {
-            w = Math.round((w * MAX_SIZE) / h)
-            h = MAX_SIZE
-          }
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, w, h)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75)
-        setAvatarUrl(compressedDataUrl)
-      }
-      img.src = event.target?.result as string
+      setRawCropImage(event.target?.result as string)
+      setCropModalOpen(true)
     }
     reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   if (!isOpen) return null
@@ -170,9 +145,9 @@ export function EditProfileModal({
       }
 
       if (password) payload.password = password
+      payload.phone = phone.trim() || null
 
       if (isClient) {
-        payload.phone = phone.trim() || null
         payload.gender = gender || null
         payload.age_bracket = ageBracket || null
         payload.problem = problem
@@ -472,6 +447,23 @@ export function EditProfileModal({
                     );
                   })()}
                 </div>
+
+                <div>
+                  <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-accent" />
+                    <span>Nomor WhatsApp Coach (Untuk Calon Klien)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Contoh: 628123456789 atau 08123456789"
+                    className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2 text-text outline-none text-sm font-mono"
+                  />
+                  <p className="text-[11px] text-dim mt-1">
+                    Nomor ini otomatis dihubungkan ke tombol <strong>"Latihan Bareng"</strong> di landing page agar calon klien dapat langsung menghubungi Anda via WhatsApp untuk pendaftaran akun.
+                  </p>
+                </div>
               </>
             )}
 
@@ -627,6 +619,18 @@ export function EditProfileModal({
           </form>
         )}
       </div>
+
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={rawCropImage}
+        cropShape="round"
+        title="Potong Foto Profil (1:1)"
+        onCrop={(dataUrl) => setAvatarUrl(dataUrl)}
+        onClose={() => {
+          setCropModalOpen(false)
+          setRawCropImage(null)
+        }}
+      />
     </div>
   )
 }

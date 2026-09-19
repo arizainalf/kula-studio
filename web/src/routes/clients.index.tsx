@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { UserAvatar } from '../components/UserAvatar'
+import { ImageCropModal } from '../components/ImageCropModal'
 
 export const Route = createFileRoute('/clients/')({
   beforeLoad: async () => {
@@ -67,6 +68,8 @@ function ClientsDirectoryPage() {
   const [addSubmitting, setAddSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [rawCropImage, setRawCropImage] = useState<string | null>(null)
   const fileInputAddRef = useRef<HTMLInputElement>(null)
 
   const isAdminOrManager =
@@ -82,33 +85,11 @@ function ClientsDirectoryPage() {
     }
     const reader = new FileReader()
     reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_SIZE = 360
-        let w = img.width
-        let h = img.height
-        if (w > h) {
-          if (w > MAX_SIZE) {
-            h = Math.round((h * MAX_SIZE) / w)
-            w = MAX_SIZE
-          }
-        } else {
-          if (h > MAX_SIZE) {
-            w = Math.round((w * MAX_SIZE) / h)
-            h = MAX_SIZE
-          }
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, w, h)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
-        setAddAvatarUrl(compressedDataUrl)
-      }
-      img.src = event.target?.result as string
+      setRawCropImage(event.target?.result as string)
+      setCropModalOpen(true)
     }
     reader.readAsDataURL(file)
+    if (fileInputAddRef.current) fileInputAddRef.current.value = ''
   }
 
   async function handleCreateClient(e: React.FormEvent) {
@@ -678,6 +659,18 @@ function ClientsDirectoryPage() {
           </div>
         </div>
       )}
+
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={rawCropImage}
+        cropShape="round"
+        title="Potong Foto Klien (1:1)"
+        onCrop={(dataUrl) => setAddAvatarUrl(dataUrl)}
+        onClose={() => {
+          setCropModalOpen(false)
+          setRawCropImage(null)
+        }}
+      />
     </AppLayout>
   )
 }

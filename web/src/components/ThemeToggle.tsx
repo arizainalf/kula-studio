@@ -3,13 +3,14 @@ import { Sun, Moon } from 'lucide-react'
 
 export type Theme = 'dark' | 'light'
 
-const THEME_STORAGE_KEY = 'trainlog-theme'
-const THEME_EVENT_NAME = 'trainlog-theme-change'
+const THEME_STORAGE_KEY = 'kulastudio-theme'
+const LEGACY_THEME_STORAGE_KEY = 'trainlog-theme'
+const THEME_EVENT_NAME = 'kulastudio-theme-change'
 
 export function getStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'dark'
   try {
-    const val = localStorage.getItem(THEME_STORAGE_KEY)
+    const val = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
     if (val === 'light' || val === 'dark') return val
   } catch {}
   return 'dark'
@@ -57,7 +58,7 @@ export function useTheme() {
     }
 
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === THEME_STORAGE_KEY) {
+      if (e.key === THEME_STORAGE_KEY || e.key === LEGACY_THEME_STORAGE_KEY) {
         const next = e.newValue === 'light' ? 'light' : 'dark'
         setThemeState(next)
         applyTheme(next)

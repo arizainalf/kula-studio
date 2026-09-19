@@ -5,6 +5,7 @@ import { Sparkline, type Point } from '../components/Sparkline'
 import { ExportPdfModal } from '../components/ExportPdfModal'
 import { AppLayout } from '../components/AppLayout'
 import { UserAvatar } from '../components/UserAvatar'
+import { ImageCropModal } from '../components/ImageCropModal'
 import { usePlatformSettings } from '../lib/platformSettings'
 import {
   formatDate,
@@ -168,6 +169,9 @@ function ClientDetail() {
   const [editNotes, setEditNotes] = useState(client.notes ?? '')
   const [editAvatarUrl, setEditAvatarUrl] = useState(client.avatar_url ?? '')
   const [editSubmitting, setEditSubmitting] = useState(false)
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [rawCropImage, setRawCropImage] = useState<string | null>(null)
+  const [cropTarget, setCropTarget] = useState<'avatar' | 'progress'>('avatar')
   const fileInputEditRef = useRef<HTMLInputElement>(null)
 
   function handleAvatarFileChange(file: File | undefined) {
@@ -178,37 +182,12 @@ function ClientDetail() {
     }
     const reader = new FileReader()
     reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_SIZE = 360
-        let width = img.width
-        let height = img.height
-
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width)
-            width = MAX_SIZE
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height)
-            height = MAX_SIZE
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height)
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
-          setEditAvatarUrl(compressedDataUrl)
-        }
-      }
-      img.src = event.target?.result as string
+      setRawCropImage(event.target?.result as string)
+      setCropTarget('avatar')
+      setCropModalOpen(true)
     }
     reader.readAsDataURL(file)
+    if (fileInputEditRef.current) fileInputEditRef.current.value = ''
   }
 
   // New Schedule form state
@@ -224,13 +203,29 @@ function ClientDetail() {
     ? (sessions.reduce((acc: number, s: Session) => acc + s.rpe, 0) / sessions.length).toFixed(1)
     : client.avg_rpe ? Number(client.avg_rpe).toFixed(1) : '—'
 
-  // Photo Upload Handler
-  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  // Photo Upload Handler (triggers 1:1 cropper first)
+  function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setMsg('File harus berupa gambar (JPG/PNG/WEBP).')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setRawCropImage(event.target?.result as string)
+      setCropTarget('progress')
+      setCropModalOpen(true)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  async function handleCropProgressPhoto(blob?: Blob) {
+    if (!blob) return
     setMsg('Mengunggah foto progress…')
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', blob, 'progress-photo.jpg')
     try {
       const res = await fetch(`${API_BASE}/api/photos/${client.id}`, {
         method: 'POST',
@@ -571,7 +566,7 @@ function ClientDetail() {
             {client.phone && (
               <a
                 href={`https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                  `Halo ${client.name}, sesi latihanmu di ${platformSettings.app_name || 'TrainLog'} tersisa ${remainingSessions} sesi lagi. Mau kita lanjutkan paket berikutnya untuk mencapai target kebugaranmu?`
+                  `Halo ${client.name}, sesi latihanmu di ${platformSettings.app_name || 'Kula Studio'} tersisa ${remainingSessions} sesi lagi. Mau kita lanjutkan paket berikutnya untuk mencapai target kebugaranmu?`
                 )}`}
                 target="_blank"
                 rel="noreferrer"
@@ -1408,6 +1403,25 @@ function ClientDetail() {
         initialClientId={client.id}
         initialClientName={client.name}
         clientsList={[{ id: client.id, name: client.name }]}
+      />
+
+      {/* ── 1:1 Image Crop Modal ── */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={rawCropImage}
+        title={cropTarget === 'avatar' ? 'Potong Foto Klien (1:1)' : 'Potong Foto Progress (1:1)'}
+        cropShape={cropTarget === 'avatar' ? 'round' : 'rect'}
+        onCrop={(dataUrl, blob) => {
+          if (cropTarget === 'avatar') {
+            setEditAvatarUrl(dataUrl)
+          } else {
+            handleCropProgressPhoto(blob)
+          }
+        }}
+        onClose={() => {
+          setCropModalOpen(false)
+          setRawCropImage(null)
+        }}
       />
     </main>
   </AppLayout>

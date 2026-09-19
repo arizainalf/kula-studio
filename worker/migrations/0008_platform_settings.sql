@@ -2,9 +2,9 @@
 
 create table if not exists platform_settings (
   id text primary key default 'default',
-  app_name text not null default 'TrainLog',
+  app_name text not null default 'Kula Studio',
   app_tagline text not null default 'Pro PT Manager',
-  app_initials text not null default 'TL',
+  app_initials text not null default 'KS',
   hero_pill text not null default 'Eksklusif untuk Personal Trainer & Studio',
   hero_headline text not null default 'Catat Sesi. Susun Program NASM.',
   hero_gradient text not null default 'Pantau Progress Klien.',
@@ -14,10 +14,10 @@ create table if not exists platform_settings (
   pricing_plans jsonb not null default '[]'::jsonb,
   long_term_plans jsonb not null default '[]'::jsonb,
   contact_whatsapp text not null default '6287884241516',
-  contact_email text not null default 'support@trainlog.id',
+  contact_email text not null default 'support@kula-studio.my.id',
   cta_headline text not null default 'Mulai Catat Sesi Latihan Hari Ini.',
   cta_subheadline text not null default 'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.',
-  footer_copyright text not null default 'TrainLog Replica. Hak Cipta Dilindungi.',
+  footer_copyright text not null default 'Kula Studio. Hak Cipta Dilindungi.',
   updated_at timestamptz default now()
 );
 
@@ -42,9 +42,9 @@ insert into platform_settings (
   footer_copyright
 ) values (
   'default',
-  'TrainLog',
+  'Kula Studio',
   'Pro PT Manager',
-  'TL',
+  'KS',
   'Eksklusif untuk Personal Trainer & Studio',
   'Catat Sesi. Susun Program NASM.',
   'Pantau Progress Klien.',
@@ -170,9 +170,9 @@ insert into platform_settings (
     }
   ]'::jsonb,
   '6287884241516',
-  'support@trainlog.id',
+  'support@kula-studio.my.id',
   'Mulai Catat Sesi Latihan Hari Ini.',
   'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.',
-  'TrainLog Replica. Hak Cipta Dilindungi.'
+  'Kula Studio. Hak Cipta Dilindungi.'
 )
 on conflict (id) do nothing;

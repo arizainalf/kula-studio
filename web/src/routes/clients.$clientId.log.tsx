@@ -201,13 +201,10 @@ function LogSession() {
 
   // Dynamic Exercise Groups State
   const [groups, setGroups] = useState<Record<string, Ex[]>>(() => {
-    const init: Record<string, Ex[]> = {
-      warmup: [],
-      resistance: [{ name: '', detail: '' }],
-    }
+    const init: Record<string, Ex[]> = {}
     const catsToUse = dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES
     for (const c of catsToUse) {
-      if (!init[c.slug]) init[c.slug] = []
+      init[c.slug] = []
     }
     return init
   })
@@ -394,33 +391,35 @@ function LogSession() {
   return (
     <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-6 lg:p-8 selection:bg-accent/30 selection:text-text font-sans antialiased">
       <div className="w-full max-w-6xl mx-auto space-y-6 sm:space-y-8">
-        {/* ── Top Header & Breadcrumb ── */}
+        {/* ── Top Navigation Bar: Back & Theme ── */}
+        <div className="flex items-center justify-between gap-3 animate-fade-in">
+          <Link
+            to="/clients/$clientId"
+            params={{ clientId: client.id }}
+            className="btn-interactive px-3.5 py-2 rounded-xl bg-panel border border-line text-dim hover:text-text hover:border-accent/40 text-xs font-semibold transition-all inline-flex items-center gap-2 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Kembali ke Detail Klien</span>
+          </Link>
+
+          <ThemeToggle />
+        </div>
+
+        {/* ── Main Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-line/60">
-          <div className="flex items-center gap-3.5">
-            <Link
-              to="/clients/$clientId"
-              params={{ clientId: client.id }}
-              className="btn-interactive px-3.5 py-2 rounded-xl bg-panel border border-line text-dim hover:text-text hover:border-accent/40 text-xs font-semibold transition-all flex items-center gap-2 shadow-sm shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Kembali</span>
-            </Link>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-2xl font-black tracking-tight text-text truncate">Catat Sesi Latihan</h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase font-bold bg-accent/15 text-accent border border-accent/30 shrink-0">
-                  Sesi #{currentSessionNumber}
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-dim mt-0.5 truncate">
-                Dokumentasikan fase latihan, metrik tubuh, dan intensitas RPE
-              </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-text">Catat Sesi Latihan</h1>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-bold bg-accent/15 text-accent border border-accent/30 shrink-0">
+                Sesi #{currentSessionNumber}
+              </span>
             </div>
+            <p className="text-[11px] sm:text-xs text-dim mt-1">
+              Klien: <strong className="text-text">{client.name}</strong> · Dokumentasikan fase latihan, metrik tubuh, dan intensitas RPE
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end flex-wrap">
-            <ThemeToggle />
-
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-start sm:justify-end flex-wrap">
             <button
               type="button"
               onClick={() => setIsAdminModalOpen(true)}
@@ -428,7 +427,7 @@ function LogSession() {
               title="Kelola Master Gerakan & Kategori Latihan"
             >
               <Dumbbell className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden sm:inline">Master Gerakan</span>
+              <span>Master Gerakan</span>
               {user?.role === 'admin_studio' || user?.role === 'platform_admin' ? (
                 <span className="text-[9px] font-mono font-bold bg-amber-400/20 text-amber-400 px-1.5 py-0.2 rounded">
                   {user?.role === 'platform_admin' ? 'Superadmin' : 'Admin'}
@@ -673,7 +672,7 @@ function LogSession() {
                         className="btn-interactive self-start sm:self-auto text-xs px-3 py-1.5 rounded-lg bg-bg border border-line hover:border-accent/40 text-accent font-medium transition-all flex items-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>+ Tambah Gerakan Manual</span>
+                        <span>Tambah</span>
                       </button>
                     </div>
 
@@ -700,7 +699,7 @@ function LogSession() {
                     {/* Exercise items list */}
                     {list.length === 0 ? (
                       <div className="py-4 text-center rounded-xl bg-bg/40 border border-dashed border-line/50 text-muted text-xs">
-                        Belum ada gerakan di kategori {cat.name}. Klik <strong>+ Tambah Gerakan Manual</strong> atau pilih rekomendasi di atas.
+                        Belum ada gerakan di kategori {cat.name}. Klik <strong>Tambah</strong> atau pilih rekomendasi di atas.
                       </div>
                     ) : (
                       <div className="space-y-2.5">
@@ -800,28 +799,45 @@ function LogSession() {
 
           {/* Section 4: WhatsApp Recap Automation */}
           {client.phone && (
-            <div className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300">
-              <div className="flex items-center gap-3">
+            <label
+              htmlFor="autoWa"
+              className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line flex items-center justify-between gap-3.5 transition-all duration-300 cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-3 min-w-0">
                 <span className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg shrink-0">
                   <Smartphone className="w-5 h-5" />
                 </span>
-                <div>
-                  <label className="text-sm font-bold text-text block cursor-pointer" htmlFor="autoWa">
+                <div className="min-w-0">
+                  <span className="text-sm font-bold text-text block">
                     Kirim Rekap Sesi ke WhatsApp Klien
-                  </label>
-                  <p className="text-xs text-dim">
+                  </span>
+                  {/* <p className="text-xs text-dim leading-relaxed">
                     Otomatis membuka WhatsApp dengan format ringkasan sesi latihan ({client.phone})
-                  </p>
+                  </p> */}
                 </div>
               </div>
-              <input
-                id="autoWa"
-                type="checkbox"
-                checked={autoOpenWa}
-                onChange={(e) => setAutoOpenWa(e.target.checked)}
-                className="w-5 h-5 accent-accent rounded cursor-pointer self-start sm:self-center"
-              />
-            </div>
+
+              <div className="shrink-0 flex items-center pl-2">
+                <input
+                  id="autoWa"
+                  type="checkbox"
+                  checked={autoOpenWa}
+                  onChange={(e) => setAutoOpenWa(e.target.checked)}
+                  className="sr-only"
+                />
+                <div
+                  className={`w-11 h-6 rounded-full transition-colors relative border flex items-center px-0.5 ${
+                    autoOpenWa ? 'bg-accent border-accent' : 'bg-bg border-line'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full transition-transform transform shadow-sm ${
+                      autoOpenWa ? 'translate-x-5 bg-[#141414]' : 'translate-x-0 bg-muted'
+                    }`}
+                  />
+                </div>
+              </div>
+            </label>
           )}
 
           {/* Error Message display */}

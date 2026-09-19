@@ -10,6 +10,7 @@ import {
   type LongTermPlan,
 } from '../lib/api'
 import { AppLayout } from '../components/AppLayout'
+import { ImageCropModal } from '../components/ImageCropModal'
 import { dispatchPlatformSettingsChange } from '../lib/platformSettings'
 import {
   Sliders,
@@ -106,9 +107,9 @@ export const Route = createFileRoute('/settings')({
       api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({
         settings: {
           id: 'default',
-          app_name: 'TrainLog',
+          app_name: 'Kula Studio',
           app_tagline: 'Pro PT Manager',
-          app_initials: 'TL',
+          app_initials: 'KS',
           hero_pill: 'Eksklusif untuk Personal Trainer & Studio',
           hero_headline: 'Catat Sesi. Susun Program NASM.',
           hero_gradient: 'Pantau Progress Klien.',
@@ -119,11 +120,11 @@ export const Route = createFileRoute('/settings')({
           pricing_plans: [],
           long_term_plans: [],
           contact_whatsapp: '6287884241516',
-          contact_email: 'support@trainlog.id',
+          contact_email: 'support@kula-studio.my.id',
           cta_headline: 'Mulai Catat Sesi Latihan Hari Ini.',
           cta_subheadline:
             'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.',
-          footer_copyright: 'TrainLog Replica. Hak Cipta Dilindungi.',
+          footer_copyright: 'Kula Studio. Hak Cipta Dilindungi.',
         },
       })),
     ])
@@ -153,9 +154,9 @@ function PlatformSettingsPage() {
   const [savingContact, setSavingContact] = useState(false)
 
   // Form states for Identity Tab
-  const [appName, setAppName] = useState(settings.app_name || 'TrainLog')
+  const [appName, setAppName] = useState(settings.app_name || 'Kula Studio')
   const [appTagline, setAppTagline] = useState(settings.app_tagline || 'Pro PT Manager')
-  const [appInitials, setAppInitials] = useState(settings.app_initials || 'TL')
+  const [appInitials, setAppInitials] = useState(settings.app_initials || 'KS')
   const [appLogoUrl, setAppLogoUrl] = useState(settings.logo_url || '')
   const logoFileInputRef = useRef<HTMLInputElement>(null)
   const [heroPill, setHeroPill] = useState(
@@ -190,6 +191,8 @@ function PlatformSettingsPage() {
 
   const [longTermModalOpen, setLongTermModalOpen] = useState(false)
   const [editingLongTerm, setEditingLongTerm] = useState<LongTermPlan | null>(null)
+  const [logoCropOpen, setLogoCropOpen] = useState(false)
+  const [rawLogoImage, setRawLogoImage] = useState<string | null>(null)
 
   function handleLogoFileChange(file: File | undefined) {
     if (!file) return
@@ -199,32 +202,11 @@ function PlatformSettingsPage() {
     }
     const reader = new FileReader()
     reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_W = 400
-        const MAX_H = 160
-        let w = img.width
-        let h = img.height
-        if (w > MAX_W) {
-          h = Math.round((h * MAX_W) / w)
-          w = MAX_W
-        }
-        if (h > MAX_H) {
-          w = Math.round((w * MAX_H) / h)
-          h = MAX_H
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, w, h)
-        const isPng = file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/svg+xml'
-        const compressed = isPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.85)
-        setAppLogoUrl(compressed)
-      }
-      img.src = event.target?.result as string
+      setRawLogoImage(event.target?.result as string)
+      setLogoCropOpen(true)
     }
     reader.readAsDataURL(file)
+    if (logoFileInputRef.current) logoFileInputRef.current.value = ''
   }
 
   // Helper notification
@@ -590,7 +572,7 @@ function PlatformSettingsPage() {
                       required
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
-                      placeholder="TrainLog"
+                      placeholder="Kula Studio"
                       className="w-full bg-bg border border-line rounded-xl px-3.5 py-2.5 text-sm text-text focus:outline-none focus:border-accent"
                     />
                   </div>
@@ -780,16 +762,16 @@ function PlatformSettingsPage() {
                     {appLogoUrl ? (
                       <img
                         src={appLogoUrl}
-                        alt={appName || 'TrainLog'}
+                        alt={appName || 'Kula Studio'}
                         className="h-7 w-auto max-w-[80px] object-contain rounded-md"
                       />
                     ) : (
                       <div className="w-7 h-7 rounded-lg bg-panel border border-accent/40 flex items-center justify-center text-accent text-xs font-extrabold">
-                        {appInitials || 'TL'}
+                        {appInitials || 'KS'}
                       </div>
                     )}
                     <div>
-                      <div className="font-bold text-xs text-text">{appName || 'TrainLog'}</div>
+                      <div className="font-bold text-xs text-text">{appName || 'Kula Studio'}</div>
                       <div className="text-[9px] font-mono text-dim uppercase">
                         {appTagline || 'Pro PT Manager'}
                       </div>
@@ -818,7 +800,7 @@ function PlatformSettingsPage() {
 
                   <div className="pt-2 flex items-center justify-center gap-2">
                     <div className="px-3.5 py-1.5 rounded-lg bg-accent text-[#141414] font-bold text-xs">
-                      Coba Gratis
+                       Mulai Sekarang — 14 Hari Percobaan
                     </div>
                     <div className="px-3.5 py-1.5 rounded-lg bg-panel border border-line text-text text-xs">
                       Pelajari Fitur
@@ -1211,7 +1193,7 @@ function PlatformSettingsPage() {
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="support@trainlog.id"
+                    placeholder="support@kula-studio.my.id"
                     className="w-full bg-bg border border-line rounded-xl px-3.5 py-2.5 text-sm text-text focus:outline-none focus:border-accent"
                   />
                 </div>
@@ -1262,7 +1244,7 @@ function PlatformSettingsPage() {
                     type="text"
                     value={footerCopyright}
                     onChange={(e) => setFooterCopyright(e.target.value)}
-                    placeholder="TrainLog Replica. Hak Cipta Dilindungi."
+                    placeholder="Kula Studio. Hak Cipta Dilindungi."
                     className="w-full bg-bg border border-line rounded-xl px-3.5 py-2.5 text-sm text-text focus:outline-none focus:border-accent"
                   />
                 </div>
@@ -1344,6 +1326,18 @@ function PlatformSettingsPage() {
           }}
         />
       )}
+
+      <ImageCropModal
+        isOpen={logoCropOpen}
+        imageSrc={rawLogoImage}
+        cropShape="rect"
+        title="Potong Logo Aplikasi (1:1)"
+        onCrop={(dataUrl) => setAppLogoUrl(dataUrl)}
+        onClose={() => {
+          setLogoCropOpen(false)
+          setRawLogoImage(null)
+        }}
+      />
     </AppLayout>
   )
 }

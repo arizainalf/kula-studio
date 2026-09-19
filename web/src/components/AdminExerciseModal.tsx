@@ -338,7 +338,7 @@ export function AdminExerciseModal({
                 className="btn-interactive text-xs font-bold px-3 py-1.5 rounded-xl bg-accent text-[#141414] flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>+ Tambah Gerakan Baru</span>
+                <span>Tambah Gerakan Baru</span>
               </button>
             </div>
 

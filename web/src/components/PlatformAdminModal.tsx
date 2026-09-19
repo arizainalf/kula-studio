@@ -61,6 +61,7 @@ export function PlatformAdminModal({
   const [editSlug, setEditSlug] = useState('')
   const [editAddress, setEditAddress] = useState('')
   const [editPhone, setEditPhone] = useState('')
+  const [editGmapsUrl, setEditGmapsUrl] = useState('')
   const [editTier, setEditTier] = useState<'starter' | 'standard' | 'pro' | 'enterprise'>('standard')
   const [editExpiry, setEditExpiry] = useState('')
   const [editSubmitting, setEditSubmitting] = useState(false)
@@ -70,6 +71,7 @@ export function PlatformAdminModal({
   const [newSlug, setNewSlug] = useState('')
   const [newAddress, setNewAddress] = useState('')
   const [newPhone, setNewPhone] = useState('')
+  const [newGmapsUrl, setNewGmapsUrl] = useState('')
   const [newTier, setNewTier] = useState<'starter' | 'standard' | 'pro' | 'enterprise'>('standard')
   const [newExpiry, setNewExpiry] = useState('')
   const [adminName, setAdminName] = useState('')
@@ -166,6 +168,7 @@ export function PlatformAdminModal({
           slug: newSlug.trim().toLowerCase(),
           address: newAddress.trim() || null,
           phone: newPhone.trim() || null,
+          gmaps_url: newGmapsUrl.trim() || null,
           plan_tier: newTier,
           subscription_expires_at: newExpiry || null,
           admin_name: adminName.trim(),
@@ -180,6 +183,7 @@ export function PlatformAdminModal({
       setNewSlug('')
       setNewAddress('')
       setNewPhone('')
+      setNewGmapsUrl('')
       setAdminName('')
       setAdminEmail('')
       setAdminPassword('')
@@ -206,6 +210,7 @@ export function PlatformAdminModal({
     setEditSlug(s.slug)
     setEditAddress(s.address || '')
     setEditPhone(s.phone || '')
+    setEditGmapsUrl(s.gmaps_url || '')
     setEditTier(s.plan_tier)
     setEditExpiry(s.subscription_expires_at ? s.subscription_expires_at.slice(0, 10) : '')
   }
@@ -224,6 +229,7 @@ export function PlatformAdminModal({
           slug: editSlug.trim().toLowerCase(),
           address: editAddress.trim() || null,
           phone: editPhone.trim() || null,
+          gmaps_url: editGmapsUrl.trim() || null,
           plan_tier: editTier,
           subscription_expires_at: editExpiry || null,
         }),
@@ -479,6 +485,17 @@ export function PlatformAdminModal({
                       />
                     </div>
 
+                    <div>
+                      <label className="text-dim block font-mono uppercase mb-1 font-semibold">Link Google Maps (GMaps URL)</label>
+                      <input
+                        type="url"
+                        value={editGmapsUrl}
+                        onChange={(e) => setEditGmapsUrl(e.target.value)}
+                        placeholder="https://maps.google.com/?q=..."
+                        className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                      />
+                    </div>
+
                     <div className="flex justify-end gap-2 pt-2">
                       <button
                         type="button"
@@ -509,9 +526,22 @@ export function PlatformAdminModal({
                         <h4 className="font-bold text-sm text-text">
                           Staf di Studio: <span className="text-accent">{selectedStudio.name}</span>
                         </h4>
-                        <span className="text-[11px] font-mono text-dim">
-                          Slug: {selectedStudio.slug} · Tier: {selectedStudio.plan_tier.toUpperCase()}
-                        </span>
+                        <div className="flex items-center gap-2 text-[11px] font-mono text-dim mt-0.5">
+                          <span>Slug: {selectedStudio.slug} · Tier: {selectedStudio.plan_tier.toUpperCase()}</span>
+                          {selectedStudio.gmaps_url && (
+                            <>
+                              <span>·</span>
+                              <a
+                                href={selectedStudio.gmaps_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-accent hover:underline inline-flex items-center gap-1 font-semibold"
+                              >
+                                <MapPin className="w-3 h-3" /> GMaps &rarr;
+                              </a>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -683,6 +713,17 @@ export function PlatformAdminModal({
                                 {s.address}
                               </span>
                             )}
+                            {s.gmaps_url && (
+                              <a
+                                href={s.gmaps_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1 text-accent hover:underline"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-accent" />
+                                GMaps &rarr;
+                              </a>
+                            )}
                           </div>
 
                           {/* Stats Counters */}
@@ -848,6 +889,17 @@ export function PlatformAdminModal({
                     onChange={(e) => setNewAddress(e.target.value)}
                     placeholder="Alamat lengkap gedung / studio gym"
                     className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-dim block font-mono uppercase mb-1 font-semibold">Link Google Maps (GMaps URL)</label>
+                  <input
+                    type="url"
+                    value={newGmapsUrl}
+                    onChange={(e) => setNewGmapsUrl(e.target.value)}
+                    placeholder="https://maps.google.com/?q=..."
+                    className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
                   />
                 </div>
               </div>

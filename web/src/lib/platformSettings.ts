@@ -3,9 +3,9 @@ import { api, type PlatformSettings } from './api'
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   id: 'default',
-  app_name: 'TrainLog',
+  app_name: 'Kula Studio',
   app_tagline: 'Pro PT Manager',
-  app_initials: 'TL',
+  app_initials: 'KS',
   logo_url: null,
   hero_pill: 'Eksklusif untuk Personal Trainer & Studio',
   hero_headline: 'Catat Sesi. Susun Program NASM.',
@@ -17,25 +17,37 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   pricing_plans: [],
   long_term_plans: [],
   contact_whatsapp: '6287884241516',
-  contact_email: 'support@trainlog.id',
+  contact_email: 'support@kula-studio.my.id',
   cta_headline: 'Mulai Catat Sesi Latihan Hari Ini.',
   cta_subheadline:
     'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.',
-  footer_copyright: 'TrainLog Replica. Hak Cipta Dilindungi.',
+  footer_copyright: 'Kula Studio. Hak Cipta Dilindungi.',
 }
 
-const SETTINGS_EVENT = 'trainlog-settings-change'
-const STORAGE_KEY = 'trainlog-platform-settings-cache'
+const SETTINGS_EVENT = 'kulastudio-settings-change'
+const STORAGE_KEY = 'kulastudio-platform-settings-cache'
+const LEGACY_STORAGE_KEY = 'trainlog-platform-settings-cache'
 
 let memoryCachedSettings: PlatformSettings | null = null
 
 export function getCachedPlatformSettings(): PlatformSettings {
   if (memoryCachedSettings) return memoryCachedSettings
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed && parsed.app_name) {
+        // Sanitize legacy TrainLog name if cached
+        if (parsed.app_name.toLowerCase().includes('trainlog')) {
+          parsed.app_name = 'Kula Studio'
+          parsed.app_initials = 'KS'
+          if (parsed.contact_email?.includes('trainlog')) {
+            parsed.contact_email = 'support@kula-studio.my.id'
+          }
+          if (parsed.footer_copyright?.includes('TrainLog')) {
+            parsed.footer_copyright = 'Kula Studio. Hak Cipta Dilindungi.'
+          }
+        }
         memoryCachedSettings = parsed
         return parsed
       }
@@ -44,13 +56,45 @@ export function getCachedPlatformSettings(): PlatformSettings {
   return DEFAULT_PLATFORM_SETTINGS
 }
 
+export function updateDocumentFavicon(logoUrl?: string | null) {
+  if (typeof document === 'undefined') return
+  try {
+    let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+
+    let appleLink = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']")
+    if (!appleLink) {
+      appleLink = document.createElement('link')
+      appleLink.rel = 'apple-touch-icon'
+      document.head.appendChild(appleLink)
+    }
+
+    if (logoUrl) {
+      link.href = logoUrl
+      link.type = logoUrl.startsWith('data:image/svg') ? 'image/svg+xml' : 'image/png'
+      appleLink.href = logoUrl
+    } else {
+      link.href = '/favicon.svg'
+      link.type = 'image/svg+xml'
+      appleLink.href = '/favicon.svg'
+    }
+  } catch {}
+}
+
 export function dispatchPlatformSettingsChange(newSettings: PlatformSettings) {
   memoryCachedSettings = newSettings
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
   } catch {}
-  if (typeof document !== 'undefined' && newSettings.app_name) {
-    document.title = `${newSettings.app_name} — ${newSettings.app_tagline || 'Pro PT Manager'}`
+  if (typeof document !== 'undefined') {
+    if (newSettings.app_name) {
+      document.title = `${newSettings.app_name} — ${newSettings.app_tagline || 'Pro PT Manager'}`
+    }
+    updateDocumentFavicon(newSettings.logo_url)
   }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(SETTINGS_EVENT, { detail: newSettings }))
@@ -59,11 +103,11 @@ export function dispatchPlatformSettingsChange(newSettings: PlatformSettings) {
 
 /**
  * Formats a brand name with luxury accent styling:
- * e.g. "TrainLog" -> "Train" + <span className="text-accent">"Log"</span>
+ * e.g. "Kula Studio" -> "Kula" + <span className="text-accent">"Studio"</span>
  * e.g. "Gym Master" -> "Gym" + <span className="text-accent">"Master"</span>
  */
 export function formatBrandName(name?: string | null): React.ReactNode {
-  if (!name) return 'TrainLog'
+  if (!name) return 'Kula Studio'
   const trimmed = name.trim()
 
   // Case 1: Multiple words (e.g. "Gym Master" or "Fit Club Pro")
@@ -108,10 +152,14 @@ export function usePlatformSettings(initialSettings?: PlatformSettings | null): 
   useEffect(() => {
     let active = true
 
+    // Sync initial favicon on mount
+    updateDocumentFavicon(settings.logo_url)
+
     function handleSettingsUpdate(e: Event) {
       const ce = e as CustomEvent<PlatformSettings>
       if (ce.detail && active) {
         setSettings(ce.detail)
+        updateDocumentFavicon(ce.detail.logo_url)
       }
     }
 
@@ -129,6 +177,7 @@ export function usePlatformSettings(initialSettings?: PlatformSettings | null): 
         if (res.settings.app_name) {
           document.title = `${res.settings.app_name} — ${res.settings.app_tagline || 'Pro PT Manager'}`
         }
+        updateDocumentFavicon(res.settings.logo_url)
       })
       .catch(() => {
         // Fallback silently to cached/default settings

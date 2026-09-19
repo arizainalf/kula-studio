@@ -375,7 +375,7 @@ function DashboardContent({
           />
         </section>
 
-        {/* ── Upsell Alert Banner (Mirroring Live TrainLog Feature) ── */}
+        {/* ── Upsell Alert Banner (Kula Studio Feature) ── */}
         {upsellClients.length > 0 && (
           <section className="p-5 rounded-2xl bg-panel border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-panel to-transparent animate-fade-in hover:border-amber-500/50 transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
@@ -393,7 +393,7 @@ function DashboardContent({
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
               {upsellClients.map((cl) => {
                 const remaining = cl.pkg_total - cl.pkg_used
-                const appName = platformSettings.app_name || 'TrainLog'
+                const appName = platformSettings.app_name || 'Kula Studio'
                 const waMessage = encodeURIComponent(
                   `Halo ${cl.name}, sesi latihan personal training kamu di ${appName} tersisa ${remaining} sesi lagi. Yuk kita amankan slot jadwal untuk paket berikutnya!`
                 )

@@ -33,6 +33,7 @@ export type Studio = {
   slug: string;
   address?: string | null;
   phone?: string | null;
+  gmaps_url?: string | null;
   plan_tier: 'starter' | 'standard' | 'pro' | 'enterprise';
   is_active: boolean;
   subscription_expires_at?: string | null;
@@ -107,9 +108,12 @@ export type TrainerShowcase = {
   avatar_url?: string | null;
   youtube_url?: string | null;
   role: string;
+  phone?: string | null;
   spec?: string | null;
   studio_name?: string | null;
   studio_slug?: string | null;
+  studio_address?: string | null;
+  studio_gmaps_url?: string | null;
 };
 
 export function extractYouTubeId(url?: string | null): string | null {
@@ -129,11 +133,21 @@ export function getYouTubeEmbedUrl(videoId: string): string {
 
 export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
-const TOKEN_KEY = 'tl_token';
+const TOKEN_KEY = 'ks_token';
+const LEGACY_TOKEN_KEY = 'tl_token';
 
 export function getStoredToken(): string | null {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY);
+    if (token && token.length > 2048) {
+      // Purge legacy bloated token containing base64 data URL
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+      return null;
+    }
+    return token;
   } catch {
     return null;
   }
@@ -143,8 +157,10 @@ export function setStoredToken(token: string | null) {
   try {
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     } else {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     }
   } catch {}
 }
@@ -157,22 +173,41 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     ...(init?.headers as Record<string, string>),
   };
 
-  const res = await fetch(`${API_BASE}/api${path}`, {
-    credentials: 'include',
-    ...init,
-    headers,
-  });
+  try {
+    const res = await fetch(`${API_BASE}/api${path}`, {
+      credentials: 'include',
+      ...init,
+      headers,
+    });
 
-  if (path === '/auth/logout') {
-    setStoredToken(null);
-  }
-
-  if (!res.ok) {
-    if (res.status === 401 && path === '/auth/me') {
+    if (path === '/auth/logout') {
       setStoredToken(null);
     }
-    const body = await res.json().catch(() => ({}));
-    throw Object.assign(new Error(body.error ?? `http_${res.status}`), { status: res.status });
+
+    if (!res.ok) {
+      if (res.status === 401 && path === '/auth/me') {
+        setStoredToken(null);
+      }
+      if (res.status === 431) {
+        // Request Header Fields Too Large -> clear invalid tokens
+        setStoredToken(null);
+        document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+        document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+      }
+      const body = await res.json().catch(() => ({}));
+      throw Object.assign(new Error(body.error ?? `http_${res.status}`), { status: res.status });
+    }
+    return res.json();
+  } catch (err: any) {
+    if (
+      err?.message?.includes('Header overflow') ||
+      err?.message?.includes('overflow') ||
+      err?.message?.includes('431')
+    ) {
+      setStoredToken(null);
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+    }
+    throw err;
   }
-  return res.json();
 }

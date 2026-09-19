@@ -36,6 +36,7 @@ import {
   Play,
   Video,
   Building2,
+  MapPin,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -118,8 +119,8 @@ export function LandingPage({
 
   const s = initialSettings
 
-  const appName = s?.app_name || 'TrainLog'
-  const appInitials = s?.app_initials || 'TL'
+  const appName = s?.app_name || 'Kula Studio'
+  const appInitials = s?.app_initials || 'KS'
   const appLogoUrl = s?.logo_url
   const appTagline = s?.app_tagline || 'Pro PT Manager'
   const heroPill = s?.hero_pill || 'Eksklusif untuk Personal Trainer & Studio'
@@ -281,7 +282,7 @@ export function LandingPage({
     s?.cta_subheadline ||
     'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.'
   const contactWa = s?.contact_whatsapp || '6287884241516'
-  const footerCopyright = s?.footer_copyright || 'TrainLog Replica. Hak Cipta Dilindungi.'
+  const footerCopyright = s?.footer_copyright || 'Kula Studio. Hak Cipta Dilindungi.'
 
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased overflow-x-hidden">
@@ -340,12 +341,6 @@ export function LandingPage({
                 >
                   Masuk
                 </a>
-                <a
-                  href="/login"
-                  className="btn-interactive bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition-all shadow-[0_2px_14px_rgba(226,232,0,0.25)]"
-                >
-                  Coba Gratis
-                </a>
               </>
             )}
           </div>
@@ -354,6 +349,17 @@ export function LandingPage({
 
       {/* ── 2. Hero Section ── */}
       <section className="relative pt-8 pb-10 md:pt-20 md:pb-24 overflow-hidden">
+        {/* Subtle Ambient Gym Texture Backdrop */}
+        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1600&q=80"
+            alt="Gym training atmosphere backdrop"
+            className="w-full h-full object-cover object-center opacity-[0.08] mix-blend-luminosity scale-105"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-bg via-transparent to-bg" />
+        </div>
+
         {/* Subtle Ambient Gold Radial Glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-accent/6 blur-[120px] pointer-events-none rounded-full animate-gold-pulse" />
 
@@ -380,7 +386,7 @@ export function LandingPage({
           {/* Dual Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-5 sm:mb-8">
             <a
-              href="/login"
+              // href="/login"
               className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-sm sm:text-base px-6 py-3.5 rounded-xl transition-all shadow-[0_4px_24px_rgba(226,232,0,0.3)] hover:scale-[1.02]"
             >
               Mulai Sekarang — 14 Hari Percobaan
@@ -708,9 +714,21 @@ export function LandingPage({
 
                       {/* Studio Affiliation */}
                       {trainer.studio_name && (
-                        <div className="flex items-center gap-1.5 text-xs text-dim mb-4 bg-bg px-2.5 py-1 rounded-lg border border-line/60 w-fit">
+                        <div className="flex items-center gap-1.5 text-xs text-dim mb-4 bg-bg px-2.5 py-1 rounded-lg border border-line/60 w-fit flex-wrap">
                           <Building2 className="w-3.5 h-3.5 text-dim shrink-0" />
                           <span className="truncate">{trainer.studio_name}</span>
+                          {trainer.studio_gmaps_url && (
+                            <a
+                              href={trainer.studio_gmaps_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline font-mono ml-1 px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 transition-colors"
+                              title={`Buka lokasi ${trainer.studio_name} di Google Maps`}
+                            >
+                              <MapPin className="w-3 h-3 text-accent shrink-0" />
+                              <span>GMaps</span>
+                            </a>
+                          )}
                         </div>
                       )}
                     </div>
@@ -736,13 +754,26 @@ export function LandingPage({
                         </span>
                       )}
 
-                      <a
-                        href="/login"
-                        className="btn-interactive inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-[#141414] font-bold text-xs shadow-[0_2px_10px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all shrink-0"
-                      >
-                        <span>Latihan Bareng</span>
-                        <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-                      </a>
+                      {(() => {
+                        const ptPhone = (trainer.phone || contactWa || '').replace(/[^0-9]/g, '')
+                        const waMessage = encodeURIComponent(
+                          `Halo Coach ${trainer.name}, saya tertarik untuk latihan bareng personal training dan ingin didaftarkan akun di Kula Studio. Boleh info jadwal latihan & ketersediaan slotnya Coach?`
+                        )
+                        const waUrl = ptPhone ? `https://wa.me/${ptPhone}?text=${waMessage}` : '/login'
+
+                        return (
+                          <a
+                            href={waUrl}
+                            target={ptPhone ? '_blank' : undefined}
+                            rel={ptPhone ? 'noreferrer' : undefined}
+                            className="btn-interactive inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-[#141414] font-bold text-xs shadow-[0_2px_10px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all shrink-0"
+                            title={`Hubungi Coach ${trainer.name} via WhatsApp untuk pendaftaran`}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>Latihan Bareng</span>
+                          </a>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1038,7 +1069,7 @@ export function LandingPage({
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
-                  href="/login"
+                  // href="/login"
                   className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-sm sm:text-base px-8 py-3 sm:py-3.5 rounded-xl transition-all shadow-[0_4px_20px_rgba(226,232,0,0.25)]"
                 >
                   Daftar Sekarang

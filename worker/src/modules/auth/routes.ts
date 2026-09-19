@@ -33,22 +33,36 @@ auth.post('/login', async (c) => {
 
   const payload = {
     sub: {
-      id: user.id, email: user.email, role: user.role, name: user.name,
-      plan_tier: user.plan_tier, expires_at: user.expires_at,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      plan_tier: user.plan_tier,
+      expires_at: user.expires_at,
       studio_id: user.studio_id ?? null,
       studio_name: user.studio_name ?? null,
       studio_slug: user.studio_slug ?? null,
-      avatar_url: user.avatar_url ?? null,
-      youtube_url: user.youtube_url ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
-    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
+    `ks_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
   );
-  return c.json({ token, user: { ...payload.sub, avatar_url: user.avatar_url ?? null, youtube_url: user.youtube_url ?? null } });
+  c.header(
+    'Set-Cookie',
+    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
+    { append: true },
+  );
+  return c.json({
+    token,
+    user: {
+      ...payload.sub,
+      avatar_url: user.avatar_url ?? null,
+      youtube_url: user.youtube_url ?? null,
+    },
+  });
 });
 
 const clientLoginSchema = z.object({
@@ -104,13 +118,19 @@ auth.post('/client-login', async (c) => {
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
+    `ks_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
+  );
+  c.header(
+    'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
+    { append: true },
   );
   return c.json({ token, user: { ...payload.sub, avatar_url: client.avatar_url ?? null } });
 });
 
 auth.post('/logout', (c) => {
-  c.header('Set-Cookie', 'tl_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0');
+  c.header('Set-Cookie', 'ks_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0');
+  c.header('Set-Cookie', 'tl_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0', { append: true });
   return c.json({ ok: true });
 });
 
@@ -140,7 +160,7 @@ auth.get('/me', requireAuth, async (c) => {
   }
 
   const [user] = await sql`
-    select u.id, u.email, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url, u.youtube_url,
+    select u.id, u.email, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url, u.youtube_url, u.phone,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier
     from users u
     left join studios s on s.id = u.studio_id
@@ -185,7 +205,7 @@ auth.get('/profile', requireAuth, async (c) => {
   }
 
   const [row] = await sql`
-    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url, u.youtube_url,
+    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url, u.youtube_url, u.phone,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier, sp.spec
     from users u
     left join studios s on s.id = u.studio_id
@@ -256,7 +276,12 @@ auth.patch('/profile', requireAuth, async (c) => {
     const token = signToken(payload, c.env.SESSION_SECRET);
     c.header(
       'Set-Cookie',
+      `ks_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
+    );
+    c.header(
+      'Set-Cookie',
       `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
+      { append: true },
     );
 
     return c.json({
@@ -288,10 +313,11 @@ auth.patch('/profile', requireAuth, async (c) => {
       name = coalesce(${d.name ?? null}, name),
       email = coalesce(${cleanEmail ?? null}, email),
       password_hash = coalesce(${newHash ?? null}, password_hash),
+      phone = ${d.phone !== undefined ? d.phone : sql`phone`},
       avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`},
       youtube_url = ${d.youtube_url !== undefined ? d.youtube_url : sql`youtube_url`}
     where id = ${u.id}
-    returning id, email, name, role, plan_tier, expires_at, is_active, avatar_url, youtube_url
+    returning id, email, name, role, phone, plan_tier, expires_at, is_active, avatar_url, youtube_url
   `;
 
   if (!updatedUser) return c.json({ error: 'user_not_found' }, 404);
@@ -317,21 +343,25 @@ auth.patch('/profile', requireAuth, async (c) => {
       studio_id: u.studio_id ?? null,
       studio_name: u.studio_name ?? null,
       studio_slug: u.studio_slug ?? null,
-      avatar_url: updatedUser.avatar_url ?? null,
-      youtube_url: updatedUser.youtube_url ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
+    `ks_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
+  );
+  c.header(
+    'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
+    { append: true },
   );
 
   return c.json({
     token,
     user: {
       ...payload.sub,
+      phone: updatedUser.phone ?? null,
       avatar_url: updatedUser.avatar_url ?? null,
       youtube_url: updatedUser.youtube_url ?? null,
       spec: sp?.spec ?? null,
@@ -367,15 +397,18 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
       studio_id: u.studio_id ?? null,
       studio_name: u.studio_name ?? null,
       studio_slug: u.studio_slug ?? null,
-      avatar_url: updated.avatar_url ?? null,
-      youtube_url: updated.youtube_url ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
+    `ks_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
+  );
+  c.header(
+    'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
+    { append: true },
   );
 
   return c.json({

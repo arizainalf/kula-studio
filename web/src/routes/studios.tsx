@@ -103,6 +103,7 @@ function StudiosPage() {
   const [newSlug, setNewSlug] = useState('')
   const [newAddress, setNewAddress] = useState('')
   const [newPhone, setNewPhone] = useState('')
+  const [newGmapsUrl, setNewGmapsUrl] = useState('')
   const [newTier, setNewTier] = useState<'starter' | 'standard' | 'pro' | 'enterprise'>('standard')
   const [newExpiry, setNewExpiry] = useState('')
   const [adminName, setAdminName] = useState('')
@@ -115,6 +116,7 @@ function StudiosPage() {
   const [editSlug, setEditSlug] = useState('')
   const [editAddress, setEditAddress] = useState('')
   const [editPhone, setEditPhone] = useState('')
+  const [editGmapsUrl, setEditGmapsUrl] = useState('')
   const [editTier, setEditTier] = useState<'starter' | 'standard' | 'pro' | 'enterprise'>('standard')
   const [editExpiry, setEditExpiry] = useState('')
   const [editSubmitting, setEditSubmitting] = useState(false)
@@ -146,6 +148,7 @@ function StudiosPage() {
     setEditSlug(s.slug)
     setEditAddress(s.address || '')
     setEditPhone(s.phone || '')
+    setEditGmapsUrl(s.gmaps_url || '')
     setEditTier(s.plan_tier)
     setEditExpiry(s.subscription_expires_at ? s.subscription_expires_at.split('T')[0] : '')
   }
@@ -218,6 +221,7 @@ function StudiosPage() {
           slug: newSlug.trim().toLowerCase(),
           address: newAddress.trim() || null,
           phone: newPhone.trim() || null,
+          gmaps_url: newGmapsUrl.trim() || null,
           plan_tier: newTier,
           subscription_expires_at: newExpiry || null,
           admin_name: adminName.trim(),
@@ -233,6 +237,7 @@ function StudiosPage() {
       setNewSlug('')
       setNewAddress('')
       setNewPhone('')
+      setNewGmapsUrl('')
       setAdminName('')
       setAdminEmail('')
       setAdminPassword('')
@@ -265,6 +270,7 @@ function StudiosPage() {
           slug: editSlug.trim().toLowerCase(),
           address: editAddress.trim() || null,
           phone: editPhone.trim() || null,
+          gmaps_url: editGmapsUrl.trim() || null,
           plan_tier: editTier,
           subscription_expires_at: editExpiry || null,
         }),
@@ -521,6 +527,20 @@ function StudiosPage() {
                           <span className="truncate">{s.address}</span>
                         </div>
                       )}
+                      {s.gmaps_url && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-accent shrink-0" />
+                          <a
+                            href={s.gmaps_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-accent hover:underline text-xs truncate flex items-center gap-1"
+                            title="Buka peta Google Maps"
+                          >
+                            <span>Google Maps &rarr;</span>
+                          </a>
+                        </div>
+                      )}
                       {s.phone && (
                         <div className="flex items-center gap-1.5">
                           <Phone className="w-3.5 h-3.5 text-dim shrink-0" />
@@ -690,6 +710,19 @@ function StudiosPage() {
                       className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none"
                     />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-dim block font-mono uppercase mb-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-accent" />
+                      <span>Link Google Maps Studio (URL GMaps)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={newGmapsUrl}
+                      onChange={(e) => setNewGmapsUrl(e.target.value)}
+                      placeholder="https://maps.app.goo.gl/... atau https://maps.google.com/..."
+                      className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none font-mono text-xs"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -854,6 +887,20 @@ function StudiosPage() {
                 />
               </div>
 
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-accent" />
+                  <span>Link Google Maps Studio (URL GMaps)</span>
+                </label>
+                <input
+                  type="url"
+                  value={editGmapsUrl}
+                  onChange={(e) => setEditGmapsUrl(e.target.value)}
+                  placeholder="https://maps.app.goo.gl/... atau https://maps.google.com/..."
+                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none font-mono text-xs"
+                />
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
                 <button
                   type="button"
@@ -900,6 +947,19 @@ function StudiosPage() {
                   <div>Status: <span className="font-bold text-emerald-400">{selectedStudio.is_active ? 'Aktif' : 'Suspended'}</span></div>
                   <div>Telepon: <span>{selectedStudio.phone || '—'}</span></div>
                   <div>Alamat: <span>{selectedStudio.address || '—'}</span></div>
+                  {selectedStudio.gmaps_url && (
+                    <div className="col-span-2 flex items-center gap-1.5 text-accent pt-1 border-t border-line/40">
+                      <MapPin className="w-3.5 h-3.5 shrink-0" />
+                      <a
+                        href={selectedStudio.gmaps_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline hover:text-accent-hover font-mono text-xs flex items-center gap-1"
+                      >
+                        <span>Buka Lokasi di Google Maps &rarr;</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 

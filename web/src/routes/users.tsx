@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
 import { AppLayout } from '../components/AppLayout'
 import { UserAvatar } from '../components/UserAvatar'
+import { ImageCropModal } from '../components/ImageCropModal'
 import {
   UserCheck,
   UserPlus,
@@ -85,6 +86,7 @@ function UsersPage() {
   // Add User Form State
   const [addName, setAddName] = useState('')
   const [addEmail, setAddEmail] = useState('')
+  const [addPhone, setAddPhone] = useState('')
   const [addPassword, setAddPassword] = useState('')
   const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [addStudioId, setAddStudioId] = useState('')
@@ -98,6 +100,7 @@ function UsersPage() {
   // Edit User Form State
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [editPhone, setEditPhone] = useState('')
   const [editRole, setEditRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [editSpec, setEditSpec] = useState('')
   const [editYoutubeUrl, setEditYoutubeUrl] = useState('')
@@ -109,6 +112,9 @@ function UsersPage() {
   const fileInputEditRef = useRef<HTMLInputElement>(null)
 
   const isAdmin = currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [rawCropImage, setRawCropImage] = useState<string | null>(null)
+  const [cropSetter, setCropSetter] = useState<((url: string) => void) | null>(null)
 
   function handleFileChange(file: File | undefined, setter: (url: string) => void) {
     if (!file) return
@@ -118,39 +124,20 @@ function UsersPage() {
     }
     const reader = new FileReader()
     reader.onload = (event) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_SIZE = 360
-        let w = img.width
-        let h = img.height
-        if (w > h) {
-          if (w > MAX_SIZE) {
-            h = Math.round((h * MAX_SIZE) / w)
-            w = MAX_SIZE
-          }
-        } else {
-          if (h > MAX_SIZE) {
-            w = Math.round((w * MAX_SIZE) / h)
-            h = MAX_SIZE
-          }
-        }
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, w, h)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
-        setter(compressedDataUrl)
-      }
-      img.src = event.target?.result as string
+      setRawCropImage(event.target?.result as string)
+      setCropSetter(() => setter)
+      setCropModalOpen(true)
     }
     reader.readAsDataURL(file)
+    if (fileInputAddRef.current) fileInputAddRef.current.value = ''
+    if (fileInputEditRef.current) fileInputEditRef.current.value = ''
   }
 
   function handleStartEdit(u: User) {
     setEditingUser(u)
     setEditName(u.name)
     setEditEmail(u.email)
+    setEditPhone(u.phone || '')
     setEditRole(
       u.role === 'admin_studio' || (u.role as string) === 'admin' || (u.role as string) === 'platform_admin'
         ? 'admin_studio'
@@ -175,6 +162,7 @@ function UsersPage() {
       const payload: Record<string, any> = {
         name: editName.trim(),
         email: editEmail.trim().toLowerCase(),
+        phone: editPhone.trim() || null,
         spec: editSpec.trim() || null,
         youtube_url: editRole === 'pt' ? (editYoutubeUrl.trim() || null) : null,
         plan_tier: editPlanTier,
@@ -229,6 +217,7 @@ function UsersPage() {
       const payload: Record<string, any> = {
         name: addName.trim(),
         email: addEmail.trim().toLowerCase(),
+        phone: addPhone.trim() || null,
         password: addPassword,
         role: targetRole,
         spec: addSpec.trim() || undefined,
@@ -248,6 +237,7 @@ function UsersPage() {
       setIsAddUserModalOpen(false)
       setAddName('')
       setAddEmail('')
+      setAddPhone('')
       setAddPassword('')
       setAddStudioId('')
       setAddYoutubeUrl('')
@@ -473,6 +463,9 @@ function UsersPage() {
                               <div className="min-w-0">
                                 <div className="font-semibold text-text truncate">{u.name}</div>
                                 <div className="text-[11px] text-dim font-mono truncate">{u.email}</div>
+                                {u.phone && (
+                                  <div className="text-[10px] text-accent font-mono truncate">WA: {u.phone}</div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -817,6 +810,23 @@ function UsersPage() {
                 </p>
               </div>
 
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                  <span>Nomor WhatsApp PT / Telepon</span>
+                  <span className="text-[10px] text-accent lowercase">opsional</span>
+                </label>
+                <input
+                  type="text"
+                  value={addPhone}
+                  onChange={(e) => setAddPhone(e.target.value)}
+                  placeholder="Contoh: 628123456789 atau 08123456789"
+                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                />
+                <p className="text-[10px] text-dim mt-1">
+                  Nomor ini digunakan untuk tombol "Latihan Bareng" di landing page agar calon klien bisa langsung menghubungi PT.
+                </p>
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
                 <button
                   type="button"
@@ -1016,6 +1026,23 @@ function UsersPage() {
                 </p>
               </div>
 
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                  <span>Nomor WhatsApp PT / Telepon</span>
+                  <span className="text-[10px] text-accent lowercase">opsional</span>
+                </label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="Contoh: 628123456789 atau 08123456789"
+                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                />
+                <p className="text-[10px] text-dim mt-1">
+                  Nomor ini digunakan untuk tombol "Latihan Bareng" di landing page agar calon klien bisa langsung menghubungi PT.
+                </p>
+              </div>
+
               {/* Password Reset */}
               <div className="p-3.5 rounded-xl bg-bg border border-line/70 space-y-2">
                 <label className="text-accent font-semibold font-mono uppercase text-[11px] flex items-center gap-1.5">
@@ -1054,6 +1081,21 @@ function UsersPage() {
           </div>
         </div>
       )}
+
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={rawCropImage}
+        cropShape="round"
+        title="Potong Foto Pengguna (1:1)"
+        onCrop={(dataUrl) => {
+          if (cropSetter) cropSetter(dataUrl)
+        }}
+        onClose={() => {
+          setCropModalOpen(false)
+          setRawCropImage(null)
+          setCropSetter(null)
+        }}
+      />
     </AppLayout>
   )
 }

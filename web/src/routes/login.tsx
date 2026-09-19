@@ -15,6 +15,7 @@ export const Route = createFileRoute('/login')({
       throw redirect({ to: '/' })
     } catch (e) {
       if (e && typeof e === 'object' && 'to' in e) throw e
+      setStoredToken(null)
       return
     }
   },
