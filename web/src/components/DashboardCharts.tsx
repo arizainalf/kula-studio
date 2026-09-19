@@ -20,15 +20,21 @@ export function StatCard({
   subtitle,
   icon,
   badge,
+  href,
 }: {
   title: string
   value: string | number
   subtitle?: string
   icon?: React.ReactNode
   badge?: { text: string; type?: 'gold' | 'amber' | 'neutral' }
+  href?: string
 }) {
-  return (
-    <div className="p-3.5 sm:p-5 rounded-2xl bg-panel border border-line shadow-[0_8px_24px_rgba(0,0,0,0.5)] flex flex-col justify-between hover-gold-glow group transition-all duration-300 min-w-0">
+  const content = (
+    <div
+      className={`p-3.5 sm:p-5 rounded-2xl bg-panel border border-line shadow-[0_8px_24px_rgba(0,0,0,0.5)] flex flex-col justify-between hover-gold-glow group transition-all duration-300 min-w-0 h-full ${
+        href ? 'cursor-pointer hover:border-accent/40' : ''
+      }`}
+    >
       <div className="flex items-center justify-between mb-1.5 gap-1">
         <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-dim group-hover:text-text transition-colors truncate">
           {title}
@@ -60,6 +66,16 @@ export function StatCard({
       {subtitle && <p className="text-[10px] sm:text-xs text-dim mt-1 group-hover:text-dim/90 transition-colors line-clamp-2">{subtitle}</p>}
     </div>
   )
+
+  if (href) {
+    return (
+      <a href={href} className="block no-underline">
+        {content}
+      </a>
+    )
+  }
+
+  return content
 }
 
 export function GoalDistributionCard({ clients }: { clients: ClientSummary[] }) {

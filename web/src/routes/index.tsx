@@ -9,7 +9,7 @@ import {
   type ClientSummary,
 } from '../components/DashboardCharts'
 import { MobileBottomNav } from '../components/MobileBottomNav'
-import { AppLayout, useAppLayout } from '../components/AppLayout'
+import { AppLayout } from '../components/AppLayout'
 import { usePlatformSettings } from '../lib/platformSettings'
 import {
   formatDate,
@@ -23,14 +23,11 @@ import {
   CheckCircle2,
   TrendingUp,
   Calendar,
-  UserPlus,
   MessageSquare,
   ArrowRight,
-  Printer,
-  Dumbbell,
-  UserCog,
   Building2,
   ShieldCheck,
+  Dumbbell,
 } from 'lucide-react'
 import { UserAvatar } from '../components/UserAvatar'
 
@@ -59,6 +56,10 @@ type LoaderData = {
   clients: Client[]
   schedule: ScheduleItem[]
   settings: PlatformSettings | null
+  studioCount: number
+  activeStudioCount: number
+  ptCount: number
+  activePtCount: number
 }
 
 export const Route = createFileRoute('/')({
@@ -72,35 +73,71 @@ export const Route = createFileRoute('/')({
       const today = getLocalTodayString()
       const nextWeekDate = getLocalFutureDateString(7)
 
-      const [clientsRes, schedRes, settingsRes] = await Promise.all([
+      const isPlatformAdmin = meRes.user.role === 'platform_admin'
+      const canViewStaff = isPlatformAdmin || meRes.user.role === 'admin_studio' || meRes.user.role === 'manager'
+
+      const [clientsRes, schedRes, settingsRes, studiosRes, staffRes] = await Promise.all([
         api<{ clients: Client[] }>('/clients').catch(() => ({ clients: [] })),
         api<{ schedule: ScheduleItem[] }>(`/schedule?from=${today}&to=${nextWeekDate}`).catch(() => ({ schedule: [] })),
-        api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null })),
+        api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null as any })),
+        isPlatformAdmin
+          ? api<{ studios: any[] }>('/platform/studios').catch(() => ({ studios: [] }))
+          : Promise.resolve({ studios: [] }),
+        canViewStaff
+          ? api<{ staff: any[] }>('/staff?role=pt').catch(() => ({ staff: [] }))
+          : Promise.resolve({ staff: [] }),
       ])
+
+      const studios = studiosRes?.studios || []
+      const staffList = staffRes?.staff || []
 
       return {
         me: meRes.user,
         clients: clientsRes.clients,
         schedule: schedRes.schedule,
         settings: settingsRes.settings,
+        studioCount: studios.length,
+        activeStudioCount: studios.filter((s: any) => s.is_active !== false).length,
+        ptCount: staffList.length,
+        activePtCount: staffList.filter((s: any) => s.is_active !== false).length,
       }
     } catch (e) {
       if (e && typeof e === 'object' && 'to' in e) throw e
-      const settingsRes = await api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null }))
-      return { me: null, clients: [], schedule: [], settings: settingsRes.settings }
+      const settingsRes = await api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null as any }))
+      return {
+        me: null,
+        clients: [],
+        schedule: [],
+        settings: settingsRes.settings,
+        studioCount: 0,
+        activeStudioCount: 0,
+        ptCount: 0,
+        activePtCount: 0,
+      }
     }
   },
   component: RootIndex,
 })
 
 function RootIndex() {
-  const { me, clients, schedule, settings } = Route.useLoaderData()
+  const { me, clients, schedule, settings, studioCount, activeStudioCount, ptCount, activePtCount } = Route.useLoaderData()
 
   if (!me) {
     return <LandingPage currentUser={null} initialSettings={settings} />
   }
 
-  return <Dashboard me={me} clients={clients} schedule={schedule} settings={settings} />
+  return (
+    <Dashboard
+      me={me}
+      clients={clients}
+      schedule={schedule}
+      settings={settings}
+      studioCount={studioCount}
+      activeStudioCount={activeStudioCount}
+      ptCount={ptCount}
+      activePtCount={activePtCount}
+    />
+  )
 }
 
 function Dashboard({
@@ -108,11 +145,19 @@ function Dashboard({
   clients,
   schedule,
   settings,
+  studioCount,
+  activeStudioCount,
+  ptCount,
+  activePtCount,
 }: {
   me: User
   clients: Client[]
   schedule: ScheduleItem[]
   settings: PlatformSettings | null
+  studioCount: number
+  activeStudioCount: number
+  ptCount: number
+  activePtCount: number
 }) {
   const [currentUser, setCurrentUser] = useState<User>(initialMe)
   const platformSettings = usePlatformSettings(settings)
@@ -128,6 +173,10 @@ function Dashboard({
         clients={clients}
         schedule={schedule}
         platformSettings={platformSettings}
+        studioCount={studioCount}
+        activeStudioCount={activeStudioCount}
+        ptCount={ptCount}
+        activePtCount={activePtCount}
       />
     </AppLayout>
   )
@@ -138,13 +187,22 @@ function DashboardContent({
   clients,
   schedule,
   platformSettings,
+  studioCount = 0,
+  activeStudioCount = 0,
+  ptCount = 0,
+  activePtCount = 0,
 }: {
   currentUser: User
   clients: Client[]
   schedule: ScheduleItem[]
   platformSettings: PlatformSettings
+  studioCount?: number
+  activeStudioCount?: number
+  ptCount?: number
+  activePtCount?: number
 }) {
-  const { openEditProfile, openExportPdf } = useAppLayout()
+  const isPlatformAdmin = currentUser.role === 'platform_admin'
+  const isAdminStudio = currentUser.role === 'admin_studio'
 
   // Analytics Computations
   const totalClients = clients.length
@@ -157,6 +215,12 @@ function DashboardContent({
     const remaining = c.pkg_total - c.pkg_used
     return c.pkg_total > 0 && remaining <= 3
   })
+
+  const gridColsClass = isPlatformAdmin
+    ? 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-6'
+    : isAdminStudio
+      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+      : 'grid-cols-2 lg:grid-cols-4'
 
   return (
     <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
@@ -184,7 +248,13 @@ function DashboardContent({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] sm:text-xs font-mono text-dim uppercase tracking-wider">
-                    Portal Pelatih
+                    {currentUser.role === 'platform_admin'
+                      ? 'Portal Platform Admin'
+                      : currentUser.role === 'admin_studio'
+                        ? 'Portal Admin Studio'
+                        : currentUser.role === 'manager'
+                          ? 'Portal Manager Studio'
+                          : 'Portal Pelatih'}
                   </span>
                   <span className="text-muted text-[10px] font-mono hidden sm:inline">&bull;</span>
                   <span className="text-[10px] font-mono text-emerald-400 hidden sm:inline-flex items-center gap-1">
@@ -227,73 +297,55 @@ function DashboardContent({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60 flex items-center gap-2 flex-wrap">
-              {currentUser.role === 'platform_admin' && (
-                <Link
-                  to="/studios"
-                  className="btn-interactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#141414] text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md"
-                  title="Kelola Semua Studio Gym di Platform"
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span>Kelola Studio (SaaS)</span>
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={openEditProfile}
-                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                title="Edit Profil dan Password Akun Saya"
-              >
-                <UserCog className="w-4 h-4 text-accent" />
-                <span>Edit Profil</span>
-              </button>
-
-              <Link
-                to="/exercises"
-                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                title="Kelola Master Gerakan & Kategori Latihan"
-              >
-                <Dumbbell className="w-4 h-4 text-accent" />
-                <span>Master Gerakan</span>
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
-                  currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
-                    ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
-                    : 'bg-bg text-dim border border-line'
-                }`}>
-                  {currentUser.role === 'admin_studio' ? 'Admin Studio' : currentUser.role}
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={openExportPdf}
-                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                title="Cetak dan Ekspor Laporan Sesi Latihan ke PDF"
-              >
-                <Printer className="w-4 h-4 text-accent" />
-                <span>Cetak Laporan PDF</span>
-              </button>
-
-              <a
-                href="/clients/new"
-                className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 sm:px-5 text-sm font-bold text-black shadow-[0_2px_14px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)] transition-all flex items-center justify-center gap-2"
-              >
-                <UserPlus className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Klien Baru</span>
-              </a>
+            {/* Executive Live Summary Info */}
+            <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60 flex items-center sm:flex-col sm:items-end justify-between gap-1 text-right">
+              <div className="text-xs font-mono text-dim flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Ringkasan Real-Time</span>
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-text">
+                {formatDate(getLocalTodayString())}
+              </div>
             </div>
           </div>
 
-        {/* ── 4 Executive KPI Stat Cards ── */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 animate-fade-in-up">
+        {/* ── Executive KPI Stat Cards ── */}
+        <section className={`grid ${gridColsClass} gap-2.5 sm:gap-4 animate-fade-in-up`}>
+          {/* Platform Admin: Total Studio */}
+          {isPlatformAdmin && (
+            <StatCard
+              title="Total Studio"
+              value={studioCount}
+              subtitle={studioCount > 0 ? `${activeStudioCount} studio aktif di platform` : 'Belum ada studio'}
+              badge={{ text: 'SAAS', type: 'gold' }}
+              icon={<Building2 className="w-5 h-5 text-accent opacity-80" />}
+              href="/studios"
+            />
+          )}
+
+          {/* Platform Admin & Admin Studio: Total PT */}
+          {(isPlatformAdmin || isAdminStudio) && (
+            <StatCard
+              title="Total PT"
+              value={ptCount}
+              subtitle={
+                isPlatformAdmin
+                  ? (ptCount > 0 ? `${activePtCount} pelatih di seluruh studio` : 'Belum ada pelatih')
+                  : (ptCount > 0 ? `${activePtCount} pelatih di studio ini` : 'Belum ada pelatih')
+              }
+              badge={{ text: isPlatformAdmin ? 'PLATFORM' : 'STUDIO', type: 'gold' }}
+              icon={<Dumbbell className="w-5 h-5 text-accent opacity-80" />}
+              href="/users"
+            />
+          )}
+
           <StatCard
             title="Total Klien"
             value={totalClients}
             subtitle={`${clients.filter((c) => c.is_active !== false).length} klien berstatus aktif`}
             badge={{ text: 'TERDAFTAR', type: 'gold' }}
             icon={<Users className="w-5 h-5 text-accent opacity-80" />}
+            href="/clients"
           />
           <StatCard
             title="Sesi Selesai"
@@ -315,6 +367,7 @@ function DashboardContent({
             subtitle={schedule.length ? `Terdekat: ${formatShortDate(schedule[0].date)} (${formatTime(schedule[0].time)})` : 'Belum ada agenda'}
             badge={{ text: schedule.length ? 'TERJADWAL' : 'KOSONG', type: schedule.length ? 'amber' : 'neutral' }}
             icon={<Calendar className="w-5 h-5 text-accent opacity-80" />}
+            href="/schedule"
           />
         </section>
 
@@ -460,7 +513,9 @@ function DashboardContent({
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-text">Status Direktori Klien</h3>
-                    <p className="text-[11px] text-dim">Total {clients.length} klien terdaftar di studio</p>
+                    <p className="text-[11px] text-dim">
+                      Total {clients.length} klien terdaftar {isPlatformAdmin ? 'di platform' : 'di studio'}
+                    </p>
                   </div>
                 </div>
                 <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-0.5 rounded-lg border border-accent/20">
