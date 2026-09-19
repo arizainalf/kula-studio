@@ -51,7 +51,7 @@ function SchedulePage() {
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased">
       {/* ── 1. Top Global Navigation Bar ── */}
-      <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-40 bg-panel backdrop-blur-xl border-b border-line">
         <div className="mx-auto max-w-6xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand Identity */}
           <a href="/" className="flex items-center gap-2.5 group">

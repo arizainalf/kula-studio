@@ -61,7 +61,7 @@ export function MobileBottomNav({
             <Link
               to="/clients/$clientId/log"
               params={{ clientId }}
-              className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-black flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
+              className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
               title="Catat Sesi Latihan"
             >
               <Dumbbell className="w-5 h-5 stroke-[2.5]" />
@@ -69,7 +69,7 @@ export function MobileBottomNav({
           ) : (
             <Link
               to="/clients/new"
-              className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-black flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
+              className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
               title="Daftarkan Klien Baru"
             >
               <Plus className="w-6 h-6 stroke-[2.5]" />
@@ -96,12 +96,12 @@ export function MobileBottomNav({
           )}
         </Link>
 
-        {/* Tab 5: White/Dark Mode Toggle */}
+        {/* Tab 5: Dark/Light Mode Toggle */}
         <button
           type="button"
           onClick={toggleTheme}
           className="flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] text-dim hover:text-text"
-          title={theme === 'dark' ? 'Ganti ke White Mode' : 'Ganti ke Dark Mode'}
+          title={theme === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
         >
           {theme === 'dark' ? (
             <Sun className="w-5 h-5 mb-1 text-amber-400" />
@@ -109,7 +109,7 @@ export function MobileBottomNav({
             <Moon className="w-5 h-5 mb-1 text-sky-400" />
           )}
           <span className="text-[10px] tracking-tight leading-none">
-            {theme === 'dark' ? 'White' : 'Dark'}
+            {theme === 'dark' ? 'Terang' : 'Gelap'}
           </span>
         </button>
       </div>

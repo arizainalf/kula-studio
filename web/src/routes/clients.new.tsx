@@ -222,11 +222,11 @@ function NewClient() {
         <button
           type="submit"
           disabled={submitting}
-          className="btn-interactive bg-accent hover:bg-accent/90 disabled:opacity-50 w-full rounded-xl py-3 sm:py-2.5 font-bold text-black text-sm transition-all shadow-[0_2px_14px_rgba(212,175,55,0.25)] flex items-center justify-center gap-2"
+          className="btn-interactive bg-accent hover:bg-accent/90 disabled:opacity-50 w-full rounded-xl py-3 sm:py-2.5 font-bold text-[#141414] text-sm transition-all shadow-[0_2px_14px_rgba(226,232,0,0.25)] flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>
-              <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+              <span className="w-4 h-4 border-2 border-[#141414] border-t-transparent rounded-full animate-spin"></span>
               <span>Menyimpan Klien...</span>
             </>
           ) : (

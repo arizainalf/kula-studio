@@ -232,7 +232,7 @@ export function AdminExerciseModal({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-bold text-text">Manajemen Master Gerakan &amp; Admin</h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-accent text-black uppercase">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-accent text-[#141414] uppercase">
                   {userRole || 'Admin'}
                 </span>
               </div>
@@ -255,7 +255,7 @@ export function AdminExerciseModal({
             onClick={() => setActiveTab('exercises')}
             className={`btn-interactive text-xs font-medium px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
               activeTab === 'exercises'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'bg-bg text-dim hover:text-text border border-line'
             }`}
           >
@@ -268,7 +268,7 @@ export function AdminExerciseModal({
             onClick={() => setActiveTab('categories')}
             className={`btn-interactive text-xs font-medium px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
               activeTab === 'categories'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'bg-bg text-dim hover:text-text border border-line'
             }`}
           >
@@ -281,7 +281,7 @@ export function AdminExerciseModal({
             onClick={() => setActiveTab('role')}
             className={`btn-interactive text-xs font-medium px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
               activeTab === 'role'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'bg-bg text-dim hover:text-text border border-line'
             }`}
           >
@@ -335,7 +335,7 @@ export function AdminExerciseModal({
               <button
                 type="button"
                 onClick={() => setIsAddingEx(!isAddingEx)}
-                className="btn-interactive text-xs font-bold px-3 py-1.5 rounded-xl bg-accent text-black flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                className="btn-interactive text-xs font-bold px-3 py-1.5 rounded-xl bg-accent text-[#141414] flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>+ Tambah Gerakan Baru</span>
@@ -421,7 +421,7 @@ export function AdminExerciseModal({
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 text-xs font-bold rounded-lg bg-accent text-black"
+                      className="px-4 py-1.5 text-xs font-bold rounded-lg bg-accent text-[#141414]"
                     >
                       Simpan Gerakan
                     </button>
@@ -498,7 +498,7 @@ export function AdminExerciseModal({
               <button
                 type="button"
                 onClick={() => setIsAddingCat(!isAddingCat)}
-                className="btn-interactive text-xs font-bold px-3 py-1.5 rounded-xl bg-accent text-black flex items-center gap-1.5"
+                className="btn-interactive text-xs font-bold px-3 py-1.5 rounded-xl bg-accent text-[#141414] flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>+ Tambah Kategori Baru</span>
@@ -576,7 +576,7 @@ export function AdminExerciseModal({
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 text-xs font-bold rounded-lg bg-accent text-black"
+                    className="px-4 py-1.5 text-xs font-bold rounded-lg bg-accent text-[#141414]"
                   >
                     Simpan Kategori
                   </button>
@@ -639,7 +639,7 @@ export function AdminExerciseModal({
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-text">Status Peran Akun Saat Ini:</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-accent text-black uppercase">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-accent text-[#141414] uppercase">
                     {userRole || 'pt'}
                   </span>
                 </div>
@@ -654,7 +654,7 @@ export function AdminExerciseModal({
                 type="button"
                 onClick={handleToggleAdminRole}
                 disabled={roleLoading}
-                className="btn-interactive px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-black font-bold text-xs shadow-sm flex items-center gap-2 shrink-0 transition-all"
+                className="btn-interactive px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-[#141414] font-bold text-xs shadow-sm flex items-center gap-2 shrink-0 transition-all"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${roleLoading ? 'animate-spin' : ''}`} />
                 <span>

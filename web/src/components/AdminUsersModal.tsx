@@ -381,11 +381,11 @@ export function AdminUsersModal({
                 <button
                   type="submit"
                   disabled={editSubmitting}
-                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
+                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
                 >
                   {editSubmitting ? (
                     <>
-                      <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                      <span className="w-3.5 h-3.5 border-2 border-[#141414] border-t-transparent rounded-full animate-spin"></span>
                       <span>Menyimpan...</span>
                     </>
                   ) : (
@@ -511,11 +511,11 @@ export function AdminUsersModal({
                 <button
                   type="submit"
                   disabled={addSubmitting}
-                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
+                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
                 >
                   {addSubmitting ? (
                     <>
-                      <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                      <span className="w-3.5 h-3.5 border-2 border-[#141414] border-t-transparent rounded-full animate-spin"></span>
                       <span>Menambahkan...</span>
                     </>
                   ) : (
@@ -606,7 +606,7 @@ export function AdminUsersModal({
                 <button
                   type="button"
                   onClick={() => setIsAddingUser(true)}
-                  className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-3.5 py-2 rounded-xl shadow-[0_2px_10px_rgba(212,175,55,0.25)] transition-all flex items-center gap-1.5 btn-interactive shrink-0"
+                  className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 py-2 rounded-xl shadow-[0_2px_10px_rgba(226,232,0,0.25)] transition-all flex items-center gap-1.5 btn-interactive shrink-0"
                 >
                   <UserPlus className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Tambah Akun</span>

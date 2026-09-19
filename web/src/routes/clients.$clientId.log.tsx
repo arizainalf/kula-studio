@@ -829,11 +829,11 @@ function LogSession() {
             <button
               type="submit"
               disabled={saving}
-              className="btn-interactive w-full sm:w-auto px-8 py-3 rounded-xl bg-accent hover:bg-accent-hover text-black font-bold text-sm transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] hover:shadow-[0_0_28px_rgba(212,175,55,0.4)] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="btn-interactive w-full sm:w-auto px-8 py-3 rounded-xl bg-accent hover:bg-accent-hover text-[#141414] font-bold text-sm transition-all shadow-[0_0_20px_rgba(226,232,0,0.25)] hover:shadow-[0_0_28px_rgba(226,232,0,0.4)] disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {saving ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                  <span className="w-4 h-4 border-2 border-[#141414] border-t-transparent rounded-full animate-spin"></span>
                   <span>Menyimpan Sesi…</span>
                 </>
               ) : (

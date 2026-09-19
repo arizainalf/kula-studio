@@ -160,7 +160,7 @@ export function WeeklyScheduleSection({
               setFormDate(selectedDate)
               setIsModalOpen(true)
             }}
-            className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-[0_2px_10px_rgba(212,175,55,0.2)] flex items-center gap-1.5 shrink-0 btn-interactive hover:shadow-[0_4px_16px_rgba(212,175,55,0.35)]"
+            className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 py-1.5 rounded-lg transition-all shadow-[0_2px_10px_rgba(226,232,0,0.2)] flex items-center gap-1.5 shrink-0 btn-interactive hover:shadow-[0_4px_16px_rgba(226,232,0,0.35)]"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Tambah Jadwal</span>
@@ -181,13 +181,13 @@ export function WeeklyScheduleSection({
                   onClick={() => setSelectedDate(day.dateStr)}
                   className={`min-w-[62px] sm:min-w-0 flex-1 shrink-0 snap-center flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border transition-all duration-200 relative btn-interactive ${
                     isSelected
-                      ? 'scale-[1.04] bg-bg border-accent shadow-[0_0_20px_rgba(212,175,55,0.2)] ring-1 ring-accent/60'
-                      : 'bg-bg/60 border-line hover:border-accent/40 hover:bg-bg hover:scale-[1.02] text-dim'
+                      ? 'scale-[1.04] bg-panel-elevated border-accent shadow-[0_0_20px_rgba(226,232,0,0.2)] ring-1 ring-accent/60'
+                      : 'bg-panel/70 border-line hover:border-accent/40 hover:bg-panel hover:scale-[1.02] text-dim'
                   }`}
                 >
                   {/* Today Badge Indicator */}
                   {day.isToday && (
-                    <span className="absolute -top-2 text-[9px] font-mono uppercase bg-accent text-black font-extrabold px-1.5 py-0.2 rounded-full shadow-[0_2px_6px_rgba(212,175,55,0.3)]">
+                    <span className="absolute -top-2 text-[9px] font-mono uppercase bg-accent text-[#141414] font-extrabold px-1.5 py-0.2 rounded-full shadow-[0_2px_6px_rgba(226,232,0,0.3)]">
                       Hari Ini
                     </span>
                   )}
@@ -244,8 +244,8 @@ export function WeeklyScheduleSection({
             </div>
 
             {currentDaySessions.length === 0 ? (
-              <div className="rounded-xl border border-line bg-bg/50 p-8 text-center flex flex-col items-center justify-center animate-fade-in">
-                <div className="w-10 h-10 rounded-full bg-panel border border-line flex items-center justify-center text-dim mb-3">
+              <div className="rounded-xl border border-line bg-panel p-8 text-center flex flex-col items-center justify-center animate-fade-in">
+                <div className="w-10 h-10 rounded-full bg-panel-elevated border border-line flex items-center justify-center text-dim mb-3">
                   <Clock className="w-5 h-5 opacity-60 text-dim" />
                 </div>
                 <p className="text-text font-medium text-sm">Tidak ada jadwal sesi di hari ini.</p>
@@ -279,11 +279,11 @@ export function WeeklyScheduleSection({
                     <div
                       key={session.id}
                       style={{ animationDelay: `${idx * 60}ms` }}
-                      className="p-4 rounded-xl bg-bg border border-line hover-gold-glow flex flex-col sm:flex-row sm:items-center justify-between gap-4 group animate-fade-in-up"
+                      className="p-4 rounded-xl bg-panel border border-line hover-gold-glow flex flex-col sm:flex-row sm:items-center justify-between gap-4 group animate-fade-in-up"
                     >
                       {/* Left: Time & Client Info */}
                       <div className="flex items-start sm:items-center gap-3.5">
-                        <div className="w-16 sm:w-20 text-center py-2 px-1 rounded-lg bg-panel border border-line shrink-0 group-hover:border-accent/40 transition-colors">
+                        <div className="w-16 sm:w-20 text-center py-2 px-1 rounded-lg bg-bg border border-line shrink-0 group-hover:border-accent/40 transition-colors">
                           <span className="text-sm sm:text-base font-extrabold font-mono text-accent leading-none block">
                             {formatTime(session.time)}
                           </span>
@@ -299,7 +299,7 @@ export function WeeklyScheduleSection({
                               {clientName}
                             </a>
                             {clientObj?.goal && (
-                              <span className="text-[10px] font-mono text-dim bg-panel px-2 py-0.5 rounded border border-line">
+                              <span className="text-[10px] font-mono text-dim bg-bg px-2 py-0.5 rounded border border-line">
                                 {clientObj.goal.replace('_', ' ').toUpperCase()}
                               </span>
                             )}
@@ -331,7 +331,7 @@ export function WeeklyScheduleSection({
                             href={`https://wa.me/${clientPhone.replace(/\D/g, '')}?text=${waReminderMessage}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs font-mono text-dim hover:text-accent bg-panel px-2.5 py-1.5 rounded-lg border border-line hover:border-accent/40 transition-colors flex items-center gap-1.5 btn-interactive"
+                            className="text-xs font-mono text-dim hover:text-accent bg-bg px-2.5 py-1.5 rounded-lg border border-line hover:border-accent/40 transition-colors flex items-center gap-1.5 btn-interactive"
                             title="Kirim pengingat sesi ke WhatsApp"
                           >
                             <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
@@ -341,7 +341,7 @@ export function WeeklyScheduleSection({
 
                         <a
                           href={`/clients/${session.client_id}/log`}
-                          className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shadow-[0_2px_8px_rgba(212,175,55,0.2)] hover:shadow-[0_4px_14px_rgba(212,175,55,0.4)] btn-interactive"
+                          className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shadow-[0_2px_8px_rgba(226,232,0,0.2)] hover:shadow-[0_4px_14px_rgba(226,232,0,0.4)] btn-interactive"
                         >
                           <Plus className="w-3 h-3 stroke-[2.5]" />
                           <span>Catat</span>
@@ -381,10 +381,10 @@ export function WeeklyScheduleSection({
                   return (
                     <div
                       key={session.id}
-                      className="p-3.5 rounded-xl bg-bg border border-line flex items-center justify-between gap-3"
+                      className="p-3.5 rounded-xl bg-panel border border-line flex items-center justify-between gap-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="font-mono text-xs text-accent font-bold px-2 py-1 rounded bg-panel border border-line">
+                        <div className="font-mono text-xs text-accent font-bold px-2 py-1 rounded bg-bg border border-line">
                           {formatShortDate(session.date)} · {formatTime(session.time)}
                         </div>
                         <div>
@@ -515,7 +515,7 @@ export function WeeklyScheduleSection({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-semibold text-xs px-5 py-2.5 rounded-xl shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_18px_rgba(212,175,55,0.4)] transition-all btn-interactive"
+                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-semibold text-xs px-5 py-2.5 rounded-xl shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all btn-interactive"
                 >
                   {submitting ? 'Menyimpan…' : 'Simpan Jadwal'}
                 </button>

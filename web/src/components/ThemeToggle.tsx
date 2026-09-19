@@ -29,7 +29,7 @@ export function applyTheme(theme: Theme) {
   // Update mobile status bar theme color
   const metaTheme = document.querySelector('meta[name="theme-color"]')
   if (metaTheme) {
-    metaTheme.setAttribute('content', theme === 'light' ? '#f8f9fa' : '#09090b')
+    metaTheme.setAttribute('content', theme === 'light' ? '#F4F5F7' : '#141414')
   }
 
   try {
@@ -103,18 +103,18 @@ export function ThemeToggle({
       type="button"
       onClick={toggleTheme}
       className={`btn-interactive p-2 sm:px-2.5 sm:py-1.5 rounded-lg border border-line hover:border-accent/40 text-dim hover:text-text transition-colors flex items-center gap-1.5 text-xs font-mono shrink-0 ${className}`}
-      title={theme === 'dark' ? 'Ganti ke Mode Terang (White Mode)' : 'Ganti ke Mode Gelap (Dark Mode)'}
-      aria-label={theme === 'dark' ? 'Aktifkan White Mode' : 'Aktifkan Dark Mode'}
+      title={theme === 'dark' ? 'Ganti ke Mode Terang (Light Mode)' : 'Ganti ke Mode Gelap (Dark Mode)'}
+      aria-label={theme === 'dark' ? 'Aktifkan Mode Terang' : 'Aktifkan Mode Gelap'}
     >
       {theme === 'dark' ? (
         <>
           <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0 transition-transform duration-300 hover:rotate-45" />
-          {showLabel && <span>White Mode</span>}
+          {showLabel && <span>Mode Terang</span>}
         </>
       ) : (
         <>
           <Moon className="w-3.5 h-3.5 text-sky-400 shrink-0 transition-transform duration-300 hover:-rotate-12" />
-          {showLabel && <span>Dark Mode</span>}
+          {showLabel && <span>Mode Gelap</span>}
         </>
       )}
     </button>

@@ -128,7 +128,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased">
       {/* ── 1. Top Global Navigation Bar ── */}
-      <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-40 bg-panel backdrop-blur-xl border-b border-line">
         <div className="mx-auto max-w-6xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand Identity */}
           <a href="/" className="flex items-center gap-2.5 group">
@@ -373,7 +373,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
                 return (
                   <div
                     key={cl.id}
-                    className="p-3.5 rounded-xl bg-bg border border-line hover-gold-glow flex items-center justify-between gap-2 transition-all duration-300"
+                    className="p-3.5 rounded-xl bg-panel border border-line hover-gold-glow flex items-center justify-between gap-2 transition-all duration-300"
                   >
                     <div>
                       <div className="font-semibold text-xs text-text">{cl.name}</div>
@@ -386,7 +386,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
                         href={`https://wa.me/${cl.phone.replace(/\D/g, '')}?text=${waMessage}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs font-semibold text-black bg-accent hover:bg-accent/90 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-200 shrink-0 btn-interactive hover:shadow-[0_4px_12px_rgba(212,175,55,0.35)]"
+                        className="text-xs font-semibold text-[#141414] bg-accent hover:bg-accent/90 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-200 shrink-0 btn-interactive hover:shadow-[0_4px_12px_rgba(226,232,0,0.35)]"
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
                         <span>WA Upsell</span>
@@ -442,7 +442,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
                   {schedule.slice(0, 3).map((item) => (
                     <li
                       key={item.id}
-                      className="p-2.5 rounded-xl bg-bg border border-line/60 flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-panel-elevated border border-line flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
@@ -491,19 +491,19 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
 
               {/* Breakdown Grid */}
               <div className="grid grid-cols-3 gap-2 text-center my-2">
-                <div className="p-2.5 rounded-xl bg-bg border border-line">
+                <div className="p-2.5 rounded-xl bg-panel-elevated border border-line">
                   <div className="text-base sm:text-lg font-bold text-text">
                     {clients.filter((c) => c.goal === 'fat_loss').length}
                   </div>
                   <div className="text-[10px] text-dim font-mono uppercase mt-0.5">Fat Loss</div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-bg border border-line">
+                <div className="p-2.5 rounded-xl bg-panel-elevated border border-line">
                   <div className="text-base sm:text-lg font-bold text-text">
                     {clients.filter((c) => c.goal === 'muscle_gain').length}
                   </div>
                   <div className="text-[10px] text-dim font-mono uppercase mt-0.5">Muscle</div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-bg border border-line">
+                <div className="p-2.5 rounded-xl bg-panel-elevated border border-line">
                   <div className="text-base sm:text-lg font-bold text-text">
                     {clients.filter((c) => c.goal !== 'fat_loss' && c.goal !== 'muscle_gain').length}
                   </div>

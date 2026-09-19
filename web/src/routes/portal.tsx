@@ -161,7 +161,7 @@ function ClientPortalPage() {
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased pb-24 sm:pb-12">
       {/* ── 1. Top Global Navigation Bar ── */}
-      <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-40 bg-panel backdrop-blur-xl border-b border-line">
         <div className="mx-auto max-w-5xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand Identity */}
           <div className="flex items-center gap-2.5">
@@ -431,7 +431,7 @@ function ClientPortalPage() {
             onClick={() => setActiveTab('progress')}
             className={`btn-interactive flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
               activeTab === 'progress'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'text-dim hover:text-text bg-panel/50'
             }`}
           >
@@ -443,7 +443,7 @@ function ClientPortalPage() {
             onClick={() => setActiveTab('leaderboard')}
             className={`btn-interactive flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
               activeTab === 'leaderboard'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'text-dim hover:text-text bg-panel/50'
             }`}
           >
@@ -784,7 +784,7 @@ function ClientPortalPage() {
                             <div className="flex items-center gap-1.5">
                               <span className="text-text">{item.name}</span>
                               {item.is_me && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent text-black uppercase">
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent text-[#141414] uppercase">
                                   Kamu
                                 </span>
                               )}

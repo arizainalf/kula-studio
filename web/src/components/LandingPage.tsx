@@ -6,11 +6,11 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased overflow-x-hidden">
       {/* ── 1. Sticky Navigation Bar ── */}
-      <header className="sticky top-0 z-50 bg-bg/85 backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-50 bg-panel backdrop-blur-xl border-b border-line">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-3 group">
             {/* Luxury Monogram Badge */}
-            <div className="w-9 h-9 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.15)] group-hover:border-accent transition-colors">
+            <div className="w-9 h-9 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_15px_rgba(226,232,0,0.15)] group-hover:border-accent transition-colors">
               <span className="font-extrabold text-sm tracking-tighter text-accent">TL</span>
             </div>
             <div className="flex flex-col">
@@ -38,7 +38,7 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
             {currentUser ? (
               <a
                 href="/"
-                className="btn-interactive bg-accent hover:bg-accent/90 text-black font-semibold text-xs sm:text-sm px-4 py-2 rounded-lg transition-all shadow-[0_2px_12px_rgba(212,175,55,0.25)] flex items-center gap-1.5"
+                className="btn-interactive bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs sm:text-sm px-4 py-2 rounded-lg transition-all shadow-[0_2px_12px_rgba(226,232,0,0.25)] flex items-center gap-1.5"
               >
                 <span>Buka Dashboard</span>
                 <span className="text-[11px] opacity-75 font-normal">({currentUser.name.split(' ')[0]})</span>
@@ -53,7 +53,7 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
                 </a>
                 <a
                   href="/login"
-                  className="btn-interactive bg-accent hover:bg-accent/90 text-black font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition-all shadow-[0_2px_14px_rgba(212,175,55,0.25)]"
+                  className="btn-interactive bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition-all shadow-[0_2px_14px_rgba(226,232,0,0.25)]"
                 >
                   Coba Gratis
                 </a>
@@ -93,7 +93,7 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-14">
             <a
               href="/login"
-              className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 text-black font-semibold text-sm sm:text-base px-6 py-3.5 rounded-xl transition-all shadow-[0_4px_24px_rgba(212,175,55,0.3)] hover:scale-[1.02]"
+              className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-sm sm:text-base px-6 py-3.5 rounded-xl transition-all shadow-[0_4px_24px_rgba(226,232,0,0.3)] hover:scale-[1.02]"
             >
               Mulai Sekarang — 14 Hari Percobaan
             </a>
@@ -493,9 +493,9 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
             </div>
 
             {/* Tier: Pro (Best Seller) */}
-            <div className="hover-gold-glow p-8 rounded-2xl bg-panel border-2 border-accent relative flex flex-col justify-between shadow-[0_8px_32px_rgba(212,175,55,0.2)] hover:shadow-[0_12px_44px_rgba(212,175,55,0.35)] transition-all duration-300">
+            <div className="hover-gold-glow p-8 rounded-2xl bg-panel border-2 border-accent relative flex flex-col justify-between shadow-[0_8px_32px_rgba(226,232,0,0.2)] hover:shadow-[0_12px_44px_rgba(226,232,0,0.35)] transition-all duration-300">
               {/* Popular Tag */}
-              <div className="absolute -top-3.5 left-8 px-3 py-0.5 rounded-full bg-accent text-black font-mono text-[11px] font-bold tracking-wider uppercase shadow-[0_0_12px_rgba(212,175,55,0.4)]">
+              <div className="absolute -top-3.5 left-8 px-3 py-0.5 rounded-full bg-accent text-[#141414] font-mono text-[11px] font-bold tracking-wider uppercase shadow-[0_0_12px_rgba(226,232,0,0.4)]">
                 Paling Diminati
               </div>
               <div>
@@ -537,7 +537,7 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
               </div>
               <a
                 href="/login"
-                className="btn-interactive w-full py-3 px-4 rounded-xl bg-accent hover:bg-accent/90 text-black text-center text-sm font-semibold transition-all shadow-[0_2px_16px_rgba(212,175,55,0.3)]"
+                className="btn-interactive w-full py-3 px-4 rounded-xl bg-accent hover:bg-accent/90 text-[#141414] text-center text-sm font-semibold transition-all shadow-[0_2px_16px_rgba(226,232,0,0.3)]"
               >
                 Mulai Paket Pro
               </a>
@@ -585,7 +585,7 @@ export function LandingPage({ currentUser }: { currentUser?: User | null }) {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
                 href="/login"
-                className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 text-black font-semibold text-sm sm:text-base px-8 py-3.5 rounded-xl transition-all shadow-[0_4px_20px_rgba(212,175,55,0.25)]"
+                className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-sm sm:text-base px-8 py-3.5 rounded-xl transition-all shadow-[0_4px_20px_rgba(226,232,0,0.25)]"
               >
                 Daftar Sekarang
               </a>

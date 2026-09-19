@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: oklch(0.13 0.005 285);
-  --color-panel: oklch(0.18 0.008 285);
-  --color-panel-elevated: oklch(0.22 0.008 285);
-  --color-line: oklch(0.28 0.008 285);
-  --color-line-subtle: oklch(0.22 0.005 285);
-  --color-text: oklch(0.96 0.005 285);
-  --color-dim: oklch(0.68 0.012 285);
-  --color-muted: oklch(0.48 0.012 285);
-  --color-accent: oklch(0.78 0.13 85);
-  --color-accent-hover: oklch(0.82 0.12 85);
+  --color-bg: #141414;
+  --color-panel: #444444;
+  --color-panel-elevated: #505050;
+  --color-line: #979797;
+  --color-line-subtle: #979797;
+  --color-text: #D6D6D6;
+  --color-dim: #979797;
+  --color-muted: #979797;
+  --color-accent: #E2E800;
+  --color-accent-hover: #c9ce00;
+  --color-black: #141414;
 
   --animate-fade-in: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in-up: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -35,12 +36,12 @@
 
   @keyframes goldPulse {
     0%, 100% {
-      box-shadow: 0 0 15px rgba(212, 175, 55, 0.12);
-      border-color: rgba(212, 175, 55, 0.3);
+      box-shadow: 0 0 15px rgba(226, 232, 0, 0.15);
+      border-color: rgba(226, 232, 0, 0.35);
     }
     50% {
-      box-shadow: 0 0 28px rgba(212, 175, 55, 0.32);
-      border-color: rgba(212, 175, 55, 0.65);
+      box-shadow: 0 0 28px rgba(226, 232, 0, 0.35);
+      border-color: rgba(226, 232, 0, 0.75);
     }
   }
 
@@ -73,8 +74,8 @@
 }
 .hover-gold-glow:hover {
   transform: translateY(-2px);
-  border-color: rgba(212, 175, 55, 0.5);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), 0 0 16px -2px rgba(212, 175, 55, 0.15);
+  border-color: rgba(226, 232, 0, 0.5);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), 0 0 16px -2px rgba(226, 232, 0, 0.2);
 }
 
 /* Button interactive active state */
@@ -95,46 +96,68 @@
   color-scheme: dark;
 }
 
-/* ── White / Light Mode Theme Variables ── */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+header, aside {
+  background-color: var(--color-panel);
+}
+
+/* ── Aturan Distribusi Warna Spesifik ──
+   Rule 6: Teks di dalam tombol atau elemen yang menggunakan #E2E800 harus menggunakan #141414 agar tetap terbaca jelas */
+.bg-accent,
+[class*="bg-accent"]:not([class*="bg-accent/"]) {
+  color: #141414 !important;
+}
+
+/* ── Tema Terang (Light Mode) ── */
 html.light,
 [data-theme="light"] {
   color-scheme: light;
-  --color-bg: oklch(0.975 0.003 285);
-  --color-panel: oklch(1 0 0);
-  --color-panel-elevated: oklch(0.945 0.005 285);
-  --color-line: oklch(0.89 0.006 285);
-  --color-line-subtle: oklch(0.935 0.004 285);
-  --color-text: oklch(0.18 0.015 285);
-  --color-dim: oklch(0.44 0.015 285);
-  --color-muted: oklch(0.62 0.012 285);
-  --color-accent: oklch(0.62 0.16 75);
-  --color-accent-hover: oklch(0.55 0.17 75);
+  --color-bg: #F4F5F7;
+  --color-panel: #FFFFFF;
+  --color-panel-elevated: #EBECEF;
+  --color-line: #D1D5DB;
+  --color-line-subtle: #E5E7EB;
+  --color-text: #141414;
+  --color-dim: #6B7280;
+  --color-muted: #9CA3AF;
+  --color-accent: #E2E800;
+  --color-accent-hover: #c9ce00;
+  --color-black: #141414;
 }
 
-/* Light mode luxury hover and shadow softening */
+/* Penyesuaian kontras teks aksen di tema terang agar jelas terbaca di atas latar putih/abu-abu */
+html.light .text-accent,
+[data-theme="light"] .text-accent,
+html.light .hover\:text-accent:hover,
+[data-theme="light"] .hover\:text-accent:hover,
+html.light .group:hover .group-hover\:text-accent,
+[data-theme="light"] .group:hover .group-hover\:text-accent {
+  color: #727900 !important;
+}
+
+/* Border aksen saat fokus di tema terang */
+html.light .focus\:border-accent:focus,
+[data-theme="light"] .focus\:border-accent:focus {
+  border-color: #8C9400 !important;
+}
+
+/* Efek hover glow yang halus di tema terang */
 html.light .hover-gold-glow:hover,
 [data-theme="light"] .hover-gold-glow:hover {
-  border-color: rgba(181, 133, 20, 0.45);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 0 16px -2px rgba(181, 133, 20, 0.16);
+  border-color: rgba(200, 206, 0, 0.6);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.08), 0 0 12px -2px rgba(226, 232, 0, 0.25);
 }
 
-html.light [class*="shadow-[0_8px_"],
-html.light [class*="shadow-[0_12px_"],
-html.light [class*="shadow-[0_20px_"],
-[data-theme="light"] [class*="shadow-[0_8px_"],
-[data-theme="light"] [class*="shadow-[0_12px_"],
-[data-theme="light"] [class*="shadow-[0_20px_"] {
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-
-html.light [class*="shadow-[0_4px_"],
-[data-theme="light"] [class*="shadow-[0_4px_"] {
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-html.light [class*="shadow-[0_2px_"],
-[data-theme="light"] [class*="shadow-[0_2px_"] {
-  box-shadow: 0 2px 8px -1px rgba(181, 133, 20, 0.18), 0 1px 2px rgba(0, 0, 0, 0.04);
+/* Bayangan lembut untuk kartu panel di tema terang */
+html.light .bg-panel.shadow-\[0_8px_24px_rgba\(0\,0\,0\,0\.5\)\],
+[data-theme="light"] .bg-panel.shadow-\[0_8px_24px_rgba\(0\,0\,0\,0\.5\)\],
+html.light [class*="shadow-[0_8px_24px_rgba(0,0,0,0.5)]"],
+[data-theme="light"] [class*="shadow-[0_8px_24px_rgba(0,0,0,0.5)]"] {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
 }
 
 .no-scrollbar::-webkit-scrollbar {

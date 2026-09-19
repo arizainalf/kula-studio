@@ -4,18 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#09090b" />
+    <meta name="theme-color" content="#141414" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>TrainLog — Personal Trainer & Studio Manager</title>
     <script>
       (function() {
         try {
           var t = localStorage.getItem('trainlog-theme');
+          var root = document.documentElement;
+          var m = document.querySelector('meta[name="theme-color"]');
           if (t === 'light') {
-            document.documentElement.classList.add('light');
-            document.documentElement.setAttribute('data-theme', 'light');
-            var m = document.querySelector('meta[name="theme-color"]');
-            if (m) m.setAttribute('content', '#f8f9fa');
+            root.classList.add('light');
+            root.setAttribute('data-theme', 'light');
+            if (m) m.setAttribute('content', '#F4F5F7');
+          } else {
+            root.classList.remove('light');
+            root.removeAttribute('data-theme');
+            if (m) m.setAttribute('content', '#141414');
           }
         } catch (e) {}
       })();

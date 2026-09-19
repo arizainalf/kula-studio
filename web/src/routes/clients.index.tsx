@@ -81,7 +81,7 @@ function ClientsDirectoryPage() {
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased">
       {/* ── 1. Top Global Navigation Bar ── */}
-      <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-40 bg-panel backdrop-blur-xl border-b border-line">
         <div className="mx-auto max-w-6xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand Identity */}
           <a href="/" className="flex items-center gap-2.5 group">
@@ -167,7 +167,7 @@ function ClientsDirectoryPage() {
 
             <a
               href="/clients/new"
-              className="btn-interactive self-start sm:self-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-black shadow-[0_2px_14px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)] transition-all flex items-center justify-center gap-2"
+              className="btn-interactive self-start sm:self-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-[#141414] shadow-[0_2px_14px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_20px_rgba(226,232,0,0.4)] transition-all flex items-center justify-center gap-2"
             >
               <UserPlus className="w-4 h-4 stroke-[2.5]" />
               <span>+ Tambah Klien Baru</span>
@@ -212,7 +212,7 @@ function ClientsDirectoryPage() {
                 onClick={() => setActiveFilter('all')}
                 className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
                   activeFilter === 'all'
-                    ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
+                    ? 'bg-accent text-[#141414] font-semibold shadow-[0_2px_10px_rgba(226,232,0,0.25)]'
                     : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
                 }`}
               >
@@ -222,7 +222,7 @@ function ClientsDirectoryPage() {
                 onClick={() => setActiveFilter('fat_loss')}
                 className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
                   activeFilter === 'fat_loss'
-                    ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
+                    ? 'bg-accent text-[#141414] font-semibold shadow-[0_2px_10px_rgba(226,232,0,0.25)]'
                     : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
                 }`}
               >
@@ -232,7 +232,7 @@ function ClientsDirectoryPage() {
                 onClick={() => setActiveFilter('muscle_gain')}
                 className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
                   activeFilter === 'muscle_gain'
-                    ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
+                    ? 'bg-accent text-[#141414] font-semibold shadow-[0_2px_10px_rgba(226,232,0,0.25)]'
                     : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
                 }`}
               >
@@ -242,7 +242,7 @@ function ClientsDirectoryPage() {
                 onClick={() => setActiveFilter('general')}
                 className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
                   activeFilter === 'general'
-                    ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
+                    ? 'bg-accent text-[#141414] font-semibold shadow-[0_2px_10px_rgba(226,232,0,0.25)]'
                     : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
                 }`}
               >
@@ -253,7 +253,7 @@ function ClientsDirectoryPage() {
                   onClick={() => setActiveFilter('upsell')}
                   className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
                     activeFilter === 'upsell'
-                      ? 'bg-amber-400 text-black font-semibold shadow-[0_2px_10px_rgba(251,191,36,0.3)]'
+                      ? 'bg-amber-400 text-[#141414] font-semibold shadow-[0_2px_10px_rgba(251,191,36,0.3)]'
                       : 'bg-panel text-amber-400/90 hover:text-amber-400 border border-amber-500/30'
                   }`}
                 >
@@ -382,7 +382,7 @@ function ClientsDirectoryPage() {
                           )}
                           <a
                             href={`/clients/${cl.id}/log`}
-                            className="text-xs font-semibold text-black bg-accent hover:bg-accent-hover px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all btn-interactive shadow-sm"
+                            className="text-xs font-semibold text-[#141414] bg-accent hover:bg-accent-hover px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all btn-interactive shadow-sm"
                           >
                             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                             <span>Catat Sesi</span>

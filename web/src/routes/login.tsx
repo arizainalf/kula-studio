@@ -123,7 +123,7 @@ function LoginPage() {
             }}
             className={`py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all ${
               roleMode === 'pt'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'text-dim hover:text-text'
             }`}
           >
@@ -138,7 +138,7 @@ function LoginPage() {
             }}
             className={`py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all ${
               roleMode === 'client'
-                ? 'bg-accent text-black font-bold shadow-sm'
+                ? 'bg-accent text-[#141414] font-bold shadow-sm'
                 : 'text-dim hover:text-text'
             }`}
           >
@@ -160,16 +160,19 @@ function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
-              placeholder={roleMode === 'pt' ? 'coach@studio.com' : 'email.anda@gmail.com'}
+              placeholder={roleMode === 'pt' ? 'nama@gym.com' : 'email@klien.com'}
               className="border border-line bg-bg w-full rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-text outline-none focus:border-accent transition-colors"
             />
           </div>
 
           {roleMode === 'pt' ? (
             <div>
-              <label className="text-dim mb-1 block text-xs font-medium uppercase tracking-wider">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-dim block text-xs font-medium uppercase tracking-wider">
+                  Password
+                </label>
+                <span className="text-[10px] text-accent font-mono">Privat Pelatih</span>
+              </div>
               <input
                 name="password"
                 type="password"
@@ -213,10 +216,10 @@ function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="btn-interactive bg-accent hover:bg-accent/90 disabled:opacity-50 w-full rounded-xl py-3 sm:py-2.5 font-semibold text-black text-sm shadow-[0_2px_12px_rgba(212,175,55,0.25)] transition-all flex items-center justify-center gap-2"
+            className="btn-interactive bg-accent hover:bg-accent/90 disabled:opacity-50 w-full rounded-xl py-3 sm:py-2.5 font-semibold text-[#141414] text-sm shadow-[0_2px_12px_rgba(226,232,0,0.25)] transition-all flex items-center justify-center gap-2"
           >
             {loading ? (
-              <span className="animate-spin rounded-full h-4 w-4 border-2 border-black border-t-transparent" />
+              <span className="animate-spin rounded-full h-4 w-4 border-2 border-[#141414] border-t-transparent" />
             ) : roleMode === 'pt' ? (
               <>
                 <Shield className="w-4 h-4" />

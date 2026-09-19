@@ -292,7 +292,7 @@ export function ExportPdfModal({
               onClick={() => setScope('all')}
               className={`py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all ${
                 scope === 'all'
-                  ? 'bg-accent text-black font-bold shadow-sm'
+                  ? 'bg-accent text-[#141414] font-bold shadow-sm'
                   : 'text-dim hover:text-text'
               }`}
             >
@@ -305,7 +305,7 @@ export function ExportPdfModal({
               onClick={() => setScope('single')}
               className={`py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all ${
                 scope === 'single'
-                  ? 'bg-accent text-black font-bold shadow-sm'
+                  ? 'bg-accent text-[#141414] font-bold shadow-sm'
                   : 'text-dim hover:text-text'
               }`}
             >
@@ -443,7 +443,7 @@ export function ExportPdfModal({
                 onClick={() => setMinRpe(val)}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-mono border transition-all ${
                   minRpe === val
-                    ? 'bg-accent text-black font-bold border-accent'
+                    ? 'bg-accent text-[#141414] font-bold border-accent'
                     : 'bg-bg border-line text-dim hover:text-text'
                 }`}
               >
@@ -515,7 +515,7 @@ export function ExportPdfModal({
             type="button"
             onClick={handlePrint}
             disabled={filteredSessions.length === 0 || loading}
-            className="btn-interactive px-5 py-2.5 rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-bold text-xs sm:text-sm shadow-[0_2px_14px_rgba(212,175,55,0.25)] flex items-center gap-2 transition-all"
+            className="btn-interactive px-5 py-2.5 rounded-xl bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-bold text-xs sm:text-sm shadow-[0_2px_14px_rgba(226,232,0,0.25)] flex items-center gap-2 transition-all"
           >
             <Printer className="w-4 h-4" />
             <span>Cetak / Unduh PDF</span>

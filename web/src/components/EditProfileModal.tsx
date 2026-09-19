@@ -383,11 +383,11 @@ export function EditProfileModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
+                  className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
                 >
                   {loading ? (
                     <>
-                      <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                      <span className="w-3.5 h-3.5 border-2 border-[#141414] border-t-transparent rounded-full animate-spin"></span>
                       <span>Menyimpan...</span>
                     </>
                   ) : (

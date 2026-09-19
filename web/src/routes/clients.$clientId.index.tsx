@@ -375,7 +375,7 @@ function ClientDetail() {
 
             <a
               href={`/clients/${client.id}/log`}
-              className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-3.5 sm:px-4 py-2 rounded-xl shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_18px_rgba(212,175,55,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
+              className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 sm:px-4 py-2 rounded-xl shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Catat Sesi</span>
@@ -391,7 +391,7 @@ function ClientDetail() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10 mb-6">
             <div className="flex items-start sm:items-center gap-4">
               {/* Luxury Monogram Avatar */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-bg border-2 border-accent/60 flex items-center justify-center text-accent font-extrabold text-xl sm:text-2xl shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-all duration-300 shrink-0 cursor-pointer">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-bg border-2 border-accent/60 flex items-center justify-center text-accent font-extrabold text-xl sm:text-2xl shadow-[0_0_20px_rgba(226,232,0,0.2)] hover:shadow-[0_0_30px_rgba(226,232,0,0.4)] hover:scale-105 transition-all duration-300 shrink-0 cursor-pointer">
                 {client.name.slice(0, 2).toUpperCase()}
               </div>
 
@@ -435,13 +435,13 @@ function ClientDetail() {
               </div>
             </div>
 
-            {/* Quick WhatsApp Reminder action */}
+            {/* Client Direct Communication Action */}
             {client.phone && (
               <a
                 href={`https://wa.me/${client.phone.replace(/\D/g, '')}`}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-bg hover:bg-panel-elevated border border-line hover:border-accent/50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 text-text w-full sm:w-fit justify-center shrink-0 btn-interactive"
+                className="bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs px-3.5 py-2.5 rounded-xl transition-colors flex items-center gap-2 w-fit btn-interactive self-start md:self-auto font-mono"
               >
                 <MessageSquare className="w-3.5 h-3.5 text-accent" />
                 <span>Chat WhatsApp Klien</span>
@@ -451,19 +451,19 @@ function ClientDetail() {
 
           {/* 4 Core Stat Cards Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-5 sm:pt-6 border-t border-line">
-            <div className="p-3 sm:p-3.5 rounded-xl bg-bg border border-line hover-gold-glow transition-all duration-300 min-w-0">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-panel-elevated border border-line hover-gold-glow transition-all duration-300 min-w-0">
               <div className="text-[10px] sm:text-[11px] font-mono text-dim uppercase truncate">Sesi Terpakai</div>
               <div className="text-lg sm:text-2xl font-extrabold text-text mt-1 truncate">{client.pkg_used} Sesi</div>
               <div className="text-[10px] text-dim mt-0.5 truncate">{progressPct}% kuota terpakai</div>
             </div>
 
-            <div className="p-3 sm:p-3.5 rounded-xl bg-bg border border-line hover-gold-glow transition-all duration-300 min-w-0">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-panel-elevated border border-line hover-gold-glow transition-all duration-300 min-w-0">
               <div className="text-[10px] sm:text-[11px] font-mono text-dim uppercase truncate">Total Paket</div>
               <div className="text-lg sm:text-2xl font-extrabold text-text mt-1 truncate">{client.pkg_total} Sesi</div>
               <div className="text-[10px] text-dim mt-0.5 truncate">Paket aktif</div>
             </div>
 
-            <div className="p-3 sm:p-3.5 rounded-xl bg-bg border border-line hover-gold-glow transition-all duration-300 min-w-0">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-panel-elevated border border-line hover-gold-glow transition-all duration-300 min-w-0">
               <div className="text-[10px] sm:text-[11px] font-mono text-dim uppercase truncate">Sisa Kuota</div>
               <div className={`text-lg sm:text-2xl font-extrabold mt-1 truncate ${isUrgentUpsell ? 'text-amber-400' : 'text-accent'}`}>
                 {remainingSessions <= 0 ? 'Habis (0)' : `${remainingSessions} Sesi`}
@@ -473,7 +473,7 @@ function ClientDetail() {
               </div>
             </div>
 
-            <div className="p-3 sm:p-3.5 rounded-xl bg-bg border border-line hover-gold-glow transition-all duration-300 min-w-0">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-panel-elevated border border-line hover-gold-glow transition-all duration-300 min-w-0">
               <div className="text-[10px] sm:text-[11px] font-mono text-dim uppercase truncate">Rata-Rata RPE</div>
               <div className="text-lg sm:text-2xl font-extrabold text-text mt-1 truncate">{avgRpeValue} / 10</div>
               <div className="text-[10px] text-dim mt-0.5 truncate">Intensitas rata-rata</div>
@@ -514,7 +514,7 @@ function ClientDetail() {
                 )}`}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shrink-0 text-center shadow-[0_2px_10px_rgba(212,175,55,0.25)] btn-interactive"
+                className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shrink-0 text-center shadow-[0_2px_10px_rgba(226,232,0,0.25)] btn-interactive"
               >
                 Kirim Penawaran WA
               </a>
@@ -528,7 +528,7 @@ function ClientDetail() {
             onClick={() => setActiveTab('sessions')}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 btn-interactive ${
               activeTab === 'sessions'
-                ? 'bg-accent text-black font-bold shadow-[0_2px_12px_rgba(212,175,55,0.3)] scale-[1.02]'
+                ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.3)] scale-[1.02]'
                 : 'text-dim hover:text-text bg-panel border border-line hover:border-accent/40'
             }`}
           >
@@ -539,7 +539,7 @@ function ClientDetail() {
             onClick={() => setActiveTab('charts')}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 btn-interactive ${
               activeTab === 'charts'
-                ? 'bg-accent text-black font-bold shadow-[0_2px_12px_rgba(212,175,55,0.3)] scale-[1.02]'
+                ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.3)] scale-[1.02]'
                 : 'text-dim hover:text-text bg-panel border border-line hover:border-accent/40'
             }`}
           >
@@ -550,7 +550,7 @@ function ClientDetail() {
             onClick={() => setActiveTab('schedule')}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 btn-interactive ${
               activeTab === 'schedule'
-                ? 'bg-accent text-black font-bold shadow-[0_2px_12px_rgba(212,175,55,0.3)] scale-[1.02]'
+                ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.3)] scale-[1.02]'
                 : 'text-dim hover:text-text bg-panel border border-line hover:border-accent/40'
             }`}
           >
@@ -561,7 +561,7 @@ function ClientDetail() {
             onClick={() => setActiveTab('photos')}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 btn-interactive ${
               activeTab === 'photos'
-                ? 'bg-accent text-black font-bold shadow-[0_2px_12px_rgba(212,175,55,0.3)] scale-[1.02]'
+                ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.3)] scale-[1.02]'
                 : 'text-dim hover:text-text bg-panel border border-line hover:border-accent/40'
             }`}
           >
@@ -572,7 +572,7 @@ function ClientDetail() {
             onClick={() => setActiveTab('info')}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 btn-interactive ${
               activeTab === 'info'
-                ? 'bg-accent text-black font-bold shadow-[0_2px_12px_rgba(212,175,55,0.3)] scale-[1.02]'
+                ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.3)] scale-[1.02]'
                 : 'text-dim hover:text-text bg-panel border border-line hover:border-accent/40'
             }`}
           >
@@ -630,7 +630,7 @@ function ClientDetail() {
                 </p>
                 <a
                   href={`/clients/${client.id}/log`}
-                  className="inline-block bg-accent hover:bg-accent/90 text-black text-xs font-semibold px-4 py-2 rounded-xl"
+                  className="inline-block bg-accent hover:bg-accent/90 text-[#141414] text-xs font-semibold px-4 py-2 rounded-xl"
                 >
                   + Catat Sesi Latihan Pertama
                 </a>
@@ -839,7 +839,7 @@ function ClientDetail() {
               </div>
               <button
                 onClick={() => setIsScheduleModalOpen(true)}
-                className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 btn-interactive shadow-[0_2px_10px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.4)] w-full sm:w-auto shrink-0"
+                className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 btn-interactive shadow-[0_2px_10px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] w-full sm:w-auto shrink-0"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Tambah Jadwal Klien</span>
@@ -918,7 +918,7 @@ function ClientDetail() {
                 <p className="text-xs text-dim">Dokumentasikan bentuk fisik dan progres visual klien</p>
               </div>
 
-              <label className="bg-accent hover:bg-accent/90 text-black font-semibold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all shadow-[0_2px_10px_rgba(212,175,55,0.2)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.35)] flex items-center justify-center gap-1.5 btn-interactive w-full sm:w-auto shrink-0">
+              <label className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all shadow-[0_2px_10px_rgba(226,232,0,0.2)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.35)] flex items-center justify-center gap-1.5 btn-interactive w-full sm:w-auto shrink-0">
                 <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Unggah Foto Baru</span>
                 <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onUpload} />
@@ -1167,7 +1167,7 @@ function ClientDetail() {
                   <button
                     type="submit"
                     disabled={editSubmitting}
-                    className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.4)] transition-all btn-interactive"
+                    className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all btn-interactive"
                   >
                     {editSubmitting ? 'Menyimpan…' : 'Simpan Perubahan'}
                   </button>
@@ -1238,7 +1238,7 @@ function ClientDetail() {
                   <button
                     type="submit"
                     disabled={schedSubmitting}
-                    className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-black font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_16px_rgba(212,175,55,0.4)] transition-all btn-interactive"
+                    className="bg-accent hover:bg-accent/90 disabled:opacity-50 text-[#141414] font-semibold px-5 py-2.5 rounded-xl text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all btn-interactive"
                   >
                     {schedSubmitting ? 'Menyimpan…' : 'Simpan Jadwal'}
                   </button>
