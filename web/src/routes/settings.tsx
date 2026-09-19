@@ -365,7 +365,7 @@ function PlatformSettingsPage() {
       activeRoute="settings"
     >
       <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
-        <div className="w-full max-w-6xl mx-auto space-y-6 animate-fade-in">
+        <div className="w-full space-y-6 animate-fade-in">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-panel border border-line">
           <div>
@@ -1056,7 +1056,7 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 5: KONTAK & FOOTER ─── */}
         {activeTab === 'contact' && (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             <form
               onSubmit={handleSaveContact}
               className="p-6 rounded-2xl bg-panel border border-line space-y-5"

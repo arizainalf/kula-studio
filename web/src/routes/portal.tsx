@@ -166,7 +166,7 @@ function ClientPortalPage() {
     client.pkg_total > 0 ? Math.min(100, Math.round((client.pkg_used / client.pkg_total) * 100)) : 0
 
   return (
-    <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased pb-24 sm:pb-12">
+    <div className="relative z-10 text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased pb-24 sm:pb-12">
       {/* ── 1. Top Global Navigation Bar ── */}
       <header className="sticky top-0 z-40 bg-panel/80 backdrop-blur-2xl border-b border-line shadow-sm">
         <div className="mx-auto max-w-5xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">

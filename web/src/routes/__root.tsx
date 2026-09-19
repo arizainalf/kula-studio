@@ -1,5 +1,11 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { AmbientBackground } from '../components/AmbientBackground'
 
 export const Route = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <AmbientBackground />
+      <Outlet />
+    </>
+  ),
 })

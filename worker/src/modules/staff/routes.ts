@@ -27,15 +27,32 @@ staff.post('/invite', requireRole('manager', 'admin_studio', 'platform_admin'), 
   const inviter = c.get('user');
   if (inviter.email === parsed.data.email) return c.json({ error: 'self_invite' }, 400);
 
-  const assignedRole = inviter.role === 'platform_admin'
-    ? parsed.data.role
-    : inviter.role === 'admin_studio'
-      ? parsed.data.role
-      : 'pt';
+  // Validasi hierarki pembuatan akun ketat: hanya bisa menambah role di bawahnya
+  let assignedRole: 'admin_studio' | 'manager' | 'pt';
+  if (inviter.role === 'platform_admin') {
+    assignedRole = parsed.data.role;
+  } else if (inviter.role === 'admin_studio') {
+    if (parsed.data.role !== 'manager' && parsed.data.role !== 'pt') {
+      return c.json({ error: 'forbidden_role', message: 'Admin Studio hanya dapat mendaftarkan akun di bawahnya (Manager atau PT)' }, 403);
+    }
+    assignedRole = parsed.data.role;
+  } else if (inviter.role === 'manager') {
+    if (parsed.data.role !== 'pt') {
+      return c.json({ error: 'forbidden_role', message: 'Manager hanya dapat mendaftarkan akun di bawahnya (PT)' }, 403);
+    }
+    assignedRole = 'pt';
+  } else {
+    return c.json({ error: 'forbidden' }, 403);
+  }
 
-  const assignedStudioId = inviter.role === 'platform_admin'
-    ? (parsed.data.studio_id ?? null)
-    : inviter.studio_id;
+  // Validasi studio assignment: Platform admin wajib memilih studio
+  let assignedStudioId = inviter.studio_id;
+  if (inviter.role === 'platform_admin') {
+    if (!parsed.data.studio_id) {
+      return c.json({ error: 'studio_required', message: 'Platform Admin wajib memilih Studio Gym tujuan penugasan akun' }, 400);
+    }
+    assignedStudioId = parsed.data.studio_id;
+  }
 
   const sql = db(c);
   const exists = await sql`select 1 from users where email = ${parsed.data.email}`;
@@ -149,8 +166,11 @@ staff.patch('/:id', requireRole('manager', 'admin_studio', 'platform_admin'), as
     const owns = await sql`select 1 from staff_profile where user_id = ${id} and manager_id = ${u.id}`;
     if (!owns.length) return c.json({ error: 'forbidden' }, 403);
   } else if (u.role === 'admin_studio') {
-    const [target] = await sql`select studio_id from users where id = ${id}`;
+    const [target] = await sql`select role, studio_id from users where id = ${id}`;
     if (!target || target.studio_id !== u.studio_id) return c.json({ error: 'forbidden' }, 403);
+    if (target.role === 'admin_studio' && id !== u.id) {
+      return c.json({ error: 'forbidden', message: 'Tidak dapat mengubah akun Admin Studio lain.' }, 403);
+    }
   }
 
   if (d.email) {
@@ -159,7 +179,17 @@ staff.patch('/:id', requireRole('manager', 'admin_studio', 'platform_admin'), as
   }
 
   const pwdHash = d.password ? hashPassword(d.password) : null;
-  const newRole = (u.role === 'admin_studio' || u.role === 'platform_admin') ? d.role : undefined;
+  let newRole: string | undefined = undefined;
+  if (u.role === 'platform_admin') {
+    newRole = d.role;
+  } else if (u.role === 'admin_studio') {
+    if (d.role) {
+      if (d.role !== 'manager' && d.role !== 'pt') {
+        return c.json({ error: 'forbidden', message: 'Admin Studio hanya dapat mengatur role Manager atau PT.' }, 403);
+      }
+      newRole = d.role;
+    }
+  }
 
   if (d.spec !== undefined) {
     await sql`
@@ -196,8 +226,9 @@ staff.delete('/:id', requireRole('admin_studio', 'platform_admin'), async (c) =>
 
   const sql = db(c);
   if (u.role === 'admin_studio') {
-    const [target] = await sql`select studio_id from users where id = ${id}`;
+    const [target] = await sql`select role, studio_id from users where id = ${id}`;
     if (!target || target.studio_id !== u.studio_id) return c.json({ error: 'forbidden' }, 403);
+    if (target.role === 'admin_studio') return c.json({ error: 'forbidden', message: 'Tidak dapat menghapus akun Admin Studio.' }, 403);
   }
   const res = await sql`delete from users where id = ${id}`;
   return res.count ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);

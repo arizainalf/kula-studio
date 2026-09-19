@@ -568,7 +568,7 @@ export function AppLayout({
 
   return (
     <AppLayoutContext.Provider value={contextValue}>
-      <div className="bg-bg text-text min-h-dvh flex font-sans antialiased selection:bg-accent/30 selection:text-text">
+      <div className="relative z-10 text-text min-h-dvh flex font-sans antialiased selection:bg-accent/30 selection:text-text">
         {/* ── 1. Desktop Fixed Left Sidebar ── */}
         <aside
           className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-30 bg-panel/80 backdrop-blur-2xl border-r border-line shadow-[4px_0_30px_rgba(0,0,0,0.3)] transition-all duration-300 ease-in-out ${

@@ -90,7 +90,7 @@ function LoginPage() {
   }
 
   return (
-    <main className="bg-bg text-text min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-accent/30 selection:text-text font-sans antialiased">
+    <main className="relative z-10 text-text min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-accent/30 selection:text-text font-sans antialiased">
       <div className="w-full max-w-sm mb-4 flex items-center justify-between animate-fade-in">
         <a
           href="/"

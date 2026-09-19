@@ -52,6 +52,8 @@ export function AdminUsersModal({
   const [addEmail, setAddEmail] = useState('')
   const [addPassword, setAddPassword] = useState('')
   const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
+  const [addStudioId, setAddStudioId] = useState('')
+  const [studios, setStudios] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [addSpec, setAddSpec] = useState('')
   const [addPlanTier, setAddPlanTier] = useState<'standard' | 'pro'>('standard')
   const [addAvatarUrl, setAddAvatarUrl] = useState('')
@@ -60,6 +62,14 @@ export function AdminUsersModal({
 
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+
+  useEffect(() => {
+    if (isOpen && currentUser.role === 'platform_admin') {
+      api<{ studios: Array<{ id: string; name: string; slug: string }> }>('/platform/studios')
+        .then((res) => setStudios(res.studios || []))
+        .catch(() => {})
+    }
+  }, [isOpen, currentUser.role])
 
   const isAdmin = currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
 
@@ -194,14 +204,23 @@ export function AdminUsersModal({
         throw new Error('Password minimal 6 karakter.')
       }
 
+      if (currentUser.role === 'platform_admin' && !addStudioId) {
+        throw new Error('Pilih Studio Gym rekanan tujuan penugasan akun ini.')
+      }
+
       const payload: Record<string, any> = {
         name: addName.trim(),
         email: addEmail.trim().toLowerCase(),
         password: addPassword,
-        role: isAdmin ? addRole : 'pt',
+        role: currentUser.role === 'platform_admin'
+          ? addRole
+          : currentUser.role === 'admin_studio'
+            ? addRole
+            : 'pt',
         spec: addSpec.trim() || undefined,
         plan_tier: addPlanTier,
         avatar_url: addAvatarUrl.trim() || null,
+        studio_id: currentUser.role === 'platform_admin' ? addStudioId : undefined,
       }
 
       const res = await api<{ pt: User }>('/staff/invite', {
@@ -215,6 +234,7 @@ export function AdminUsersModal({
       setAddName('')
       setAddEmail('')
       setAddPassword('')
+      setAddStudioId('')
       setAddSpec('')
       setAddAvatarUrl('')
       setTimeout(() => setSuccessMsg(''), 3500)
@@ -418,15 +438,24 @@ export function AdminUsersModal({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1 font-semibold">Role Pengguna</label>
-                  {isAdmin ? (
+                  {currentUser.role === 'platform_admin' ? (
                     <select
                       value={editRole}
                       onChange={(e) => setEditRole(e.target.value as any)}
                       className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
                     >
-                      <option value="pt">Personal Trainer (PT)</option>
-                      <option value="manager">Manager Studio</option>
                       <option value="admin_studio">Admin Studio</option>
+                      <option value="manager">Manager Studio</option>
+                      <option value="pt">Personal Trainer (PT)</option>
+                    </select>
+                  ) : currentUser.role === 'admin_studio' ? (
+                    <select
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value as any)}
+                      className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
+                    >
+                      <option value="manager">Manager Studio</option>
+                      <option value="pt">Personal Trainer (PT)</option>
                     </select>
                   ) : (
                     <div className="px-3 py-2 bg-panel border border-line rounded-xl text-dim font-mono uppercase text-xs">
@@ -636,6 +665,29 @@ export function AdminUsersModal({
                 </div>
               </div>
 
+              {/* Studio Selection for Platform Admin */}
+              {currentUser.role === 'platform_admin' && (
+                <div className="p-3.5 rounded-xl bg-accent/10 border border-accent/30 space-y-1.5">
+                  <label className="text-accent font-semibold font-mono uppercase text-[11px] flex items-center justify-between">
+                    <span>Studio Gym Rekanan Tujuan Penugasan *</span>
+                    <span className="text-[10px] text-dim lowercase">Wajib dipilih</span>
+                  </label>
+                  <select
+                    required
+                    value={addStudioId}
+                    onChange={(e) => setAddStudioId(e.target.value)}
+                    className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm font-semibold"
+                  >
+                    <option value="">-- Pilih Studio Gym Rekanan --</option>
+                    {studios.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.slug})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1 font-semibold">Password Akun</label>
@@ -651,15 +703,24 @@ export function AdminUsersModal({
 
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1 font-semibold">Role Pengguna</label>
-                  {isAdmin ? (
+                  {currentUser.role === 'platform_admin' ? (
                     <select
                       value={addRole}
                       onChange={(e) => setAddRole(e.target.value as any)}
                       className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
                     >
-                      <option value="pt">Personal Trainer (PT)</option>
-                      <option value="manager">Manager Studio</option>
                       <option value="admin_studio">Admin Studio</option>
+                      <option value="manager">Manager Studio</option>
+                      <option value="pt">Personal Trainer (PT)</option>
+                    </select>
+                  ) : currentUser.role === 'admin_studio' ? (
+                    <select
+                      value={addRole}
+                      onChange={(e) => setAddRole(e.target.value as any)}
+                      className="w-full bg-panel border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
+                    >
+                      <option value="manager">Manager Studio</option>
+                      <option value="pt">Personal Trainer (PT)</option>
                     </select>
                   ) : (
                     <div className="px-3 py-2 bg-panel border border-line rounded-xl text-dim font-mono uppercase text-xs">

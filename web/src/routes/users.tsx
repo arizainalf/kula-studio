@@ -40,16 +40,25 @@ export const Route = createFileRoute('/users')({
       api<{ staff: User[] }>('/staff').catch(() => ({ staff: [] })),
     ])
 
+    let studios: Array<{ id: string; name: string; slug: string }> = []
+    if (meRes.user.role === 'platform_admin') {
+      try {
+        const res = await api<{ studios: Array<{ id: string; name: string; slug: string }> }>('/platform/studios')
+        studios = res.studios || []
+      } catch {}
+    }
+
     return {
       currentUser: meRes.user,
       initialStaff: staffRes.staff || [],
+      studios,
     }
   },
   component: UsersPage,
 })
 
 function UsersPage() {
-  const { currentUser: initialUser, initialStaff } = Route.useLoaderData()
+  const { currentUser: initialUser, initialStaff, studios = [] } = Route.useLoaderData()
   const [currentUser, setCurrentUser] = useState<User>(initialUser)
   const [usersList, setUsersList] = useState<User[]>(initialStaff)
 
@@ -70,6 +79,7 @@ function UsersPage() {
   const [addEmail, setAddEmail] = useState('')
   const [addPassword, setAddPassword] = useState('')
   const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
+  const [addStudioId, setAddStudioId] = useState('')
   const [addSpec, setAddSpec] = useState('')
   const [addPlanTier, setAddPlanTier] = useState<'standard' | 'pro'>('standard')
   const [addAvatarUrl, setAddAvatarUrl] = useState('')
@@ -194,14 +204,23 @@ function UsersPage() {
     setErrorMsg('')
 
     try {
+      if (currentUser.role === 'platform_admin' && !addStudioId) {
+        throw new Error('Pilih Studio Gym rekanan tujuan penugasan akun ini.')
+      }
+
       const payload: Record<string, any> = {
         name: addName.trim(),
         email: addEmail.trim().toLowerCase(),
         password: addPassword,
-        role: isAdmin ? addRole : 'pt',
+        role: currentUser.role === 'platform_admin'
+          ? addRole
+          : currentUser.role === 'admin_studio'
+            ? addRole
+            : 'pt',
         spec: addSpec.trim() || undefined,
         plan_tier: addPlanTier,
         avatar_url: addAvatarUrl.trim() || null,
+        studio_id: currentUser.role === 'platform_admin' ? addStudioId : undefined,
       }
 
       const res = await api<{ pt: User }>('/staff/invite', {
@@ -215,6 +234,7 @@ function UsersPage() {
       setAddName('')
       setAddEmail('')
       setAddPassword('')
+      setAddStudioId('')
       setAddSpec('')
       setAddAvatarUrl('')
       setTimeout(() => setSuccessMsg(''), 3500)
@@ -661,8 +681,31 @@ function UsersPage() {
                 />
               </div>
 
+              {/* Studio Selection for Platform Admin */}
+              {currentUser.role === 'platform_admin' && (
+                <div className="p-3.5 rounded-xl bg-accent/10 border border-accent/30 space-y-1.5">
+                  <label className="text-accent font-semibold font-mono uppercase text-[11px] flex items-center justify-between">
+                    <span>Studio Gym Tujuan Penugasan *</span>
+                    <span className="text-[10px] text-dim lowercase">Wajib dipilih</span>
+                  </label>
+                  <select
+                    required
+                    value={addStudioId}
+                    onChange={(e) => setAddStudioId(e.target.value)}
+                    className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm font-semibold"
+                  >
+                    <option value="">-- Pilih Studio Gym Rekanan --</option>
+                    {studios.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.slug})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {isAdmin ? (
+                {currentUser.role === 'platform_admin' ? (
                   <div>
                     <label className="text-dim block font-mono uppercase mb-1 font-semibold">
                       Peran / Role Pengguna
@@ -672,9 +715,23 @@ function UsersPage() {
                       onChange={(e) => setAddRole(e.target.value as any)}
                       className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
                     >
-                      <option value="pt">Personal Trainer (PT)</option>
-                      <option value="manager">Manager Operasional</option>
                       <option value="admin_studio">Admin Studio Gym</option>
+                      <option value="manager">Manager Studio</option>
+                      <option value="pt">Personal Trainer (PT)</option>
+                    </select>
+                  </div>
+                ) : currentUser.role === 'admin_studio' ? (
+                  <div>
+                    <label className="text-dim block font-mono uppercase mb-1 font-semibold">
+                      Peran / Role Pengguna
+                    </label>
+                    <select
+                      value={addRole}
+                      onChange={(e) => setAddRole(e.target.value as any)}
+                      className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
+                    >
+                      <option value="manager">Manager Studio</option>
+                      <option value="pt">Personal Trainer (PT)</option>
                     </select>
                   </div>
                 ) : (
