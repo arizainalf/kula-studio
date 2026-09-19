@@ -848,7 +848,7 @@ export function AdminUsersModal({
                               <span
                                 className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${
                                   u.role === 'admin_studio' || (u.role as string) === 'admin'
-                                    ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
+                                    ? 'bg-accent/15 text-accent border border-accent/30'
                                     : u.role === 'manager'
                                       ? 'bg-sky-400/15 text-sky-300 border border-sky-400/30'
                                       : 'bg-accent/15 text-accent border border-accent/30'

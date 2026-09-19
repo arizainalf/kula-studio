@@ -108,7 +108,7 @@ export function ThemeToggle({
     >
       {theme === 'dark' ? (
         <>
-          <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0 transition-transform duration-300 hover:rotate-45" />
+          <Sun className="w-3.5 h-3.5 text-accent shrink-0 transition-transform duration-300 hover:rotate-45" />
           {showLabel && <span>Mode Terang</span>}
         </>
       ) : (

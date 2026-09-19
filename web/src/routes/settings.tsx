@@ -365,18 +365,18 @@ function PlatformSettingsPage() {
       activeRoute="settings"
     >
       <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
-        <div className="w-full space-y-6 animate-fade-in">
+        <div className="w-full max-w-6xl mx-auto space-y-6 animate-fade-in">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-panel border border-line">
           <div>
             <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-amber-400/20 text-amber-400">
+              <span className="p-2 rounded-xl bg-accent/15 text-accent">
                 <Sliders className="w-5 h-5" />
               </span>
               <h1 className="text-xl sm:text-2xl font-black text-text tracking-tight">
                 Identitas &amp; Landing Page SaaS
               </h1>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/30 uppercase">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/25 uppercase">
                 Platform Admin
               </span>
             </div>
@@ -523,7 +523,7 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 1: IDENTITAS UTAMA & HERO ─── */}
         {activeTab === 'identity' && (
-          <div className="grid lg:grid-cols-12 gap-6">
+          <div className="grid lg:grid-cols-12 gap-6 items-start">
             {/* Form Column */}
             <div className="lg:col-span-7">
               <form
@@ -1056,7 +1056,7 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 5: KONTAK & FOOTER ─── */}
         {activeTab === 'contact' && (
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mx-auto">
             <form
               onSubmit={handleSaveContact}
               className="p-6 rounded-2xl bg-panel border border-line space-y-5"

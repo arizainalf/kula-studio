@@ -314,7 +314,7 @@ function StudiosPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line/40 pb-5">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-400/20 text-amber-400 border border-amber-400/30 flex items-center gap-1">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/25 flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" />
                   SAAS SUPERADMIN
                 </span>

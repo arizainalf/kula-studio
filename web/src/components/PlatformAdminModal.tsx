@@ -263,7 +263,7 @@ export function PlatformAdminModal({
         {/* Header Modal */}
         <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between bg-panel-elevated/40 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
               <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
@@ -271,7 +271,7 @@ export function PlatformAdminModal({
                 <h3 className="text-base sm:text-lg font-extrabold text-text tracking-tight">
                   Manajemen Platform Multi-Tenant (SaaS)
                 </h3>
-                <span className="text-[10px] font-mono font-bold uppercase bg-amber-400/15 text-amber-400 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono font-bold uppercase bg-accent/15 text-accent border border-accent/30 px-2 py-0.5 rounded-full">
                   PLATFORM ADMIN
                 </span>
               </div>
@@ -372,7 +372,7 @@ export function PlatformAdminModal({
 
                   <div className="p-3.5 rounded-xl bg-panel border border-line flex flex-col justify-between">
                     <span className="text-[11px] font-mono uppercase text-dim flex items-center gap-1">
-                      <Dumbbell className="w-3 h-3 text-amber-400" /> Total PT
+                      <Dumbbell className="w-3 h-3 text-accent" /> Total PT
                     </span>
                     <span className="text-xl sm:text-2xl font-bold font-mono text-text mt-1">
                       {overview.total_pts}
@@ -537,7 +537,7 @@ export function PlatformAdminModal({
                               <span
                                 className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded font-semibold ${
                                   st.role === 'admin_studio' || (st.role as string) === 'admin'
-                                    ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
+                                    ? 'bg-accent/15 text-accent border border-accent/25'
                                     : st.role === 'manager'
                                       ? 'bg-sky-400/20 text-sky-400 border border-sky-400/30'
                                       : 'bg-emerald-400/20 text-emerald-400 border border-emerald-400/30'

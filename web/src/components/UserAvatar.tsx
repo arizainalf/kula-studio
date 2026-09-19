@@ -47,7 +47,7 @@ export function UserAvatar({
   const getRoleBorderColor = () => {
     switch (role) {
       case 'platform_admin':
-        return 'border-amber-400/50 text-amber-400 bg-amber-400/10'
+        return 'border-accent/50 text-accent bg-accent/10'
       case 'admin_studio':
       case 'admin':
         return 'border-accent/50 text-accent bg-panel'
@@ -89,7 +89,7 @@ export function UserAvatar({
         <span
           className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-panel ${
             role === 'platform_admin'
-              ? 'bg-amber-400'
+              ? 'bg-accent'
               : role === 'admin_studio' || role === 'admin'
                 ? 'bg-accent'
                 : role === 'manager'

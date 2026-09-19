@@ -115,7 +115,7 @@ function NewClient() {
                     <span>Pilih PT Penanggung Jawab</span>
                     <span className="text-accent">*</span>
                   </label>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-accent/15 text-accent border border-accent/25">
                     Fitur {currentUser.role.toUpperCase()}
                   </span>
                 </div>

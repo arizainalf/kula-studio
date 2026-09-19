@@ -446,7 +446,7 @@ function UsersPage() {
                             <span
                               className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 uppercase ${
                                 isSuper
-                                  ? 'bg-amber-400/20 text-amber-400 border border-amber-400/40'
+                                  ? 'bg-accent/15 text-accent border border-accent/30'
                                   : isStudioAdmin
                                     ? 'bg-accent/15 text-accent border border-accent/30'
                                     : isManager
@@ -455,7 +455,7 @@ function UsersPage() {
                               }`}
                             >
                               {isSuper ? (
-                                <ShieldCheck className="w-3 h-3 text-amber-400" />
+                                <ShieldCheck className="w-3 h-3 text-accent" />
                               ) : isStudioAdmin ? (
                                 <Shield className="w-3 h-3 text-accent" />
                               ) : isManager ? (

@@ -916,7 +916,7 @@ function ClientPortalPage() {
             title="Ubah Tema"
           >
             {theme === 'dark' ? (
-              <Sun className="w-5 h-5 mb-1 text-amber-400" />
+              <Sun className="w-5 h-5 mb-1 text-accent" />
             ) : (
               <Moon className="w-5 h-5 mb-1 text-indigo-400" />
             )}
