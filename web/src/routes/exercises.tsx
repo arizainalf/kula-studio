@@ -509,7 +509,7 @@ function ExercisesPage() {
       {/* ── Modal: Tambah Gerakan Baru ── */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
@@ -612,7 +612,7 @@ function ExercisesPage() {
       {/* ── Modal: Edit Gerakan ── */}
       {editingExercise && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <h3 className="font-bold text-base text-text">Edit Data Gerakan</h3>
               <button
@@ -694,7 +694,7 @@ function ExercisesPage() {
       {/* ── Modal: Kelola Kategori Gerakan ── */}
       {isCategoriesModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <FolderPlus className="w-5 h-5 text-accent" />

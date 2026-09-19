@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User, type Studio } from '../lib/api'
 import { AppLayout } from '../components/AppLayout'
@@ -83,6 +83,12 @@ function StudiosPage() {
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('action=new')) {
+      setIsAddModalOpen(true)
+    }
+  }, [])
   const [editingStudio, setEditingStudio] = useState<Studio | null>(null)
   const [selectedStudio, setSelectedStudio] = useState<Studio | null>(null)
   const [studioStaff, setStudioStaff] = useState<any[]>([])
@@ -299,6 +305,7 @@ function StudiosPage() {
     <AppLayout
       currentUser={currentUser}
       activeRoute="studios"
+      onAddStudioClick={() => setIsAddModalOpen(true)}
       onProfileUpdated={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
     >
       <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
@@ -586,10 +593,10 @@ function StudiosPage() {
       {/* ── Modal: Tambah Studio Baru ── */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                 </div>
                 <h3 className="font-bold text-base text-text">Daftarkan Studio Gym Baru</h3>
@@ -767,7 +774,7 @@ function StudiosPage() {
       {/* ── Modal: Edit Studio ── */}
       {editingStudio && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <h3 className="font-bold text-base text-text">Edit Informasi Studio</h3>
               <button
@@ -871,7 +878,7 @@ function StudiosPage() {
       {/* ── Modal: Detail & Staf Studio ── */}
       {selectedStudio && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <div>
                 <h3 className="font-bold text-base text-text">{selectedStudio.name}</h3>

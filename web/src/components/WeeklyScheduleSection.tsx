@@ -430,7 +430,7 @@ export function WeeklyScheduleSection({
       {/* ── 4. Luxury Modal: Add New Schedule ── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] relative max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] relative max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-4">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />

@@ -318,7 +318,7 @@ export function LandingPage({
 
         <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center relative z-10 animate-fade-in-up">
           {/* Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-panel border border-accent/30 text-accent text-xs font-mono tracking-wider uppercase mb-6 shadow-[0_0_20px_rgba(212,175,55,0.08)]">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-panel border border-accent/30 text-accent text-xs font-mono tracking-wider uppercase mb-6 shadow-[0_0_20px_rgba(226,232,0,0.15)]">
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             {heroPill}
           </div>
@@ -326,7 +326,7 @@ export function LandingPage({
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-text leading-[1.12] mb-6">
             {heroHeadline}{' '}
-            <span className="block mt-1 bg-gradient-to-r from-[#f4f4f6] via-accent to-[#c5a059] bg-clip-text text-transparent">
+            <span className="block mt-1 bg-gradient-to-r from-text via-accent to-accent-hover bg-clip-text text-transparent">
               {heroGradient}
             </span>
           </h1>

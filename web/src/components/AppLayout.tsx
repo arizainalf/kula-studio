@@ -65,6 +65,7 @@ export interface AppLayoutProps {
   clientId?: string
   canLogSession?: boolean
   onScheduleClick?: () => void
+  onAddStudioClick?: () => void
 }
 
 export function AppLayout({
@@ -75,6 +76,7 @@ export function AppLayout({
   clientId,
   canLogSession,
   onScheduleClick,
+  onAddStudioClick,
 }: AppLayoutProps) {
   const location = useLocation()
   const pathname = location.pathname
@@ -210,7 +212,7 @@ export function AppLayout({
               }
             >
               {user.role === 'platform_admin' ? (
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <ShieldCheck className="w-4 h-4 text-accent" />
               ) : (
                 <Building2 className="w-4 h-4 text-accent" />
               )}
@@ -221,12 +223,12 @@ export function AppLayout({
             <div className="p-2.5 rounded-xl bg-bg border border-line/50">
               {user.role === 'platform_admin' ? (
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[11px] font-bold text-text truncate">Platform SaaS</div>
-                    <div className="text-[9px] font-mono text-amber-400 font-bold uppercase tracking-wider">
+                    <div className="text-[9px] font-mono text-accent font-bold uppercase tracking-wider">
                       Superadmin
                     </div>
                   </div>
@@ -332,16 +334,16 @@ export function AppLayout({
                       : 'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
                   } ${
                     isStudios
-                      ? 'bg-amber-400/20 text-amber-300 font-bold border border-amber-400/40 shadow-sm'
-                      : 'text-dim hover:text-amber-300 hover:bg-amber-400/10'
+                      ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
+                      : 'text-dim hover:text-text hover:bg-panel-elevated/70'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                    <ShieldCheck className={`w-4 h-4 shrink-0 ${isStudios ? 'text-[#141414]' : 'text-accent'}`} />
                     {!isCollapsedDesktop && <span>Kelola Studio</span>}
                   </div>
                   {!isCollapsedDesktop && (
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-400">
+                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${isStudios ? 'bg-[#141414]/20 text-[#141414]' : 'bg-accent/15 text-accent border border-accent/25'}`}>
                       SAAS
                     </span>
                   )}
@@ -356,16 +358,16 @@ export function AppLayout({
                       : 'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
                   } ${
                     isSettings
-                      ? 'bg-amber-400/20 text-amber-300 font-bold border border-amber-400/40 shadow-sm'
-                      : 'text-dim hover:text-amber-300 hover:bg-amber-400/10'
+                      ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
+                      : 'text-dim hover:text-text hover:bg-panel-elevated/70'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Sliders className="w-4 h-4 text-amber-400 shrink-0" />
+                    <Sliders className={`w-4 h-4 shrink-0 ${isSettings ? 'text-[#141414]' : 'text-accent'}`} />
                     {!isCollapsedDesktop && <span>Identitas &amp; SaaS</span>}
                   </div>
                   {!isCollapsedDesktop && (
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-400">
+                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${isSettings ? 'bg-[#141414]/20 text-[#141414]' : 'bg-accent/15 text-accent border border-accent/25'}`}>
                       CONFIG
                     </span>
                   )}
@@ -510,7 +512,7 @@ export function AppLayout({
             <span
               className={`inline-block w-full text-center text-[9px] font-mono font-bold px-2 py-0.5 rounded-md uppercase border ${
                 user.role === 'platform_admin'
-                  ? 'bg-amber-400/20 text-amber-400 border-amber-400/30'
+                  ? 'bg-accent/20 text-accent border-accent/30'
                   : user.role === 'admin_studio'
                     ? 'bg-accent/20 text-accent border-accent/30'
                     : user.role === 'manager'
@@ -626,6 +628,7 @@ export function AppLayout({
           clientId={clientId}
           canLogSession={canLogSession !== undefined ? canLogSession : user.role === 'pt'}
           onScheduleClick={onScheduleClick}
+          onAddStudioClick={onAddStudioClick}
           openExportPdf={() => setIsExportPdfOpen(true)}
           openEditProfile={() => setIsEditProfileOpen(true)}
           handleLogout={handleLogout}

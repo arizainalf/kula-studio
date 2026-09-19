@@ -256,17 +256,17 @@ export function AdminUsersModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
-      <div className="bg-panel border border-line rounded-2xl w-full max-w-4xl p-5 sm:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] flex flex-col animate-scale-in">
+      <div className="bg-panel border border-line rounded-2xl w-full max-w-4xl p-5 sm:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] flex flex-col animate-scale-in">
         {/* Header Modal */}
         <div className="flex items-center justify-between pb-4 border-b border-line shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent shadow-[0_0_12px_rgba(212,175,55,0.2)]">
+            <div className="w-10 h-10 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent shadow-[0_0_12px_rgba(226,232,0,0.2)]">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base text-text">Manajemen &amp; Edit Akun Pengguna</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase bg-accent/20 text-accent border border-accent/30">
                   {currentUser.role.toUpperCase()}
                 </span>
               </div>

@@ -454,7 +454,7 @@ function LogSession() {
 
         {/* Copy notification toast */}
         {copyNotice && (
-          <div className="p-3.5 rounded-xl bg-accent/15 border border-accent/40 text-accent text-xs font-medium flex items-center gap-2 animate-fade-in shadow-[0_0_20px_rgba(212,175,55,0.15)]">
+          <div className="p-3.5 rounded-xl bg-accent/15 border border-accent/40 text-accent text-xs font-medium flex items-center gap-2 animate-fade-in shadow-[0_0_20px_rgba(226,232,0,0.15)]">
             <Sparkles className="w-4 h-4" />
             <span>{copyNotice}</span>
           </div>

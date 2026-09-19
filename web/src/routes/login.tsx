@@ -251,7 +251,7 @@ function LoginPage() {
             <button
               type="button"
               onClick={() => fillDemo('platform_admin')}
-              className="px-2 py-1 rounded-md bg-amber-400/20 border border-amber-400/40 text-amber-300 hover:bg-amber-400/30 transition-colors font-bold"
+              className="px-2 py-1 rounded-md bg-accent/20 border border-accent/40 text-accent hover:bg-accent/30 transition-colors font-bold"
             >
               🛡️ Platform Admin
             </button>

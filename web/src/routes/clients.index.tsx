@@ -333,7 +333,7 @@ function ClientsDirectoryPage() {
                 const isUrgent = cl.pkg_total > 0 && remaining <= 3
                 return (
                   <li key={cl.id} style={{ animationDelay: `${idx * 40}ms` }} className="animate-fade-in-up">
-                    <div className="hover-gold-glow group rounded-2xl bg-panel border border-line p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_32px_rgba(212,175,55,0.2)] transition-all duration-300">
+                    <div className="hover-gold-glow group rounded-2xl bg-panel border border-line p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_32px_rgba(226,232,0,0.2)] transition-all duration-300">
                       <div>
                         {/* Top Client Header */}
                         <div className="flex items-start justify-between gap-2 mb-2">
@@ -385,7 +385,7 @@ function ClientsDirectoryPage() {
                               className={`h-full rounded-full transition-all duration-500 ${
                                 isUrgent
                                   ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]'
-                                  : 'bg-accent shadow-[0_0_10px_rgba(212,175,55,0.4)]'
+                                  : 'bg-accent shadow-[0_0_10px_rgba(226,232,0,0.4)]'
                               }`}
                               style={{ width: `${Math.min(pct, 100)}%` }}
                             />
@@ -454,7 +454,7 @@ function ClientsDirectoryPage() {
       {/* ── Modal: Tambah Klien Baru ── */}
       {isAddClientModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4 animate-fade-in">
-          <div className="bg-panel border border-line rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(212,175,55,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
+          <div className="bg-panel border border-line rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(226,232,0,0.12)] max-h-[90dvh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-5 border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
