@@ -7,6 +7,10 @@ export type ClientSummary = {
   avg_rpe?: number
   last_session_date?: string | null
   phone?: string | null
+  email?: string | null
+  pt_id?: string | null
+  pt_name?: string | null
+  pt_email?: string | null
 }
 
 export function StatCard({

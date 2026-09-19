@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
 import { LandingPage } from '../components/LandingPage'
 import {
@@ -8,8 +8,12 @@ import {
   RpeSpectrumCard,
   type ClientSummary,
 } from '../components/DashboardCharts'
-import { WeeklyScheduleSection } from '../components/WeeklyScheduleSection'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { MobileBottomNav } from '../components/MobileBottomNav'
+import { ExportPdfModal } from '../components/ExportPdfModal'
+import { AdminExerciseModal } from '../components/AdminExerciseModal'
+import { EditProfileModal } from '../components/EditProfileModal'
+import { AdminUsersModal } from '../components/AdminUsersModal'
 import {
   formatDate,
   formatShortDate,
@@ -27,8 +31,9 @@ import {
   Globe,
   MessageSquare,
   ArrowRight,
-  Search,
-  X,
+  Printer,
+  Dumbbell,
+  UserCog,
 } from 'lucide-react'
 
 export type Client = ClientSummary & {
@@ -61,6 +66,9 @@ export const Route = createFileRoute('/')({
   loader: async (): Promise<LoaderData> => {
     try {
       const meRes = await api<{ user: User }>('/auth/me')
+      if (meRes.user.role === 'client') {
+        throw redirect({ to: '/portal' })
+      }
 
       const today = getLocalTodayString()
       const nextWeekDate = getLocalFutureDateString(7)
@@ -75,7 +83,8 @@ export const Route = createFileRoute('/')({
         clients: clientsRes.clients,
         schedule: schedRes.schedule,
       }
-    } catch {
+    } catch (e) {
+      if (e && typeof e === 'object' && 'to' in e) throw e
       return { me: null, clients: [], schedule: [] }
     }
   },
@@ -92,9 +101,12 @@ function RootIndex() {
   return <Dashboard me={me} clients={clients} schedule={schedule} />
 }
 
-function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; schedule: ScheduleItem[] }) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [activeFilter, setActiveFilter] = useState<'all' | 'fat_loss' | 'muscle_gain' | 'general' | 'upsell'>('all')
+function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Client[]; schedule: ScheduleItem[] }) {
+  const [currentUser, setCurrentUser] = useState<User>(initialMe)
+  const [isExportPdfOpen, setIsExportPdfOpen] = useState(false)
+  const [isAdminExerciseOpen, setIsAdminExerciseOpen] = useState(false)
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+  const [isAdminUsersOpen, setIsAdminUsersOpen] = useState(false)
 
   async function logout() {
     await api('/auth/logout', { method: 'POST' })
@@ -111,23 +123,6 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
   const upsellClients = clients.filter((c) => {
     const remaining = c.pkg_total - c.pkg_used
     return c.pkg_total > 0 && remaining <= 3
-  })
-
-  // Filtered Clients list
-  const filteredClients = clients.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.phone && c.phone.includes(searchTerm)) ||
-      (c.notes && c.notes.toLowerCase().includes(searchTerm.toLowerCase()))
-
-    if (!matchesSearch) return false
-
-    if (activeFilter === 'all') return true
-    if (activeFilter === 'upsell') {
-      const remaining = c.pkg_total - c.pkg_used
-      return c.pkg_total > 0 && remaining <= 3
-    }
-    return c.goal === activeFilter
   })
 
   return (
@@ -150,9 +145,58 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
             </div>
           </a>
 
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-dim">
+            <Link to="/" className="text-accent font-bold">
+              Dashboard
+            </Link>
+            <Link to="/clients" className="hover:text-accent transition-colors">
+              Klien
+            </Link>
+            <Link to="/schedule" className="hover:text-accent transition-colors">
+              Jadwal
+            </Link>
+            {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+              <button
+                type="button"
+                onClick={() => setIsAdminUsersOpen(true)}
+                className="hover:text-accent transition-colors flex items-center gap-1.5 text-dim cursor-pointer"
+              >
+                <Users className="w-3.5 h-3.5 text-accent" />
+                <span>Kelola Akun</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsAdminExerciseOpen(true)}
+              className="hover:text-accent transition-colors flex items-center gap-1.5 text-dim cursor-pointer"
+            >
+              <Dumbbell className="w-3.5 h-3.5 text-accent" />
+              <span>Master Gerakan</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsExportPdfOpen(true)}
+              className="hover:text-accent transition-colors flex items-center gap-1.5 text-dim cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5 text-accent" />
+              <span>Laporan PDF</span>
+            </button>
+          </nav>
+
           {/* Quick Actions (Theme Toggle, Public Landing & Logout) */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle showLabel={false} />
+
+            <button
+              type="button"
+              onClick={() => setIsEditProfileOpen(true)}
+              className="btn-interactive text-dim hover:text-accent p-2 sm:px-3 sm:py-1.5 rounded-lg border border-line hover:border-accent/40 transition-colors flex items-center gap-1.5 text-xs font-mono"
+              title="Edit Profil Akun Saya"
+            >
+              <UserCog className="w-3.5 h-3.5 text-accent" />
+              <span className="hidden sm:inline">Edit Akun</span>
+            </button>
 
             <a
               href="/landing"
@@ -176,7 +220,7 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
       </header>
 
       {/* ── Main Dashboard Body ── */}
-      <main className="p-3.5 sm:p-8 md:p-10 pt-4 sm:pt-6">
+      <main className="p-3.5 sm:p-8 md:p-10 pt-4 sm:pt-6 pb-24 sm:pb-10">
         <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
           {/* ── 2. Coach Greeting & Hero Action Card ── */}
           <div className="hover-gold-glow p-4 sm:p-6 rounded-2xl bg-panel border border-line shadow-[0_4px_24px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 animate-fade-in">
@@ -184,7 +228,7 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
               {/* Coach Avatar with Online Badge */}
               <div className="relative shrink-0">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-extrabold text-base sm:text-lg shadow-[0_0_20px_rgba(212,175,55,0.18)]">
-                  {me.name.slice(0, 2).toUpperCase()}
+                  {currentUser.name.slice(0, 2).toUpperCase()}
                 </div>
                 <span
                   className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-panel animate-pulse"
@@ -205,33 +249,70 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
                   </span>
                 </div>
                 <h1 className="text-base sm:text-xl font-bold tracking-tight text-text truncate mt-0.5">
-                  Selamat Datang, {me.name}
+                  Selamat Datang, {currentUser.name}
                 </h1>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase">
-                    {me.role}
+                    {currentUser.role}
                   </span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-bg text-text border border-line">
-                    {me.plan_tier ? `${me.plan_tier.toUpperCase()} TIER` : 'STANDARD'}
+                    {currentUser.plan_tier ? `${currentUser.plan_tier.toUpperCase()} TIER` : 'STANDARD'}
                   </span>
-                  {me.expires_at && (
+                  {currentUser.expires_at && (
                     <span className="text-[10px] font-mono text-muted flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-dim" />
-                      <span>Aktif s/d {formatDate(me.expires_at)}</span>
+                      <span>Aktif s/d {formatDate(currentUser.expires_at)}</span>
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Primary Action Button */}
-            <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60">
+            {/* Action Buttons */}
+            <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60 flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsEditProfileOpen(true)}
+                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                title="Edit Profil dan Password Akun Saya"
+              >
+                <UserCog className="w-4 h-4 text-accent" />
+                <span>Edit Profil</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsAdminExerciseOpen(true)}
+                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                title="Kelola Master Gerakan & Kategori Latihan"
+              >
+                <Dumbbell className="w-4 h-4 text-accent" />
+                <span>Master Gerakan</span>
+                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
+                  currentUser.role === 'admin'
+                    ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
+                    : 'bg-bg text-dim border border-line'
+                }`}>
+                  {currentUser.role}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsExportPdfOpen(true)}
+                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                title="Cetak dan Ekspor Laporan Sesi Latihan ke PDF"
+              >
+                <Printer className="w-4 h-4 text-accent" />
+                <span>Cetak Laporan PDF</span>
+              </button>
+
               <a
                 href="/clients/new"
                 className="btn-interactive w-full sm:w-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 sm:px-5 text-sm font-bold text-black shadow-[0_2px_14px_rgba(212,175,55,0.25)] hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)] transition-all flex items-center justify-center gap-2"
               >
                 <UserPlus className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Tambah Klien Baru</span>
+                <span>+ Klien Baru</span>
               </a>
             </div>
           </div>
@@ -326,193 +407,162 @@ function Dashboard({ me, clients, schedule }: { me: User; clients: Client[]; sch
           </section>
         )}
 
-        {/* ── 5. Prominent Weekly Schedule Section (Interactive 7-Day Strip & Timeline) ── */}
-        <WeeklyScheduleSection
-          schedule={schedule}
-          clients={clients}
-          onScheduleChange={() => {
-            // Soft-refresh or reload data
-            location.reload()
-          }}
-        />
-
-        {/* ── 6. Visual Analytics Row ── */}
+        {/* ── 5. Visual Analytics Row ── */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 animate-fade-in-up">
           <GoalDistributionCard clients={clients} />
           <RpeSpectrumCard clients={clients} />
         </section>
 
-        {/* ── 7. Client Directory with Filters & Search ── */}
-        <section className="space-y-4 pt-2 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-sm font-mono uppercase tracking-wider text-dim flex items-center gap-2">
-              <span>Daftar Klien Pelatihan</span>
-              <span className="text-xs font-mono text-accent bg-panel px-2 py-0.5 rounded border border-line">
-                {filteredClients.length} Klien
-              </span>
-            </h2>
+        {/* ── 6. Executive Overview & Fast Navigation Hub ── */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 animate-fade-in-up">
+          {/* Card A: Upcoming Schedule Snapshot */}
+          <div className="hover-gold-glow p-5 sm:p-6 rounded-2xl bg-panel border border-line flex flex-col justify-between gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300">
+            <div>
+              <div className="flex items-center justify-between gap-2 pb-3 border-b border-line mb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-bg border border-accent/40 flex items-center justify-center text-accent">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-text">Agenda Latihan Terdekat</h3>
+                    <p className="text-[11px] text-dim">Sesi personal training pekan ini</p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-0.5 rounded-lg border border-accent/20">
+                  {schedule.length} Sesi
+                </span>
+              </div>
 
-            {/* Search Box */}
-            <div className="relative w-full sm:w-72">
-              <Search className="w-3.5 h-3.5 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Cari nama atau telepon..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-panel border border-line rounded-xl pl-8.5 pr-8 py-2 text-sm sm:text-xs text-text placeholder:text-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all duration-200"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-dim hover:text-text p-1 rounded transition-colors btn-interactive"
-                  title="Hapus pencarian"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Filter Tabs: Horizontal scrollable with shrink-0 chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 text-xs no-scrollbar touch-scroll -mx-1 px-1">
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
-                activeFilter === 'all'
-                  ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
-                  : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
-              }`}
-            >
-              Semua ({clients.length})
-            </button>
-            <button
-              onClick={() => setActiveFilter('fat_loss')}
-              className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
-                activeFilter === 'fat_loss'
-                  ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
-                  : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
-              }`}
-            >
-              Fat Loss
-            </button>
-            <button
-              onClick={() => setActiveFilter('muscle_gain')}
-              className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
-                activeFilter === 'muscle_gain'
-                  ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
-                  : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
-              }`}
-            >
-              Muscle Gain
-            </button>
-            <button
-              onClick={() => setActiveFilter('general')}
-              className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
-                activeFilter === 'general'
-                  ? 'bg-accent text-black font-semibold shadow-[0_2px_10px_rgba(212,175,55,0.25)]'
-                  : 'bg-panel text-dim hover:text-text border border-line hover:border-line-subtle'
-              }`}
-            >
-              General Fitness
-            </button>
-            {upsellClients.length > 0 && (
-              <button
-                onClick={() => setActiveFilter('upsell')}
-                className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 btn-interactive ${
-                  activeFilter === 'upsell'
-                    ? 'bg-amber-400 text-black font-semibold shadow-[0_2px_10px_rgba(251,191,36,0.3)]'
-                    : 'bg-panel text-amber-400/90 hover:text-amber-400 border border-amber-500/30'
-                }`}
-              >
-                Perlu Upsell ({upsellClients.length})
-              </button>
-            )}
-          </div>
-
-          {/* Clients Grid */}
-          {filteredClients.length === 0 ? (
-            <div className="p-8 sm:p-12 rounded-2xl bg-panel border border-line text-center animate-fade-in">
-              <p className="text-dim text-sm mb-3">Tidak ada klien yang cocok dengan kriteria pencarian.</p>
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('')
-                    setActiveFilter('all')
-                  }}
-                  className="text-accent text-xs hover:underline font-mono btn-interactive"
-                >
-                  Reset Filter &amp; Pencarian
-                </button>
-              )}
-            </div>
-          ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-              {filteredClients.map((cl, idx) => {
-                const pct = cl.pkg_total ? Math.round(((cl.pkg_used || 0) / cl.pkg_total) * 100) : 0
-                const remaining = cl.pkg_total - (cl.pkg_used || 0)
-                return (
-                  <li key={cl.id} style={{ animationDelay: `${idx * 40}ms` }} className="animate-fade-in-up">
-                    <a
-                      href={`/clients/${cl.id}`}
-                      className="bg-panel border border-line hover-gold-glow block rounded-2xl p-4.5 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.4)] group flex flex-col justify-between h-full"
+              {schedule.length === 0 ? (
+                <div className="py-6 text-center text-xs text-dim bg-bg/40 rounded-xl border border-dashed border-line/60">
+                  Belum ada sesi latihan terjadwal dalam waktu dekat.
+                </div>
+              ) : (
+                <ul className="space-y-2.5">
+                  {schedule.slice(0, 3).map((item) => (
+                    <li
+                      key={item.id}
+                      className="p-2.5 rounded-xl bg-bg border border-line/60 flex items-center justify-between text-xs"
                     >
-                      <div>
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-bg border border-line group-hover:border-accent/70 group-hover:scale-110 flex items-center justify-center text-xs font-bold text-accent transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
-                              {cl.name.slice(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <span className="font-semibold text-text text-sm group-hover:text-accent transition-colors block">
-                                {cl.name}
-                              </span>
-                              <span className="text-[11px] text-dim">{goalLabel(cl.goal)}</span>
-                            </div>
-                          </div>
-                          <span className="text-dim text-xs font-mono shrink-0">
-                            {cl.pkg_used || 0}/{cl.pkg_total} sesi
-                          </span>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="bg-line h-1.5 overflow-hidden rounded-full my-2.5">
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ease-out ${
-                              remaining <= 3 ? 'bg-amber-400' : 'bg-accent'
-                            }`}
-                            style={{ width: `${Math.min(pct, 100)}%` }}
-                          />
-                        </div>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
+                        <span className="font-semibold text-text truncate">{item.client_name || 'Klien'}</span>
                       </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-dim pt-2 border-t border-line/50 mt-2">
-                        <span>
-                          {cl.last_session_date
-                            ? `Sesi: ${formatDate(cl.last_session_date)}`
-                            : 'Belum ada sesi'}
-                        </span>
-                        {cl.avg_rpe ? (
-                          <span className="text-text font-mono font-medium group-hover:text-accent transition-colors">
-                            RPE {cl.avg_rpe}
-                          </span>
-                        ) : (
-                          <span className="font-mono">{pct}% terpakai</span>
-                        )}
+                      <div className="flex items-center gap-2 text-dim font-mono text-[11px] shrink-0">
+                        <span>{formatShortDate(item.date)}</span>
+                        <span>&bull;</span>
+                        <span className="text-accent font-bold">{formatTime(item.time)}</span>
                       </div>
-                    </a>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-line/50 flex items-center justify-between">
+              <span className="text-[11px] text-dim font-mono">Kelola agenda lengkap</span>
+              <Link
+                to="/schedule"
+                className="btn-interactive text-xs font-semibold text-accent hover:underline flex items-center gap-1.5"
+              >
+                <span>Buka Jadwal Lengkap</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card B: Clients Directory Snapshot */}
+          <div className="hover-gold-glow p-5 sm:p-6 rounded-2xl bg-panel border border-line flex flex-col justify-between gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300">
+            <div>
+              <div className="flex items-center justify-between gap-2 pb-3 border-b border-line mb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-bg border border-accent/40 flex items-center justify-center text-accent">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-text">Status Direktori Klien</h3>
+                    <p className="text-[11px] text-dim">Total {clients.length} klien terdaftar di studio</p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-0.5 rounded-lg border border-accent/20">
+                  {clients.length} Klien
+                </span>
+              </div>
+
+              {/* Breakdown Grid */}
+              <div className="grid grid-cols-3 gap-2 text-center my-2">
+                <div className="p-2.5 rounded-xl bg-bg border border-line">
+                  <div className="text-base sm:text-lg font-bold text-text">
+                    {clients.filter((c) => c.goal === 'fat_loss').length}
+                  </div>
+                  <div className="text-[10px] text-dim font-mono uppercase mt-0.5">Fat Loss</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-bg border border-line">
+                  <div className="text-base sm:text-lg font-bold text-text">
+                    {clients.filter((c) => c.goal === 'muscle_gain').length}
+                  </div>
+                  <div className="text-[10px] text-dim font-mono uppercase mt-0.5">Muscle</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-bg border border-line">
+                  <div className="text-base sm:text-lg font-bold text-text">
+                    {clients.filter((c) => c.goal !== 'fat_loss' && c.goal !== 'muscle_gain').length}
+                  </div>
+                  <div className="text-[10px] text-dim font-mono uppercase mt-0.5">General</div>
+                </div>
+              </div>
+
+              {upsellClients.length > 0 && (
+                <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[11px] flex items-center justify-between px-3 mt-2">
+                  <span>Perlu perpanjangan paket:</span>
+                  <span className="font-bold font-mono">{upsellClients.length} Klien</span>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-line/50 flex items-center justify-between">
+              <span className="text-[11px] text-dim font-mono">Daftar &amp; riwayat</span>
+              <Link
+                to="/clients"
+                className="btn-interactive text-xs font-semibold text-accent hover:underline flex items-center gap-1.5"
+              >
+                <span>Buka Direktori Klien</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
         </section>
       </div>
     </main>
+
+    {/* ── Mobile Bottom Navigation Bar (App Experience) ── */}
+    <MobileBottomNav />
+
+    {/* ── Modals ── */}
+    <ExportPdfModal
+      isOpen={isExportPdfOpen}
+      onClose={() => setIsExportPdfOpen(false)}
+      clientsList={clients.map((c) => ({ id: c.id, name: c.name }))}
+    />
+
+    <AdminExerciseModal
+      isOpen={isAdminExerciseOpen}
+      onClose={() => setIsAdminExerciseOpen(false)}
+      userRole={currentUser.role}
+      onRoleChanged={() => location.reload()}
+    />
+
+    <EditProfileModal
+      isOpen={isEditProfileOpen}
+      onClose={() => setIsEditProfileOpen(false)}
+      currentUser={currentUser}
+      onProfileUpdated={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
+    />
+
+    <AdminUsersModal
+      isOpen={isAdminUsersOpen}
+      onClose={() => setIsAdminUsersOpen(false)}
+      currentUser={currentUser}
+    />
   </div>
   )
-}
-
-function goalLabel(g: string) {
-  return { fat_loss: 'Fat Loss', muscle_gain: 'Muscle Gain', general: 'General Fitness' }[g] ?? g
 }

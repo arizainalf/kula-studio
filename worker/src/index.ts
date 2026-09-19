@@ -6,6 +6,8 @@ import clientRoutes from './modules/clients/routes';
 import sessionRoutes from './modules/sessions/routes';
 import scheduleRoutes from './modules/schedule/routes';
 import photoRoutes from './modules/photos/routes';
+import portalRoutes from './modules/portal/routes';
+import exerciseRoutes from './modules/exercises/routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -15,8 +17,11 @@ app.route('/api/auth', authRoutes);
 app.route('/api/staff', staffRoutes);
 app.route('/api/clients', clientRoutes);
 app.route('/api/clients', sessionRoutes);
+app.route('/api/sessions', sessionRoutes);
 app.route('/api/schedule', scheduleRoutes);
 app.route('/api/photos', photoRoutes);
+app.route('/api/portal', portalRoutes);
+app.route('/api/exercises', exerciseRoutes);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 app.onError((err, c) => {

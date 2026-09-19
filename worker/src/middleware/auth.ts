@@ -6,15 +6,20 @@ import type { Env } from '../env';
 export interface SessionUser {
   id: string;
   email: string;
-  role: 'admin' | 'manager' | 'pt';
+  role: 'admin' | 'manager' | 'pt' | 'client';
   name: string;
-  plan_tier: 'standard' | 'pro' | null;
-  expires_at: string | null;
+  plan_tier?: 'standard' | 'pro' | null;
+  expires_at?: string | null;
+  clientId?: string;
+  phone?: string | null;
+  pt_id?: string;
+  pt_name?: string | null;
 }
 
 const GRACE_DAYS = 14;
 
 export function accessState(u: SessionUser): 'active' | 'grace' | 'locked' {
+  if (u.role === 'client') return 'active';
   if (!u.expires_at) return 'active';
   // ISO dari Postgres date bisa "2026-09-16" atau "2026-09-16T00:00:00.000Z" — ambil 10 char pertama
   const day = u.expires_at.slice(0, 10);

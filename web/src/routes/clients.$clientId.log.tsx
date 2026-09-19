@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { createFileRoute, redirect, Link, useNavigate } from '@tanstack/react-router'
-import { api } from '../lib/api'
+import { api, type User } from '../lib/api'
 import { formatDate, formatDateWithDay, getLocalTodayString } from '../lib/date'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { AdminExerciseModal } from '../components/AdminExerciseModal'
 import {
   ArrowLeft,
   Copy,
@@ -12,33 +13,14 @@ import {
   Dumbbell,
   HeartPulse,
   Wind,
+  Activity,
+  ShieldPlus,
   Plus,
   Trash2,
   Smartphone,
   Check,
+  BookmarkPlus,
 } from 'lucide-react'
-
-export const Route = createFileRoute('/clients/$clientId/log')({
-  beforeLoad: async () => {
-    try {
-      await api('/auth/me')
-    } catch {
-      throw redirect({ to: '/login' })
-    }
-  },
-  loader: async ({ params }) => {
-    const [clientRes, sessionsRes] = await Promise.all([
-      api<{ client: Client }>(`/clients/${params.clientId}`),
-      api<{ sessions: Session[] }>(`/clients/${params.clientId}/sessions?limit=5`).catch(() => ({ sessions: [] })),
-    ])
-
-    return {
-      client: clientRes.client,
-      recentSessions: sessionsRes.sessions ?? [],
-    }
-  },
-  component: LogSession,
-})
 
 export type Client = {
   id: string
@@ -63,13 +45,29 @@ export type Session = {
   rpe: number
   weight: number | null
   fat_pct: number | null
-  exercises: Array<{ warmup: Ex[]; resistance: Ex[]; cardio: Ex[]; cooldown: Ex[] }>
+  exercises: Array<Record<string, Ex[]>>
   notes: string | null
   created_at?: string
 }
 
-// Preset library for instant 1-click workout additions
-const PRESETS: Record<string, Array<{ name: string; detail: string }>> = {
+export type DBCategory = {
+  slug: string
+  name: string
+  description?: string | null
+  icon?: string | null
+  sort_order: number
+}
+
+export type DBExercise = {
+  id: string
+  category_slug: string
+  name: string
+  default_detail?: string | null
+  muscle_group?: string | null
+}
+
+// Preset fallback library if database is empty or offline
+const FALLBACK_PRESETS: Record<string, Array<{ name: string; detail: string }>> = {
   warmup: [
     { name: 'Dynamic Full-Body Stretch', detail: '10 menit' },
     { name: 'Cat-Cow Mobility', detail: '2 set x 10 reps' },
@@ -86,6 +84,12 @@ const PRESETS: Record<string, Array<{ name: string; detail: string }>> = {
     { name: 'Leg Press', detail: '3 set x 12 reps @ 90kg' },
     { name: 'Seated Cable Row', detail: '3 set x 12 reps @ 40kg' },
   ],
+  core: [
+    { name: 'Plank Hold', detail: '3 set x 45 detik' },
+    { name: 'Hanging Leg Raise', detail: '3 set x 12 reps' },
+    { name: 'Russian Twist', detail: '3 set x 20 reps' },
+    { name: 'Deadbug', detail: '3 set x 10 reps / sisi' },
+  ],
   cardio: [
     { name: 'Incline Treadmill Walk', detail: '15 menit (Speed 5.2, Incline 7%)' },
     { name: 'Stationary Bike (Zone 2)', detail: '15 menit moderate' },
@@ -98,7 +102,21 @@ const PRESETS: Record<string, Array<{ name: string; detail: string }>> = {
     { name: 'Pigeon Pose (Hip Opener)', detail: '2 set x 30 detik / sisi' },
     { name: 'Child’s Pose & Breathing', detail: '3 menit regulasi nafas' },
   ],
+  rehab: [
+    { name: 'Thoracic Spine Foam Roller', detail: '3 set x 10 ekstensi' },
+    { name: 'Scapular Wall Slides', detail: '3 set x 12 reps' },
+    { name: 'Ankle Dorsiflexion Mobilization', detail: '2 set x 15 reps / sisi' },
+  ],
 }
+
+const DEFAULT_CATEGORIES: DBCategory[] = [
+  { slug: 'warmup', name: 'Pemanasan', description: 'Aktivasi Otot & Mobilitas Sendi', icon: 'flame', sort_order: 1 },
+  { slug: 'resistance', name: 'Latihan Utama (Resistance)', description: 'Beban, Hipertrofi & Kekuatan', icon: 'dumbbell', sort_order: 2 },
+  { slug: 'core', name: 'Core & Abdominal', description: 'Stabilitas Tulang Belakang & Postur', icon: 'activity', sort_order: 3 },
+  { slug: 'cardio', name: 'Kardio / Ketahanan', description: 'Stamina & Pembakaran Kalori', icon: 'heart-pulse', sort_order: 4 },
+  { slug: 'cooldown', name: 'Pendinginan & Stretching', description: 'Regulasi Nafas & Relaksasi Otot', icon: 'wind', sort_order: 5 },
+  { slug: 'rehab', name: 'Rehabilitasi & Mobilitas', description: 'Pencegahan Cedera & Kesehatan Sendi', icon: 'shield-plus', sort_order: 6 },
+]
 
 const RPE_INFO: Record<number, { title: string; desc: string; color: string; badge: string }> = {
   1: { title: 'Sangat Ringan', desc: 'Aktivitas pemulihan aktif, nafas santai tanpa usaha berat.', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/30' },
@@ -113,13 +131,53 @@ const RPE_INFO: Record<number, { title: string; desc: string; color: string; bad
   10: { title: 'Maksimal / Failure (0 RIR)', desc: 'Beban batas maksimal mutlak, tidak ada repetisi tersisa.', color: 'text-rose-400', badge: 'bg-rose-500/10 border-rose-500/30' },
 }
 
+export const Route = createFileRoute('/clients/$clientId/log')({
+  beforeLoad: async () => {
+    try {
+      const res = await api<{ user: User }>('/auth/me')
+      if (res.user.role === 'client') throw redirect({ to: '/portal' })
+    } catch (e) {
+      if (e && typeof e === 'object' && 'to' in e) throw e
+      throw redirect({ to: '/login' })
+    }
+  },
+  loader: async ({ params }) => {
+    const [meRes, clientRes, sessionsRes, categoriesRes, exercisesRes] = await Promise.all([
+      api<{ user: User }>('/auth/me').catch(() => ({ user: null })),
+      api<{ client: Client }>(`/clients/${params.clientId}`),
+      api<{ sessions: Session[] }>(`/clients/${params.clientId}/sessions?limit=5`).catch(() => ({ sessions: [] })),
+      api<{ categories: DBCategory[] }>('/exercises/categories').catch(() => ({ categories: [] })),
+      api<{ exercises: DBExercise[] }>('/exercises').catch(() => ({ exercises: [] })),
+    ])
+
+    return {
+      user: meRes.user,
+      client: clientRes.client,
+      recentSessions: sessionsRes.sessions ?? [],
+      dbCategories: categoriesRes.categories ?? [],
+      dbExercises: exercisesRes.exercises ?? [],
+    }
+  },
+  component: LogSession,
+})
+
 function LogSession() {
-  const { client, recentSessions } = Route.useLoaderData() as {
+  const { user, client, recentSessions, dbCategories, dbExercises } = Route.useLoaderData() as {
+    user: User | null
     client: Client
     recentSessions: Session[]
+    dbCategories: DBCategory[]
+    dbExercises: DBExercise[]
   }
   const navigate = useNavigate()
   const lastSession = recentSessions[0] ?? null
+
+  // Active categories & exercises state
+  const [categoriesList, setCategoriesList] = useState<DBCategory[]>(
+    dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES
+  )
+  const [exercisesList, setExercisesList] = useState<DBExercise[]>(dbExercises)
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
 
   // Form states
   const [date, setDate] = useState(getLocalTodayString())
@@ -132,52 +190,93 @@ function LogSession() {
   const [errorMsg, setErrorMsg] = useState('')
   const [copyNotice, setCopyNotice] = useState('')
 
-  // 4-Phase Exercise Groups
-  const [groups, setGroups] = useState<{
-    warmup: Ex[]
-    resistance: Ex[]
-    cardio: Ex[]
-    cooldown: Ex[]
-  }>({
-    warmup: [],
-    resistance: [{ name: '', detail: '' }],
-    cardio: [],
-    cooldown: [],
+  // Dynamic Exercise Groups State
+  const [groups, setGroups] = useState<Record<string, Ex[]>>(() => {
+    const init: Record<string, Ex[]> = {
+      warmup: [],
+      resistance: [{ name: '', detail: '' }],
+    }
+    const catsToUse = dbCategories.length > 0 ? dbCategories : DEFAULT_CATEGORIES
+    for (const c of catsToUse) {
+      if (!init[c.slug]) init[c.slug] = []
+    }
+    return init
   })
 
+  // Reload categories & exercises from API
+  async function loadLibraryData() {
+    try {
+      const [catsRes, exRes] = await Promise.all([
+        api<{ categories: DBCategory[] }>('/exercises/categories'),
+        api<{ exercises: DBExercise[] }>('/exercises'),
+      ])
+      if (catsRes.categories && catsRes.categories.length > 0) {
+        setCategoriesList(catsRes.categories)
+      }
+      if (exRes.exercises) {
+        setExercisesList(exRes.exercises)
+      }
+    } catch {}
+  }
+
   // Exercise manipulation helpers
-  function addEx(g: 'warmup' | 'resistance' | 'cardio' | 'cooldown', item?: Ex) {
+  function addEx(categorySlug: string, item?: Ex) {
     setGroups((prev) => ({
       ...prev,
-      [g]: [...prev[g], item ?? { name: '', detail: '' }],
+      [categorySlug]: [...(prev[categorySlug] || []), item ?? { name: '', detail: '' }],
     }))
   }
 
-  function setEx(g: 'warmup' | 'resistance' | 'cardio' | 'cooldown', i: number, field: keyof Ex, value: string) {
+  function setEx(categorySlug: string, i: number, field: keyof Ex, value: string) {
     setGroups((prev) => ({
       ...prev,
-      [g]: prev[g].map((e, idx) => (idx === i ? { ...e, [field]: value } : e)),
+      [categorySlug]: (prev[categorySlug] || []).map((e, idx) => (idx === i ? { ...e, [field]: value } : e)),
     }))
   }
 
-  function delEx(g: 'warmup' | 'resistance' | 'cardio' | 'cooldown', i: number) {
+  function delEx(categorySlug: string, i: number) {
     setGroups((prev) => ({
       ...prev,
-      [g]: prev[g].filter((_, idx) => idx !== i),
+      [categorySlug]: (prev[categorySlug] || []).filter((_, idx) => idx !== i),
     }))
+  }
+
+  // Quick 1-click Save Manual Exercise to Master Library
+  async function handleSaveRowToLibrary(categorySlug: string, item: Ex) {
+    if (!item.name.trim()) return
+    try {
+      await api('/exercises', {
+        method: 'POST',
+        body: JSON.stringify({
+          category_slug: categorySlug,
+          name: item.name.trim(),
+          default_detail: item.detail?.trim() || undefined,
+          is_global: user?.role === 'admin',
+        }),
+      })
+      setCopyNotice(`Gerakan "${item.name}" berhasil disimpan ke Library Master!`)
+      setTimeout(() => setCopyNotice(''), 3500)
+      loadLibraryData()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan gerakan ke library.')
+    }
   }
 
   // Copy routine from last session
   function handleCopyFromLastSession() {
     if (!lastSession) return
     const eg = Array.isArray(lastSession.exercises) ? lastSession.exercises[0] : lastSession.exercises
-    if (eg) {
-      setGroups({
-        warmup: eg.warmup?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
-        resistance: eg.resistance?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
-        cardio: eg.cardio?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
-        cooldown: eg.cooldown?.map((x) => ({ name: x.name, detail: x.detail ?? '' })) ?? [],
-      })
+    if (eg && typeof eg === 'object') {
+      const nextGroups: Record<string, Ex[]> = {}
+      for (const [key, list] of Object.entries(eg)) {
+        if (Array.isArray(list)) {
+          nextGroups[key] = list.map((x: any) => ({ name: x.name || '', detail: x.detail ?? '' }))
+        }
+      }
+      setGroups((prev) => ({
+        ...prev,
+        ...nextGroups,
+      }))
       if (lastSession.weight != null) setWeight(String(lastSession.weight))
       if (lastSession.fat_pct != null) setFatPct(String(lastSession.fat_pct))
       setCopyNotice('Gerakan dari sesi terakhir berhasil disalin!')
@@ -219,22 +318,21 @@ function LogSession() {
         return Number.isFinite(n) ? n : null
       }
 
-      const formattedExercises = [
-        {
-          warmup: groups.warmup
-            .filter((x) => x.name.trim())
-            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
-          resistance: groups.resistance
-            .filter((x) => x.name.trim())
-            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
-          cardio: groups.cardio
-            .filter((x) => x.name.trim())
-            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
-          cooldown: groups.cooldown
-            .filter((x) => x.name.trim())
-            .map((x) => ({ name: x.name.trim(), ...(x.detail?.trim() ? { detail: x.detail.trim() } : {}) })),
-        },
-      ]
+      // Group all valid exercises by category slug
+      const formattedCategoryExercises: Record<string, Array<{ name: string; detail?: string }>> = {}
+      for (const [slug, list] of Object.entries(groups)) {
+        const valid = list
+          .filter((x) => x.name && x.name.trim().length > 0)
+          .map((x) => ({
+            name: x.name.trim(),
+            ...(x.detail && x.detail.trim() ? { detail: x.detail.trim() } : {}),
+          }))
+        if (valid.length > 0) {
+          formattedCategoryExercises[slug] = valid
+        }
+      }
+
+      const formattedExercises = [formattedCategoryExercises]
 
       await api(`/clients/${client.id}/sessions`, {
         method: 'POST',
@@ -250,6 +348,7 @@ function LogSession() {
 
       // If WhatsApp option enabled and phone available, open WhatsApp with summary
       if (autoOpenWa && client.phone) {
+        const categoryMap = Object.fromEntries(categoriesList.map((c) => [c.slug, c.name]))
         const waText = generateWaMessage(
           client.name,
           date,
@@ -257,6 +356,7 @@ function LogSession() {
           num(weight),
           num(fatPct),
           groups,
+          categoryMap,
           notes
         )
         const cleanPhone = client.phone.replace(/\D/g, '')
@@ -276,41 +376,6 @@ function LogSession() {
   const currentSessionNumber = client.pkg_used + 1
   const remainingQuota = client.pkg_total - client.pkg_used
   const isUrgentRenewal = client.pkg_total > 0 && remainingQuota <= 3
-
-  const phaseConfig = [
-    {
-      key: 'warmup' as const,
-      name: 'Pemanasan',
-      sub: 'Aktivasi Otot & Mobilitas Sendi',
-      icon: <Flame className="w-4 h-4 text-emerald-400" />,
-      accent: 'emerald',
-      presets: PRESETS.warmup,
-    },
-    {
-      key: 'resistance' as const,
-      name: 'Latihan Utama (Resistance)',
-      sub: 'Beban, Hipertrofi & Kekuatan',
-      icon: <Dumbbell className="w-4 h-4 text-accent" />,
-      accent: 'amber',
-      presets: PRESETS.resistance,
-    },
-    {
-      key: 'cardio' as const,
-      name: 'Kardio / Kondisi Jantung',
-      sub: 'Stamina & Pembakaran Kalori',
-      icon: <HeartPulse className="w-4 h-4 text-sky-400" />,
-      accent: 'sky',
-      presets: PRESETS.cardio,
-    },
-    {
-      key: 'cooldown' as const,
-      name: 'Pendinginan & Stretching',
-      sub: 'Regulasi Nafas & Relaksasi Otot',
-      icon: <Wind className="w-4 h-4 text-purple-400" />,
-      accent: 'purple',
-      presets: PRESETS.cooldown,
-    },
-  ]
 
   return (
     <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
@@ -334,23 +399,38 @@ function LogSession() {
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-dim mt-0.5 truncate">
-                Dokumentasikan 4 fase latihan, metrik tubuh, dan intensitas RPE
+                Dokumentasikan fase latihan, metrik tubuh, dan intensitas RPE
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+          <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end flex-wrap">
             <ThemeToggle />
+
+            <button
+              type="button"
+              onClick={() => setIsAdminModalOpen(true)}
+              className="btn-interactive px-3.5 py-2 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm"
+              title="Kelola Master Gerakan & Kategori Latihan"
+            >
+              <Dumbbell className="w-3.5 h-3.5 text-accent" />
+              <span className="hidden sm:inline">Master Gerakan</span>
+              {user?.role === 'admin' ? (
+                <span className="text-[9px] font-mono font-bold bg-amber-400/20 text-amber-400 px-1.5 py-0.2 rounded">Admin</span>
+              ) : (
+                <span className="text-[9px] font-mono bg-bg text-dim px-1.5 py-0.2 rounded border border-line">PT</span>
+              )}
+            </button>
 
             {lastSession && (
               <button
                 type="button"
                 onClick={handleCopyFromLastSession}
-                className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-panel hover:bg-panel-elevated border border-accent/30 text-accent hover:border-accent text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-2"
+                className="btn-interactive px-3.5 py-2 rounded-xl bg-panel hover:bg-panel-elevated border border-accent/30 text-accent hover:border-accent text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-2"
                 title="Salin daftar gerakan dari sesi latihan sebelumnya"
               >
                 <Copy className="w-3.5 h-3.5" />
-                <span>Salin dari Sesi Terakhir</span>
+                <span>Salin Sesi Lalu</span>
               </button>
             )}
           </div>
@@ -446,11 +526,9 @@ function LogSession() {
                   )}
                 </label>
                 <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="500"
-                  placeholder="Contoh: 72.5"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="misal: 68.5"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3.5 py-2.5 outline-none text-base sm:text-sm font-mono transition-colors placeholder:text-muted"
@@ -459,17 +537,15 @@ function LogSession() {
 
               <div>
                 <label className="block text-xs font-semibold text-dim mb-1.5 flex items-center justify-between">
-                  <span>Lemak Tubuh (%)</span>
+                  <span>Kadar Lemak Tubuh (%)</span>
                   {lastSession?.fat_pct != null && (
                     <span className="text-[10px] text-muted font-mono">Lalu: {lastSession.fat_pct}%</span>
                   )}
                 </label>
                 <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  placeholder="Contoh: 24.2"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="misal: 18.2"
                   value={fatPct}
                   onChange={(e) => setFatPct(e.target.value)}
                   className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3.5 py-2.5 outline-none text-base sm:text-sm font-mono transition-colors placeholder:text-muted"
@@ -477,25 +553,25 @@ function LogSession() {
               </div>
             </div>
 
-            {/* Interactive RPE Intensity Slider & Badges */}
-            <div className="pt-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
-                <label className="text-xs font-semibold text-dim flex items-center gap-2">
-                  <span>Intensitas Latihan — RPE (Rate of Perceived Exertion)</span>
+            {/* RPE Selector & Interactive Explanation */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-dim flex items-center gap-1.5">
+                  <span>Skala Beban & Intensitas (RPE 1-10)</span>
                   <span className="text-accent">*</span>
                 </label>
                 <span className="text-xs font-mono font-bold text-accent">
-                  Skala Terpilih: {rpe} / 10
+                  RPE {rpe}/10
                 </span>
               </div>
 
-              {/* 1-10 Button Selector */}
-              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => {
+              {/* RPE 1 to 10 Selector Buttons */}
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
+                {Array.from({ length: 10 }, (_, idx) => idx + 1).map((val) => {
                   const isSelected = rpe === val
-                  let activeClass = 'bg-bg text-dim border-line hover:border-line-subtle'
+                  let activeClass = 'bg-bg text-dim border-line hover:border-accent/40'
                   if (isSelected) {
-                    if (val <= 4) activeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500 shadow-sm font-bold scale-105'
+                    if (val <= 3) activeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500 shadow-sm font-bold scale-105'
                     else if (val <= 6) activeClass = 'bg-sky-500/20 text-sky-300 border-sky-500 shadow-sm font-bold scale-105'
                     else if (val <= 8) activeClass = 'bg-accent/25 text-accent border-accent shadow-sm font-bold scale-105'
                     else activeClass = 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-sm font-bold scale-105'
@@ -531,71 +607,84 @@ function LogSession() {
             </div>
           </div>
 
-          {/* Section 2: 4-Phase Workout Builder */}
+          {/* Section 2: Dynamic Exercise Categories Builder */}
           <div className="space-y-5">
             <div className="flex items-center justify-between pb-2 border-b border-line/60">
               <h2 className="text-sm font-bold uppercase tracking-wider text-dim flex items-center gap-2 font-mono">
                 <span>02</span>
-                <span className="text-text">Struktur 4 Fase Latihan (TrainLog Signature)</span>
+                <span className="text-text">Struktur Gerakan Latihan (Katalog & Input Bebas)</span>
               </h2>
-              <span className="text-xs text-muted">Bisa dikosongkan jika fase tidak dilakukan</span>
+              <span className="text-xs text-muted">Dapat diisi manual secara bebas atau dari rekomendasi</span>
             </div>
 
             <div className="space-y-4">
-              {phaseConfig.map((phase) => {
-                const list = groups[phase.key]
+              {categoriesList.map((cat) => {
+                const list = groups[cat.slug] || []
+                // Get presets for this category from database, or fallback
+                const dbPresets = exercisesList.filter((e) => e.category_slug === cat.slug)
+                const fallbackPresets = FALLBACK_PRESETS[cat.slug] || []
+                const availablePresets = dbPresets.length > 0
+                  ? dbPresets.map((e) => ({ name: e.name, detail: e.default_detail || '' }))
+                  : fallbackPresets
+
                 return (
                   <div
-                    key={phase.key}
+                    key={cat.slug}
                     className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line shadow-[0_4px_16px_rgba(0,0,0,0.3)] transition-all duration-300"
                   >
                     {/* Phase Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-line/60 mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <span className="text-base">{phase.icon}</span>
+                        <span className="p-2 rounded-xl bg-bg border border-line">
+                          {getCategoryIcon(cat.slug, cat.icon)}
+                        </span>
                         <div>
                           <h3 className="font-bold text-sm text-text flex items-center gap-2">
-                            <span>{phase.name}</span>
+                            <span>{cat.name}</span>
                             <span className="text-[10px] font-mono font-normal px-2 py-0.5 rounded-md bg-bg border border-line text-dim">
                               {list.length} gerakan
                             </span>
                           </h3>
-                          <p className="text-[11px] text-dim">{phase.sub}</p>
+                          {cat.description && (
+                            <p className="text-[11px] text-dim">{cat.description}</p>
+                          )}
                         </div>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => addEx(phase.key)}
+                        onClick={() => addEx(cat.slug)}
                         className="btn-interactive self-start sm:self-auto text-xs px-3 py-1.5 rounded-lg bg-bg border border-line hover:border-accent/40 text-accent font-medium transition-all flex items-center gap-1.5"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Tambah Gerakan</span>
+                        <span>+ Tambah Gerakan Manual</span>
                       </button>
                     </div>
 
-                    {/* Quick Preset Chips */}
-                    <div className="mb-3.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] text-muted uppercase font-mono mr-1">Rekomendasi Cepat:</span>
-                        {phase.presets.map((preset, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => addEx(phase.key, { name: preset.name, detail: preset.detail })}
-                            className="btn-interactive text-[11px] px-2.5 py-1 rounded-lg bg-bg/80 border border-line/70 hover:border-accent/50 text-dim hover:text-text transition-all"
-                            title={`Tambahkan ${preset.name} (${preset.detail})`}
-                          >
-                            + {preset.name}
-                          </button>
-                        ))}
+                    {/* Quick Preset Chips from Library */}
+                    {availablePresets.length > 0 && (
+                      <div className="mb-3.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-muted uppercase font-mono mr-1">Rekomendasi Cepat:</span>
+                          {availablePresets.slice(0, 7).map((preset, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => addEx(cat.slug, { name: preset.name, detail: preset.detail })}
+                              className="btn-interactive text-[11px] px-2.5 py-1 rounded-lg bg-bg/80 border border-line/70 hover:border-accent/50 text-dim hover:text-text transition-all"
+                              title={`Tambahkan ${preset.name} ${preset.detail ? `(${preset.detail})` : ''}`}
+                            >
+                              + {preset.name}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Exercise items list */}
                     {list.length === 0 ? (
                       <div className="py-4 text-center rounded-xl bg-bg/40 border border-dashed border-line/50 text-muted text-xs">
-                        Belum ada gerakan di fase {phase.name}. Klik tombol tambah atau pilih rekomendasi di atas.
+                        Belum ada gerakan di kategori {cat.name}. Klik <strong>+ Tambah Gerakan Manual</strong> atau pilih rekomendasi di atas.
                       </div>
                     ) : (
                       <div className="space-y-2.5">
@@ -607,22 +696,35 @@ function LogSession() {
                             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <input
                                 type="text"
-                                placeholder="Nama Latihan (misal: Barbell Squat)"
+                                placeholder="Nama Latihan (bebas ketik manual, misal: Barbell Squat)"
                                 value={item.name}
-                                onChange={(e) => setEx(phase.key, i, 'name', e.target.value)}
+                                onChange={(e) => setEx(cat.slug, i, 'name', e.target.value)}
                                 className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3 py-2 outline-none text-base sm:text-xs transition-colors placeholder:text-muted"
                               />
                               <input
                                 type="text"
-                                placeholder="Detail (3 set x 10 reps @ 60kg)"
+                                placeholder="Detail (bebas ketik manual, misal: 3 set x 10 reps @ 60kg)"
                                 value={item.detail ?? ''}
-                                onChange={(e) => setEx(phase.key, i, 'detail', e.target.value)}
+                                onChange={(e) => setEx(cat.slug, i, 'detail', e.target.value)}
                                 className="w-full bg-bg border border-line focus:border-accent focus:ring-1 focus:ring-accent/30 text-text rounded-xl px-3 py-2 outline-none text-base sm:text-xs font-mono transition-colors placeholder:text-muted"
                               />
                             </div>
+
+                            {/* Quick Save to Master Library button */}
+                            {item.name.trim() && (
+                              <button
+                                type="button"
+                                onClick={() => handleSaveRowToLibrary(cat.slug, item)}
+                                className="btn-interactive w-8 h-8 rounded-xl border border-line bg-bg text-dim hover:text-accent hover:border-accent/40 flex items-center justify-center text-xs transition-all shrink-0"
+                                title="Simpan gerakan ini ke Library Master agar bisa dipakai ulang"
+                              >
+                                <BookmarkPlus className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
                             <button
                               type="button"
-                              onClick={() => delEx(phase.key, i)}
+                              onClick={() => delEx(cat.slug, i)}
                               className="btn-interactive w-8 h-8 rounded-xl border border-line bg-bg text-dim hover:text-rose-400 hover:border-rose-500/40 flex items-center justify-center text-xs transition-all shrink-0"
                               title="Hapus gerakan ini"
                             >
@@ -744,8 +846,27 @@ function LogSession() {
           </div>
         </form>
       </div>
+
+      {/* Admin Master Gerakan Modal */}
+      <AdminExerciseModal
+        isOpen={isAdminModalOpen}
+        onClose={() => {
+          setIsAdminModalOpen(false)
+          loadLibraryData()
+        }}
+        userRole={user?.role}
+      />
     </main>
   )
+}
+
+function getCategoryIcon(slug: string, iconName?: string | null) {
+  if (iconName === 'flame' || slug === 'warmup') return <Flame className="w-4 h-4 text-emerald-400" />
+  if (iconName === 'activity' || slug === 'core') return <Activity className="w-4 h-4 text-amber-400" />
+  if (iconName === 'heart-pulse' || slug === 'cardio') return <HeartPulse className="w-4 h-4 text-sky-400" />
+  if (iconName === 'wind' || slug === 'cooldown') return <Wind className="w-4 h-4 text-purple-400" />
+  if (iconName === 'shield-plus' || slug === 'rehab') return <ShieldPlus className="w-4 h-4 text-teal-400" />
+  return <Dumbbell className="w-4 h-4 text-accent" />
 }
 
 function goalLabel(g: string) {
@@ -773,7 +894,8 @@ function generateWaMessage(
   rpe: number,
   weight: number | null,
   fatPct: number | null,
-  groups: { warmup: Ex[]; resistance: Ex[]; cardio: Ex[]; cooldown: Ex[] },
+  groups: Record<string, Ex[]>,
+  categoryMap: Record<string, string>,
   notes: string
 ) {
   let text = `*Halo ${clientName}!* 💪\n`
@@ -782,44 +904,13 @@ function generateWaMessage(
   if (weight != null) text += `⚖️ *Berat Badan:* ${weight} kg\n`
   if (fatPct != null) text += `📉 *Lemak Tubuh:* ${fatPct}%\n\n`
 
-  if (groups.warmup.some((x) => x.name.trim())) {
-    text +=
-      `🟢 *Warm-up:*\n` +
-      groups.warmup
-        .filter((x) => x.name.trim())
-        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
-        .join('\n') +
-      `\n\n`
-  }
-
-  if (groups.resistance.some((x) => x.name.trim())) {
-    text +=
-      `🟡 *Resistance:*\n` +
-      groups.resistance
-        .filter((x) => x.name.trim())
-        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
-        .join('\n') +
-      `\n\n`
-  }
-
-  if (groups.cardio.some((x) => x.name.trim())) {
-    text +=
-      `🔵 *Cardio:*\n` +
-      groups.cardio
-        .filter((x) => x.name.trim())
-        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
-        .join('\n') +
-      `\n\n`
-  }
-
-  if (groups.cooldown.some((x) => x.name.trim())) {
-    text +=
-      `🟣 *Cool-down:*\n` +
-      groups.cooldown
-        .filter((x) => x.name.trim())
-        .map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`)
-        .join('\n') +
-      `\n\n`
+  for (const [slug, list] of Object.entries(groups)) {
+    const valid = list.filter((x) => x.name && x.name.trim().length > 0)
+    if (valid.length > 0) {
+      const title = categoryMap[slug] || slug.toUpperCase()
+      text += `🔹 *${title}:*\n`
+      text += valid.map((x) => `• ${x.name} ${x.detail ? `(${x.detail})` : ''}`).join('\n') + '\n\n'
+    }
   }
 
   if (notes.trim()) {

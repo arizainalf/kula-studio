@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { api } from '../lib/api'
+import { api, type User } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { MobileBottomNav } from '../components/MobileBottomNav'
+import { ExportPdfModal } from '../components/ExportPdfModal'
 import {
   formatDate,
   formatShortDate,
@@ -12,6 +14,7 @@ import {
   getLocalTodayString,
   getLocalFutureDateString,
 } from '../lib/date'
+import { EditProfileModal } from '../components/EditProfileModal'
 import {
   ArrowLeft,
   Printer,
@@ -34,26 +37,47 @@ import {
   X,
   AlertTriangle,
   Check,
+  ShieldCheck,
+  UserCog,
 } from 'lucide-react'
 
 export const Route = createFileRoute('/clients/$clientId/')({
   beforeLoad: async () => {
-    try { await api('/auth/me') } catch { throw redirect({ to: '/login' }) }
+    try {
+      const res = await api<{ user: User }>('/auth/me')
+      if (res.user.role === 'client') throw redirect({ to: '/portal' })
+    } catch (e) {
+      if (e && typeof e === 'object' && 'to' in e) throw e
+      throw redirect({ to: '/login' })
+    }
   },
   loader: async ({ params }) => {
     const fromDate = getLocalFutureDateString(-30)
     const toDate = getLocalFutureDateString(90)
 
-    const [clientRes, sessionsRes, photosRes, schedRes] = await Promise.all([
+    const [meRes, clientRes, sessionsRes, photosRes, schedRes] = await Promise.all([
+      api<{ user: User }>('/auth/me'),
       api<{ client: Client }>(`/clients/${params.clientId}`),
       api<{ sessions: Session[] }>(`/clients/${params.clientId}/sessions?limit=100`),
       api<{ photos: Photo[] }>(`/photos/${params.clientId}`).catch(() => ({ photos: [] })),
       api<{ schedule: ClientSchedule[] }>(`/schedule?from=${fromDate}&to=${toDate}`).catch(() => ({ schedule: [] })),
     ])
 
+    let trainers: Array<{ id: string; name: string; email: string; role: string }> = []
+    if (meRes.user.role === 'admin' || meRes.user.role === 'manager') {
+      try {
+        const staffRes = await api<{ staff: Array<{ id: string; name: string; email: string; role: string }> }>('/staff')
+        trainers = (staffRes.staff || []).filter((s) => s.role === 'pt')
+      } catch (e) {
+        console.error('Failed to load trainers for admin', e)
+      }
+    }
+
     const clientSchedule = schedRes.schedule.filter((s: ClientSchedule) => s.client_id === params.clientId)
 
     return {
+      currentUser: meRes.user,
+      trainers,
       client: clientRes.client,
       sessions: sessionsRes.sessions,
       photos: photosRes.photos,
@@ -72,12 +96,16 @@ export type Client = {
   avg_rpe?: number
   last_session_date?: string | null
   phone?: string | null
+  email?: string | null
   notes?: string | null
   age_bracket?: string | null
   gender?: 'pria' | 'wanita' | null
   problem?: 'none' | 'knee' | 'back' | 'shoulder' | string | null
   is_active?: boolean
   created_at?: string
+  pt_id?: string | null
+  pt_name?: string | null
+  pt_email?: string | null
 }
 
 export type Session = {
@@ -96,13 +124,24 @@ type Photo = { id: string; session_id: string | null; created_at: string }
 type ClientSchedule = { id: string; client_id: string; pt_id: string; date: string; time: string; note?: string | null }
 
 function ClientDetail() {
-  const { client: initialClient, sessions, photos: initialPhotos, schedule: initialSchedule } = Route.useLoaderData() as {
+  const {
+    currentUser,
+    trainers = [],
+    client: initialClient,
+    sessions,
+    photos: initialPhotos,
+    schedule: initialSchedule,
+  } = Route.useLoaderData() as {
+    currentUser?: User
+    trainers?: Array<{ id: string; name: string; email: string; role: string }>
     client: Client
     sessions: Session[]
     photos: Photo[]
     schedule: ClientSchedule[]
   }
 
+  const [meUser, setMeUser] = useState<User | undefined>(currentUser)
+  const [isSelfProfileOpen, setIsSelfProfileOpen] = useState(false)
   const [client, setClient] = useState<Client>(initialClient)
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos)
   const [scheduleList, setScheduleList] = useState<ClientSchedule[]>(initialSchedule)
@@ -114,12 +153,15 @@ function ClientDetail() {
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+  const [isExportPdfOpen, setIsExportPdfOpen] = useState(false)
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null)
 
   // Edit form state
+  const [editPtId, setEditPtId] = useState(client.pt_id ?? '')
   const [editName, setEditName] = useState(client.name)
   const [editGoal, setEditGoal] = useState(client.goal)
   const [editPkgTotal, setEditPkgTotal] = useState(client.pkg_total)
+  const [editEmail, setEditEmail] = useState(client.email ?? '')
   const [editPhone, setEditPhone] = useState(client.phone ?? '')
   const [editProblem, setEditProblem] = useState(client.problem ?? 'none')
   const [editNotes, setEditNotes] = useState(client.notes ?? '')
@@ -162,16 +204,21 @@ function ClientDetail() {
     e.preventDefault()
     setEditSubmitting(true)
     try {
+      const payload: Record<string, any> = {
+        name: editName,
+        goal: editGoal,
+        pkg_total: Number(editPkgTotal),
+        email: editEmail.trim() || null,
+        phone: editPhone.trim() || null,
+        problem: editProblem,
+        notes: editNotes.trim() || null,
+      }
+      if (currentUser?.role === 'admin' || currentUser?.role === 'manager') {
+        if (editPtId) payload.pt_id = editPtId
+      }
       const res = await api<{ client: Client }>(`/clients/${client.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({
-          name: editName,
-          goal: editGoal,
-          pkg_total: Number(editPkgTotal),
-          phone: editPhone.trim() || null,
-          problem: editProblem,
-          notes: editNotes.trim() || null,
-        }),
+        body: JSON.stringify(payload),
       })
       setClient((prev) => ({
         ...prev,
@@ -250,105 +297,6 @@ function ClientDetail() {
     return encodeURIComponent(text)
   }
 
-  // Export PDF with Luxury Printable Layout
-  function exportPdf() {
-    const sorted = [...sessions].sort((a: Session, b: Session) => a.date.localeCompare(b.date))
-    const rows = sorted
-      .map((s: Session) => {
-        const eg = Array.isArray(s.exercises) ? s.exercises[0] : s.exercises
-        const exList = eg
-          ? [...(eg.warmup || []), ...(eg.resistance || []), ...(eg.cardio || []), ...(eg.cooldown || [])]
-              .map((e: Ex) => `${esc(e.name)}${e.detail ? ` (${esc(e.detail)})` : ''}`)
-              .join('; ')
-          : '—'
-
-        return `
-          <tr>
-            <td style="font-weight:600">${formatDate(s.date)}</td>
-            <td style="color:#d4af37;font-weight:bold">${s.rpe}/10</td>
-            <td>${s.weight != null ? `${s.weight} kg` : '—'}</td>
-            <td>${s.fat_pct != null ? `${s.fat_pct}%` : '—'}</td>
-            <td style="font-size:11px">${exList}</td>
-            <td style="font-style:italic;color:#666">${esc(s.notes ?? '—')}</td>
-          </tr>`
-      })
-      .join('')
-
-    const w = window.open('', '_blank', 'width=900,height=1000')
-    if (!w) {
-      alert('Popup diblokir oleh browser — izinkan popup untuk mencetak laporan.')
-      return
-    }
-
-    w.document.write(`<!doctype html>
-    <html lang="id">
-    <head>
-      <meta charset="utf-8">
-      <title>Laporan Latihan — ${esc(client.name)}</title>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 36px; color: #1a1a1a; background: #fff; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #222; padding-bottom: 16px; margin-bottom: 24px; }
-        .logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-        .logo span { color: #d4af37; }
-        .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 14px; margin-bottom: 24px; }
-        .meta-item { font-size: 12px; color: #6c757d; }
-        .meta-value { font-size: 14px; font-weight: bold; color: #212529; margin-top: 2px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 16px; }
-        th { background: #1a1a1a; color: #fff; text-align: left; padding: 10px 8px; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-        td { border-bottom: 1px solid #dee2e6; padding: 10px 8px; vertical-align: top; }
-        tr:nth-child(even) { background: #fafafa; }
-        .footer { margin-top: 36px; border-top: 1px solid #e9ecef; padding-top: 12px; font-size: 11px; color: #adb5bd; display: flex; justify-content: space-between; }
-        @media print {
-          body { margin: 0; }
-          button { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div>
-          <div class="logo">Train<span>Log</span></div>
-          <div style="font-size: 13px; color: #6c757d; margin-top: 4px;">Laporan Riwayat Sesi &amp; Evaluasi Kebugaran</div>
-        </div>
-        <div style="text-align: right; font-size: 12px; color: #6c757d;">
-          Dicetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-        </div>
-      </div>
-
-      <div class="meta-grid">
-        <div class="meta-item">Nama Klien<div class="meta-value">${esc(client.name)}</div></div>
-        <div class="meta-item">Target Latihan<div class="meta-value">${goalLabel(client.goal)}</div></div>
-        <div class="meta-item">Status Kuota Paket<div class="meta-value">${client.pkg_used} / ${client.pkg_total} Sesi</div></div>
-        <div class="meta-item">Rata-rata RPE<div class="meta-value">${avgRpeValue} / 10</div></div>
-      </div>
-
-      <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px 0;">Riwayat Sesi Latihan (${sessions.length})</h3>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 80px">Tanggal</th>
-            <th style="width: 60px">RPE</th>
-            <th style="width: 75px">BB (kg)</th>
-            <th style="width: 75px">Lemak %</th>
-            <th>Latihan (Set / Rep / Beban)</th>
-            <th style="width: 140px">Catatan Coach</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-
-      <div class="footer">
-        <span>TrainLog — Sistem Manajemen Sesi Latihan Personal Trainer</span>
-        <span>Halaman 1 dari 1</span>
-      </div>
-      <script>window.onload = () => window.print();</script>
-    </body>
-    </html>`)
-    w.document.close()
-  }
-
   // Filtered & Sorted Sessions
   const filteredSessions = sessions
     .filter((s: Session) => {
@@ -371,7 +319,7 @@ function ClientDetail() {
     })
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
+    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 pb-24 sm:pb-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
       <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
         {/* ── 1. Top Navigation Bar & Actions ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-line/60 animate-fade-in">
@@ -386,16 +334,39 @@ function ClientDetail() {
           <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
             <ThemeToggle />
 
+            {meUser && (
+              <button
+                type="button"
+                onClick={() => setIsSelfProfileOpen(true)}
+                className="bg-panel hover:bg-panel-elevated text-text border border-line hover:border-accent/40 text-xs px-3 sm:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 btn-interactive font-mono"
+                title="Edit Profil Akun Saya"
+              >
+                <UserCog className="w-3.5 h-3.5 text-accent" />
+                <span className="hidden sm:inline">Edit Akun</span>
+              </button>
+            )}
+
             <button
-              onClick={exportPdf}
+              onClick={() => setIsExportPdfOpen(true)}
               className="bg-panel hover:bg-panel-elevated text-text border border-line hover:border-accent/40 text-xs px-3 sm:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 btn-interactive"
+              title="Cetak Laporan Sesi Latihan Klien ke PDF"
             >
               <Printer className="w-3.5 h-3.5 text-dim" />
               <span>Export PDF</span>
             </button>
 
             <button
-              onClick={() => setIsEditModalOpen(true)}
+              onClick={() => {
+                setEditPtId(client.pt_id ?? '')
+                setEditName(client.name)
+                setEditGoal(client.goal)
+                setEditPkgTotal(client.pkg_total)
+                setEditEmail(client.email ?? '')
+                setEditPhone(client.phone ?? '')
+                setEditProblem(client.problem ?? 'none')
+                setEditNotes(client.notes ?? '')
+                setIsEditModalOpen(true)
+              }}
               className="bg-panel hover:bg-panel-elevated text-text border border-line hover:border-accent/40 text-xs px-3 sm:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 btn-interactive"
             >
               <Edit3 className="w-3.5 h-3.5 text-dim" />
@@ -437,6 +408,12 @@ function ClientDetail() {
 
                 {/* Subtitle meta tags */}
                 <div className="flex items-center gap-2 sm:gap-3 text-xs text-dim font-mono flex-wrap">
+                  {client.pt_name && (
+                    <span className="text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/25 flex items-center gap-1 font-semibold">
+                      <UserCheck className="w-3 h-3" />
+                      Coach: {client.pt_name}
+                    </span>
+                  )}
                   {client.gender && <span>{client.gender === 'pria' ? 'Pria' : 'Wanita'}</span>}
                   {client.age_bracket && <span>&bull; {client.age_bracket}</span>}
                   {client.problem && client.problem !== 'none' && (
@@ -546,7 +523,7 @@ function ClientDetail() {
         )}
 
         {/* ── 4. Tab Navigation (Touch-friendly Horizontal Scroll on Mobile) ── */}
-        <div className="flex items-center gap-2 border-b border-line pb-2 overflow-x-auto text-xs font-mono no-scrollbar touch-scroll -mx-1 px-1">
+        <div className="flex items-center gap-2 pb-2 overflow-x-auto text-xs font-mono no-scrollbar touch-scroll -mx-1 px-1">
           <button
             onClick={() => setActiveTab('sessions')}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 btn-interactive ${
@@ -1006,6 +983,10 @@ function ClientDetail() {
                   <span className="font-semibold text-text">{client.phone || '—'}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-line/40">
+                  <span className="text-dim">Email (Login Portal)</span>
+                  <span className="font-semibold text-text font-mono text-xs">{client.email || '—'}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-line/40">
                   <span className="text-dim">Target Utama</span>
                   <span className="font-semibold text-accent">{goalLabel(client.goal)}</span>
                 </div>
@@ -1067,6 +1048,30 @@ function ClientDetail() {
               </div>
 
               <form onSubmit={handleEditClient} className="space-y-4 text-xs">
+                {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && trainers.length > 0 && (
+                  <div className="p-3 bg-accent/5 rounded-xl border border-accent/25 space-y-1.5">
+                    <label className="text-accent font-semibold block font-mono uppercase text-[11px] flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>PT Penanggung Jawab (Akses Admin)</span>
+                    </label>
+                    <select
+                      value={editPtId}
+                      onChange={(e) => setEditPtId(e.target.value)}
+                      className="w-full bg-bg border border-accent/40 rounded-xl px-3 py-2 text-base sm:text-sm text-text outline-none focus:border-accent"
+                    >
+                      <option value="">-- Pilih Personal Trainer --</option>
+                      {trainers.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.email})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-dim">
+                      Sebagai Admin/Manager, Anda dapat memindahkan kepemilikan klien ini ke Personal Trainer lain.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1">Nama Klien</label>
                   <input
@@ -1102,6 +1107,17 @@ function ClientDetail() {
                       className="w-full bg-bg border border-line rounded-xl px-3 py-2 text-base sm:text-sm text-text outline-none focus:border-accent font-mono"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-dim block font-mono uppercase mb-1">Email Klien (Login Portal)</label>
+                  <input
+                    type="email"
+                    placeholder="klien@gmail.com"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full bg-bg border border-line rounded-xl px-3.5 py-2 text-base sm:text-sm text-text outline-none focus:border-accent"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1251,16 +1267,34 @@ function ClientDetail() {
           </div>
         )}
       </div>
+
+      {/* ── Mobile Bottom Navigation Bar ── */}
+      <MobileBottomNav clientId={client.id} onScheduleClick={() => setActiveTab('schedule')} />
+
+      {/* ── Export PDF Modal ── */}
+      <ExportPdfModal
+        isOpen={isExportPdfOpen}
+        onClose={() => setIsExportPdfOpen(false)}
+        initialClientId={client.id}
+        initialClientName={client.name}
+        clientsList={[{ id: client.id, name: client.name }]}
+      />
+
+      {/* ── Current User Profile Edit Modal ── */}
+      {meUser && (
+        <EditProfileModal
+          isOpen={isSelfProfileOpen}
+          onClose={() => setIsSelfProfileOpen(false)}
+          currentUser={meUser}
+          onProfileUpdated={(updated) => setMeUser((prev) => ({ ...(prev || {}), ...updated }))}
+        />
+      )}
     </main>
   )
 }
 
 function goalLabel(g: string) {
   return { fat_loss: 'Fat Loss', muscle_gain: 'Muscle Gain', general: 'General Fitness' }[g] ?? g
-}
-
-function esc(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 }
 
 function seriesOf(sessions: Session[], key: 'weight' | 'fat_pct' | 'rpe'): Point[] {

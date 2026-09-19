@@ -1,42 +1,89 @@
+import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { ArrowLeft, UserPlus } from 'lucide-react'
-import { api } from '../lib/api'
+import { ArrowLeft, UserPlus, Dumbbell, ShieldCheck } from 'lucide-react'
+import { api, type User } from '../lib/api'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { MobileBottomNav } from '../components/MobileBottomNav'
+
+export type TrainerOption = {
+  id: string
+  name: string
+  email: string
+  role?: string
+}
 
 export const Route = createFileRoute('/clients/new')({
   beforeLoad: async () => {
-    try { await api('/auth/me') } catch { throw redirect({ to: '/login' }) }
+    try {
+      const res = await api<{ user: User }>('/auth/me')
+      if (res.user.role === 'client') throw redirect({ to: '/portal' })
+    } catch (e) {
+      if (e && typeof e === 'object' && 'to' in e) throw e
+      throw redirect({ to: '/login' })
+    }
+  },
+  loader: async () => {
+    const meRes = await api<{ user: User }>('/auth/me')
+    let trainers: TrainerOption[] = []
+    if (meRes.user.role === 'admin' || meRes.user.role === 'manager') {
+      const staffRes = await api<{ staff: Array<{ id: string; name: string; email: string }> }>('/staff').catch(() => ({ staff: [] }))
+      trainers = (staffRes.staff || []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+      }))
+      // Pastikan ada akun trainer yang bisa dipilih
+      if (trainers.length === 0) {
+        trainers = [{ id: meRes.user.id, name: meRes.user.name, email: meRes.user.email }]
+      }
+    }
+    return {
+      currentUser: meRes.user,
+      trainers,
+    }
   },
   component: NewClient,
 })
 
-const input = 'border-line bg-bg w-full rounded-lg border px-3 py-2 outline-none focus:border-accent'
-const label = 'text-dim mb-1 block text-sm'
+const input = 'border-line bg-bg w-full rounded-xl border px-3.5 py-2.5 outline-none focus:border-accent transition-colors'
+const label = 'text-dim mb-1.5 block text-xs font-semibold'
 
 function NewClient() {
+  const { currentUser, trainers } = Route.useLoaderData()
+  const [selectedPtId, setSelectedPtId] = useState<string>(trainers[0]?.id || currentUser.id)
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const isAdminOrManager = currentUser.role === 'admin' || currentUser.role === 'manager'
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    setErrorMsg('')
+    setSubmitting(true)
+
     const f = new FormData(e.currentTarget)
-    const err = document.getElementById('err')!
-    err.textContent = ''
     try {
       const r = await api<{ client: { id: string } }>('/clients', {
         method: 'POST',
         body: JSON.stringify({
-          name: f.get('name'), goal: f.get('goal'),
+          name: f.get('name'),
+          goal: f.get('goal'),
           pkg_total: Number(f.get('pkg_total') || 0),
+          email: f.get('email') || undefined,
           phone: f.get('phone') || undefined,
           notes: f.get('notes') || undefined,
+          pt_id: isAdminOrManager && selectedPtId ? selectedPtId : undefined,
         }),
       })
       location.href = `/clients/${r.client.id}`
     } catch (ex) {
-      err.textContent = ex instanceof Error ? `Gagal: ${ex.message}` : 'Gagal menyimpan.'
+      setErrorMsg(ex instanceof Error ? `Gagal: ${ex.message}` : 'Gagal menyimpan data klien.')
+      setSubmitting(false)
     }
   }
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-4 sm:p-6 md:p-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
+    <main className="bg-bg text-text min-h-dvh p-4 sm:p-6 md:p-10 pb-24 sm:pb-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
       <div className="mx-auto max-w-md mb-4 flex items-center justify-between">
         <a
           href="/"
@@ -49,10 +96,10 @@ function NewClient() {
         <ThemeToggle />
       </div>
 
-      <form onSubmit={onSubmit} className="bg-panel border-line mx-auto max-w-md rounded-2xl border p-5 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.7)] animate-fade-in">
-        <div className="flex items-center gap-2.5 pb-4 mb-6 border-b border-line">
-          <div className="w-9 h-9 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent">
-            <UserPlus className="w-4 h-4" />
+      <form onSubmit={onSubmit} className="bg-panel border border-line mx-auto max-w-md rounded-2xl p-5 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.7)] animate-fade-in space-y-4">
+        <div className="flex items-center gap-2.5 pb-4 border-b border-line">
+          <div className="w-10 h-10 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent">
+            <UserPlus className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-text">Pendaftaran Klien Baru</h1>
@@ -60,33 +107,139 @@ function NewClient() {
           </div>
         </div>
 
-        <label className={label}>Nama Klien</label>
-        <input name="name" required maxLength={100} placeholder="Nama lengkap klien" className={`${input} mb-4 text-base sm:text-sm`} />
+        {/* ── Admin / Manager Dedicated Trainer Selection ── */}
+        {isAdminOrManager && (
+          <div className="p-4 rounded-xl bg-bg border border-accent/40 shadow-sm animate-fade-in space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                <Dumbbell className="w-3.5 h-3.5 text-accent" />
+                <span>Pilih PT Penanggung Jawab</span>
+                <span className="text-accent">*</span>
+              </label>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                Fitur {currentUser.role.toUpperCase()}
+              </span>
+            </div>
 
-        <label className={label}>Tujuan Utama</label>
-        <select name="goal" className={`${input} mb-4 text-base sm:text-sm`}>
-          <option value="fat_loss">Fat Loss (Penurunan Lemak)</option>
-          <option value="muscle_gain">Muscle Gain (Peningkatan Massa Otot)</option>
-          <option value="general">General Fitness &amp; Stamina</option>
-        </select>
+            {trainers.length > 0 ? (
+              <select
+                name="pt_id"
+                required
+                value={selectedPtId}
+                onChange={(e) => setSelectedPtId(e.target.value)}
+                className="w-full bg-panel border border-line focus:border-accent text-text rounded-xl px-3.5 py-2.5 outline-none text-base sm:text-sm font-semibold transition-colors"
+              >
+                {trainers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.email})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-xs text-dim py-1 font-mono">
+                Belum ada pelatih terdaftar di studio. Klien akan ditautkan ke akun Anda.
+              </div>
+            )}
 
-        <label className={label}>Total Kuota Sesi Paket</label>
-        <input name="pkg_total" type="number" min={0} max={1000} defaultValue={12} className={`${input} mb-4 font-mono text-base sm:text-sm`} />
+            <p className="text-[11px] text-dim leading-relaxed">
+              Sebagai <strong>{currentUser.role.toUpperCase()}</strong>, Anda dapat mendaftarkan klien dan menunjuk pelatih (PT) yang akan bertanggung jawab.
+            </p>
+          </div>
+        )}
 
-        <label className={label}>Nomor WhatsApp (opsional)</label>
-        <input name="phone" maxLength={20} placeholder="08xxxxxxxxxx" className={`${input} mb-4 font-mono text-base sm:text-sm`} />
+        <div>
+          <label className={label}>Nama Lengkap Klien <span className="text-accent">*</span></label>
+          <input
+            name="name"
+            required
+            maxLength={100}
+            placeholder="misal: Rian Pratama"
+            className={`${input} text-base sm:text-sm`}
+          />
+        </div>
 
-        <label className={label}>Catatan Tambahan (opsional)</label>
-        <textarea name="notes" maxLength={500} rows={3} placeholder="Riwayat kebugaran, keluhan ringan, atau jadwal preferensi..." className={`${input} mb-4 text-base sm:text-sm`} />
+        <div>
+          <label className={label}>Tujuan Utama Latihan <span className="text-accent">*</span></label>
+          <select name="goal" className={`${input} text-base sm:text-sm`}>
+            <option value="fat_loss">Fat Loss (Penurunan Lemak)</option>
+            <option value="muscle_gain">Muscle Gain (Peningkatan Massa Otot)</option>
+            <option value="general">General Fitness &amp; Stamina</option>
+          </select>
+        </div>
 
-        <p id="err" className="text-rose-400 mb-4 min-h-5 text-xs font-medium"></p>
+        <div>
+          <label className={label}>Total Kuota Sesi Paket <span className="text-accent">*</span></label>
+          <input
+            name="pkg_total"
+            type="number"
+            min={0}
+            max={1000}
+            defaultValue={12}
+            className={`${input} font-mono text-base sm:text-sm`}
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className={label}>Email Klien (opsional)</label>
+            <span className="text-[10px] text-accent font-mono">Untuk Login Portal</span>
+          </div>
+          <input
+            name="email"
+            type="email"
+            placeholder="klien@gmail.com"
+            className={`${input} text-base sm:text-sm`}
+          />
+        </div>
+
+        <div>
+          <label className={label}>Nomor WhatsApp / HP (opsional)</label>
+          <input
+            name="phone"
+            maxLength={20}
+            placeholder="08xxxxxxxxxx"
+            className={`${input} font-mono text-base sm:text-sm`}
+          />
+        </div>
+
+        <div>
+          <label className={label}>Catatan Tambahan (opsional)</label>
+          <textarea
+            name="notes"
+            maxLength={500}
+            rows={3}
+            placeholder="Riwayat kebugaran, preferensi jadwal, atau keluhan cedera..."
+            className={`${input} text-base sm:text-sm`}
+          />
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold animate-shake">
+            {errorMsg}
+          </div>
+        )}
+
         <button
           type="submit"
-          className="btn-interactive bg-accent hover:bg-accent/90 w-full rounded-xl py-3 sm:py-2.5 font-semibold text-black text-sm transition-all shadow-[0_2px_14px_rgba(212,175,55,0.25)] flex items-center justify-center gap-2"
+          disabled={submitting}
+          className="btn-interactive bg-accent hover:bg-accent/90 disabled:opacity-50 w-full rounded-xl py-3 sm:py-2.5 font-bold text-black text-sm transition-all shadow-[0_2px_14px_rgba(212,175,55,0.25)] flex items-center justify-center gap-2"
         >
-          <span>Simpan Data Klien</span>
+          {submitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+              <span>Menyimpan Klien...</span>
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="w-4 h-4" />
+              <span>Simpan Data Klien</span>
+            </>
+          )}
         </button>
       </form>
+
+      {/* ── Mobile Bottom Navigation Bar ── */}
+      <MobileBottomNav />
     </main>
   )
 }

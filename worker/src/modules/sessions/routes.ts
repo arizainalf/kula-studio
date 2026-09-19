@@ -17,17 +17,13 @@ const sessionSchema = z.object({
   rpe: z.number().int().min(1).max(10),
   weight: z.number().min(0).max(500).nullable().optional(),
   fat_pct: z.number().min(0).max(100).nullable().optional(),
-  exercises: z.array(z.object({
-    warmup: z.array(exerciseSchema).default([]),
-    resistance: z.array(exerciseSchema).default([]),
-    cardio: z.array(exerciseSchema).default([]),
-    cooldown: z.array(exerciseSchema).default([]),
-  })).default([]),
+  exercises: z.array(z.record(z.string(), z.array(exerciseSchema))).default([]),
   notes: z.string().max(2000).optional(),
 });
 
-// PT harus punya client-nya (manager/admin read-only list)
+// PT harus punya client-nya (manager/admin read-only list; client read own)
 async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string }) {
+  if (u.role === 'client') return u.id === clientId ? { pt_id: null } : null;
   const [row] = await sql`select pt_id from clients where id = ${clientId}`;
   if (!row) return null;
   if (u.role === 'admin') return row;
@@ -38,6 +34,45 @@ async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id:
   }
   return null;
 }
+
+// GET /api/sessions — Daftar seluruh sesi (untuk PDF export & report rekap)
+sessions.get('/', async (c) => {
+  const u = c.get('user');
+  if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
+
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+  const clientId = c.req.query('clientId');
+  const minRpe = c.req.query('minRpe');
+  const limit = Math.min(Number(c.req.query('limit') ?? 500), 1000);
+
+  const sql = db(c);
+  const rows = await sql`
+    select 
+      s.*,
+      c.name as client_name,
+      c.goal as client_goal,
+      c.phone as client_phone,
+      c.pkg_total as client_pkg_total,
+      row_number() over (partition by s.client_id order by s.date asc, s.created_at asc)::int as session_number,
+      count(*) over (partition by s.client_id)::int as client_pkg_used,
+      p.name as pt_name
+    from sessions s
+    join clients c on c.id = s.client_id
+    join users p on p.id = s.pt_id
+    where (${u.role} = 'admin' or s.pt_id = ${u.id}
+           or (${u.role} = 'manager' and exists(
+                select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id})))
+      ${from ? sql`and s.date >= ${from}` : sql``}
+      ${to ? sql`and s.date <= ${to}` : sql``}
+      ${clientId ? sql`and s.client_id = ${clientId}` : sql``}
+      ${minRpe ? sql`and s.rpe >= ${Number(minRpe)}` : sql``}
+    order by s.date desc, s.created_at desc
+    limit ${limit}
+  `;
+
+  return c.json({ sessions: rows });
+});
 
 // GET /api/clients/:clientId/sessions — keyset pagination ?before=<date>&limit=
 sessions.get('/:clientId/sessions', async (c) => {

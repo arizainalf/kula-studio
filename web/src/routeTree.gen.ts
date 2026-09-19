@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PortalRouteImport } from './routes/portal'
+import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as ClientsIndexRouteImport } from './routes/clients.index'
 import { Route as ClientsClientIdRouteImport } from './routes/clients.$clientId'
 import { Route as ClientsNewRouteImport } from './routes/clients.new'
 import { Route as ClientsClientIdIndexRouteImport } from './routes/clients.$clientId.index'
@@ -30,6 +33,21 @@ const LandingRoute = LandingRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientsIndexRoute = ClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
@@ -57,8 +75,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRoute
+  '/schedule': typeof ScheduleRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
+  '/clients/': typeof ClientsIndexRoute
   '/clients/$clientId/log': typeof ClientsClientIdLogRoute
   '/clients/$clientId/': typeof ClientsClientIdIndexRoute
 }
@@ -66,7 +87,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRoute
+  '/schedule': typeof ScheduleRoute
   '/clients/new': typeof ClientsNewRoute
+  '/clients': typeof ClientsIndexRoute
   '/clients/$clientId/log': typeof ClientsClientIdLogRoute
   '/clients/$clientId': typeof ClientsClientIdIndexRoute
 }
@@ -75,8 +99,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
+  '/portal': typeof PortalRoute
+  '/schedule': typeof ScheduleRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
+  '/clients/': typeof ClientsIndexRoute
   '/clients/$clientId/log': typeof ClientsClientIdLogRoute
   '/clients/$clientId/': typeof ClientsClientIdIndexRoute
 }
@@ -86,8 +113,11 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/login'
+    | '/portal'
+    | '/schedule'
     | '/clients/$clientId'
     | '/clients/new'
+    | '/clients/'
     | '/clients/$clientId/log'
     | '/clients/$clientId/'
   fileRoutesByTo: FileRoutesByTo
@@ -95,7 +125,10 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/login'
+    | '/portal'
+    | '/schedule'
     | '/clients/new'
+    | '/clients'
     | '/clients/$clientId/log'
     | '/clients/$clientId'
   id:
@@ -103,8 +136,11 @@ export interface FileRouteTypes {
     | '/'
     | '/landing'
     | '/login'
+    | '/portal'
+    | '/schedule'
     | '/clients/$clientId'
     | '/clients/new'
+    | '/clients/'
     | '/clients/$clientId/log'
     | '/clients/$clientId/'
   fileRoutesById: FileRoutesById
@@ -113,8 +149,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
+  PortalRoute: typeof PortalRoute
+  ScheduleRoute: typeof ScheduleRoute
   ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   ClientsNewRoute: typeof ClientsNewRoute
+  ClientsIndexRoute: typeof ClientsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +177,27 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clients/': {
+      id: '/clients/'
+      path: '/clients'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof ClientsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clients/$clientId': {
@@ -189,8 +249,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
+  PortalRoute: PortalRoute,
+  ScheduleRoute: ScheduleRoute,
   ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   ClientsNewRoute: ClientsNewRoute,
+  ClientsIndexRoute: ClientsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
