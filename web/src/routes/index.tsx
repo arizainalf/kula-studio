@@ -8,13 +8,8 @@ import {
   RpeSpectrumCard,
   type ClientSummary,
 } from '../components/DashboardCharts'
-import { ThemeToggle } from '../components/ThemeToggle'
 import { MobileBottomNav } from '../components/MobileBottomNav'
-import { ExportPdfModal } from '../components/ExportPdfModal'
-import { AdminExerciseModal } from '../components/AdminExerciseModal'
-import { EditProfileModal } from '../components/EditProfileModal'
-import { AdminUsersModal } from '../components/AdminUsersModal'
-import { PlatformAdminModal } from '../components/PlatformAdminModal'
+import { AppLayout, useAppLayout } from '../components/AppLayout'
 import {
   formatDate,
   formatShortDate,
@@ -28,8 +23,6 @@ import {
   TrendingUp,
   Calendar,
   UserPlus,
-  LogOut,
-  Globe,
   MessageSquare,
   ArrowRight,
   Printer,
@@ -106,16 +99,20 @@ function RootIndex() {
 
 function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Client[]; schedule: ScheduleItem[] }) {
   const [currentUser, setCurrentUser] = useState<User>(initialMe)
-  const [isExportPdfOpen, setIsExportPdfOpen] = useState(false)
-  const [isAdminExerciseOpen, setIsAdminExerciseOpen] = useState(false)
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
-  const [isAdminUsersOpen, setIsAdminUsersOpen] = useState(false)
-  const [isPlatformAdminOpen, setIsPlatformAdminOpen] = useState(false)
 
-  async function logout() {
-    await api('/auth/logout', { method: 'POST' })
-    location.href = '/'
-  }
+  return (
+    <AppLayout
+      currentUser={currentUser}
+      activeRoute="dashboard"
+      onProfileUpdated={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
+    >
+      <DashboardContent currentUser={currentUser} clients={clients} schedule={schedule} />
+    </AppLayout>
+  )
+}
+
+function DashboardContent({ currentUser, clients, schedule }: { currentUser: User; clients: Client[]; schedule: ScheduleItem[] }) {
+  const { openEditProfile, openAdminExercise, openExportPdf, openPlatformAdmin } = useAppLayout()
 
   // Analytics Computations
   const totalClients = clients.length
@@ -130,113 +127,9 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
   })
 
   return (
-    <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased">
-      {/* ── 1. Top Global Navigation Bar ── */}
-      <header className="sticky top-0 z-40 bg-panel backdrop-blur-xl border-b border-line">
-        <div className="mx-auto max-w-6xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
-          {/* Brand Identity */}
-          <a href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(212,175,55,0.15)] group-hover:border-accent transition-colors">
-              <span className="font-extrabold text-xs tracking-tighter text-accent">TL</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-sm sm:text-base tracking-tight leading-none text-text">
-                Train<span className="text-accent">Log</span>
-              </span>
-              <span className="text-[9px] text-dim tracking-wider uppercase font-mono mt-0.5">
-                Pro PT Manager
-              </span>
-            </div>
-          </a>
-
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-dim">
-            <Link to="/" className="text-accent font-bold">
-              Dashboard
-            </Link>
-            <Link to="/clients" className="hover:text-accent transition-colors">
-              Klien
-            </Link>
-            <Link to="/schedule" className="hover:text-accent transition-colors">
-              Jadwal
-            </Link>
-            {currentUser.role === 'platform_admin' && (
-              <button
-                type="button"
-                onClick={() => setIsPlatformAdminOpen(true)}
-                className="hover:text-accent transition-colors flex items-center gap-1.5 text-amber-400 font-bold cursor-pointer"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Kelola Studio (SaaS)</span>
-              </button>
-            )}
-            {(currentUser.role === 'admin_studio' || currentUser.role === 'manager' || currentUser.role === 'platform_admin') && (
-              <button
-                type="button"
-                onClick={() => setIsAdminUsersOpen(true)}
-                className="hover:text-accent transition-colors flex items-center gap-1.5 text-dim cursor-pointer"
-              >
-                <Users className="w-3.5 h-3.5 text-accent" />
-                <span>Kelola Akun</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setIsAdminExerciseOpen(true)}
-              className="hover:text-accent transition-colors flex items-center gap-1.5 text-dim cursor-pointer"
-            >
-              <Dumbbell className="w-3.5 h-3.5 text-accent" />
-              <span>Master Gerakan</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsExportPdfOpen(true)}
-              className="hover:text-accent transition-colors flex items-center gap-1.5 text-dim cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-accent" />
-              <span>Laporan PDF</span>
-            </button>
-          </nav>
-
-          {/* Quick Actions (Theme Toggle, Public Landing & Logout) */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <ThemeToggle showLabel={false} />
-
-            <button
-              type="button"
-              onClick={() => setIsEditProfileOpen(true)}
-              className="btn-interactive text-dim hover:text-accent p-2 sm:px-3 sm:py-1.5 rounded-lg border border-line hover:border-accent/40 transition-colors flex items-center gap-1.5 text-xs font-mono"
-              title="Edit Profil Akun Saya"
-            >
-              <UserCog className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden sm:inline">Edit Akun</span>
-            </button>
-
-            <a
-              href="/landing"
-              className="btn-interactive text-dim hover:text-accent p-2 sm:px-3 sm:py-1.5 rounded-lg border border-line hover:border-accent/40 transition-colors flex items-center gap-1.5 text-xs font-mono"
-              title="Buka Beranda Publik"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Beranda Publik</span>
-            </a>
-
-            <button
-              onClick={logout}
-              className="btn-interactive text-dim hover:text-rose-400 p-2 sm:px-3 sm:py-1.5 rounded-lg border border-line hover:border-rose-500/40 transition-colors flex items-center gap-1.5 text-xs font-medium"
-              title="Keluar dari Akun"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Keluar</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* ── Main Dashboard Body ── */}
-      <main className="p-3.5 sm:p-8 md:p-10 pt-4 sm:pt-6 pb-24 sm:pb-10">
-        <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
-          {/* ── 2. Coach Greeting & Hero Action Card ── */}
+    <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
+      <div className="w-full space-y-6 sm:space-y-8">
+        {/* ── 2. Coach Greeting & Hero Action Card ── */}
           <div className="hover-gold-glow p-4 sm:p-6 rounded-2xl bg-panel border border-line shadow-[0_4px_24px_rgba(0,0,0,0.35)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 animate-fade-in">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {/* Coach Avatar with Online Badge */}
@@ -302,7 +195,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
               {currentUser.role === 'platform_admin' && (
                 <button
                   type="button"
-                  onClick={() => setIsPlatformAdminOpen(true)}
+                  onClick={openPlatformAdmin}
                   className="btn-interactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#141414] text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md"
                   title="Kelola Semua Studio Gym di Platform"
                 >
@@ -313,7 +206,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
 
               <button
                 type="button"
-                onClick={() => setIsEditProfileOpen(true)}
+                onClick={openEditProfile}
                 className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                 title="Edit Profil dan Password Akun Saya"
               >
@@ -323,7 +216,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
 
               <button
                 type="button"
-                onClick={() => setIsAdminExerciseOpen(true)}
+                onClick={openAdminExercise}
                 className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                 title="Kelola Master Gerakan & Kategori Latihan"
               >
@@ -340,7 +233,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
 
               <button
                 type="button"
-                onClick={() => setIsExportPdfOpen(true)}
+                onClick={openExportPdf}
                 className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                 title="Cetak dan Ekspor Laporan Sesi Latihan ke PDF"
               >
@@ -573,43 +466,8 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
           </div>
         </section>
       </div>
+      {/* ── Mobile Bottom Navigation Bar (App Experience) ── */}
+      <MobileBottomNav />
     </main>
-
-    {/* ── Mobile Bottom Navigation Bar (App Experience) ── */}
-    <MobileBottomNav />
-
-    {/* ── Modals ── */}
-    <ExportPdfModal
-      isOpen={isExportPdfOpen}
-      onClose={() => setIsExportPdfOpen(false)}
-      clientsList={clients.map((c) => ({ id: c.id, name: c.name }))}
-    />
-
-    <AdminExerciseModal
-      isOpen={isAdminExerciseOpen}
-      onClose={() => setIsAdminExerciseOpen(false)}
-      userRole={currentUser.role}
-      onRoleChanged={() => location.reload()}
-    />
-
-    <EditProfileModal
-      isOpen={isEditProfileOpen}
-      onClose={() => setIsEditProfileOpen(false)}
-      currentUser={currentUser}
-      onProfileUpdated={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
-    />
-
-    <AdminUsersModal
-      isOpen={isAdminUsersOpen}
-      onClose={() => setIsAdminUsersOpen(false)}
-      currentUser={currentUser}
-    />
-
-    <PlatformAdminModal
-      isOpen={isPlatformAdminOpen}
-      onClose={() => setIsPlatformAdminOpen(false)}
-      currentUser={currentUser}
-    />
-  </div>
   )
 }

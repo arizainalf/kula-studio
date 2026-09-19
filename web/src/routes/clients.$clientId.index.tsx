@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
-import { ThemeToggle } from '../components/ThemeToggle'
 import { MobileBottomNav } from '../components/MobileBottomNav'
 import { ExportPdfModal } from '../components/ExportPdfModal'
+import { AppLayout } from '../components/AppLayout'
 import {
   formatDate,
   formatShortDate,
@@ -14,7 +14,6 @@ import {
   getLocalTodayString,
   getLocalFutureDateString,
 } from '../lib/date'
-import { EditProfileModal } from '../components/EditProfileModal'
 import {
   ArrowLeft,
   Printer,
@@ -38,7 +37,6 @@ import {
   AlertTriangle,
   Check,
   ShieldCheck,
-  UserCog,
 } from 'lucide-react'
 
 export const Route = createFileRoute('/clients/$clientId/')({
@@ -141,7 +139,6 @@ function ClientDetail() {
   }
 
   const [meUser, setMeUser] = useState<User | undefined>(currentUser)
-  const [isSelfProfileOpen, setIsSelfProfileOpen] = useState(false)
   const [client, setClient] = useState<Client>(initialClient)
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos)
   const [scheduleList, setScheduleList] = useState<ClientSchedule[]>(initialSchedule)
@@ -319,32 +316,24 @@ function ClientDetail() {
     })
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 pb-24 sm:pb-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
-      <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
-        {/* ── 1. Top Navigation Bar & Actions ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-line/60 animate-fade-in">
-          <a
-            href="/"
-            className="text-dim hover:text-accent text-xs font-mono flex items-center gap-1.5 transition-colors w-fit btn-interactive"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Dashboard</span>
-          </a>
+    <AppLayout
+      currentUser={meUser || ({} as User)}
+      activeRoute="clients"
+      onProfileUpdated={(updated) => setMeUser((prev) => (prev ? ({ ...prev, ...updated }) : undefined))}
+    >
+      <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12 selection:bg-accent/30 selection:text-text font-sans antialiased">
+        <div className="w-full space-y-6 sm:space-y-8">
+          {/* ── 1. Top Navigation Bar & Actions ── */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-line/60 animate-fade-in">
+            <a
+              href="/clients"
+              className="text-dim hover:text-accent text-xs font-mono flex items-center gap-1.5 transition-colors w-fit btn-interactive"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali ke Direktori Klien</span>
+            </a>
 
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
-            <ThemeToggle />
-
-            {meUser && (
-              <button
-                type="button"
-                onClick={() => setIsSelfProfileOpen(true)}
-                className="bg-panel hover:bg-panel-elevated text-text border border-line hover:border-accent/40 text-xs px-3 sm:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 btn-interactive font-mono"
-                title="Edit Profil Akun Saya"
-              >
-                <UserCog className="w-3.5 h-3.5 text-accent" />
-                <span className="hidden sm:inline">Edit Akun</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
 
             <button
               onClick={() => setIsExportPdfOpen(true)}
@@ -1279,18 +1268,9 @@ function ClientDetail() {
         initialClientName={client.name}
         clientsList={[{ id: client.id, name: client.name }]}
       />
-
-      {/* ── Current User Profile Edit Modal ── */}
-      {meUser && (
-        <EditProfileModal
-          isOpen={isSelfProfileOpen}
-          onClose={() => setIsSelfProfileOpen(false)}
-          currentUser={meUser}
-          onProfileUpdated={(updated) => setMeUser((prev) => ({ ...(prev || {}), ...updated }))}
-        />
-      )}
     </main>
-  )
+  </AppLayout>
+)
 }
 
 function goalLabel(g: string) {

@@ -378,8 +378,8 @@ function LogSession() {
   const isUrgentRenewal = client.pkg_total > 0 && remainingQuota <= 3
 
   return (
-    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-8 md:p-10 selection:bg-accent/30 selection:text-text font-sans antialiased">
-      <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
+    <main className="bg-bg text-text min-h-dvh p-3.5 sm:p-6 lg:p-8 selection:bg-accent/30 selection:text-text font-sans antialiased">
+      <div className="w-full max-w-6xl mx-auto space-y-6 sm:space-y-8">
         {/* ── Top Header & Breadcrumb ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-line/60">
           <div className="flex items-center gap-3.5">
