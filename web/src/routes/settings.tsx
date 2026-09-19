@@ -364,19 +364,19 @@ function PlatformSettingsPage() {
       onProfileUpdated={(up) => setCurrentUser((prev) => ({ ...prev, ...up }))}
       activeRoute="settings"
     >
-      <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
-        <div className="w-full space-y-6 animate-fade-in">
+      <main className="flex-1 w-full min-w-0 max-w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
+        <div className="w-full min-w-0 space-y-6 animate-fade-in">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-panel border border-line">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-accent/15 text-accent">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-panel border border-line">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="p-2 rounded-xl bg-accent/15 text-accent shrink-0">
                 <Sliders className="w-5 h-5" />
               </span>
-              <h1 className="text-xl sm:text-2xl font-black text-text tracking-tight">
+              <h1 className="text-lg sm:text-2xl font-black text-text tracking-tight break-words">
                 Identitas &amp; Landing Page SaaS
               </h1>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/25 uppercase">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/25 uppercase shrink-0">
                 Platform Admin
               </span>
             </div>
@@ -386,12 +386,12 @@ function PlatformSettingsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <a
               href="/landing"
               target="_blank"
               rel="noreferrer"
-              className="btn-interactive flex items-center gap-2 px-3.5 py-2 rounded-xl bg-bg border border-line hover:border-accent text-xs font-semibold text-text transition-all"
+              className="btn-interactive flex items-center justify-center gap-2 w-full sm:w-auto px-3.5 py-2 rounded-xl bg-bg border border-line hover:border-accent text-xs font-semibold text-text transition-all"
             >
               <ExternalLink className="w-3.5 h-3.5 text-accent" />
               <span>Lihat Landing Page</span>
@@ -401,15 +401,15 @@ function PlatformSettingsPage() {
 
         {/* Global Alert Notification */}
         {successMsg && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between text-xs sm:text-sm animate-fade-in">
-            <div className="flex items-center gap-2.5">
+          <div className="p-3.5 sm:p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between text-xs sm:text-sm animate-fade-in">
+            <div className="flex items-center gap-2.5 min-w-0">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{successMsg}</span>
+              <span className="break-words">{successMsg}</span>
             </div>
             <button
               type="button"
               onClick={() => setSuccessMsg('')}
-              className="p-1 hover:text-text"
+              className="p-1 hover:text-text shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -417,15 +417,15 @@ function PlatformSettingsPage() {
         )}
 
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-between text-xs sm:text-sm animate-fade-in">
-            <div className="flex items-center gap-2.5">
+          <div className="p-3.5 sm:p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-between text-xs sm:text-sm animate-fade-in">
+            <div className="flex items-center gap-2.5 min-w-0">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
+              <span className="break-words">{errorMsg}</span>
             </div>
             <button
               type="button"
               onClick={() => setErrorMsg('')}
-              className="p-1 hover:text-text"
+              className="p-1 hover:text-text shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -433,7 +433,8 @@ function PlatformSettingsPage() {
         )}
 
         {/* Tabs Bar */}
-        <div className="flex items-center gap-2 border-b border-line pb-1 overflow-x-auto">
+        <div className="w-full min-w-0 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 border-b border-line pb-1.5 w-max min-w-full">
           <button
             type="button"
             onClick={() => setActiveTab('identity')}
@@ -519,16 +520,17 @@ function PlatformSettingsPage() {
             <Phone className="w-4 h-4" />
             <span>Kontak &amp; Footer</span>
           </button>
+          </div>
         </div>
 
         {/* ─── TAB 1: IDENTITAS UTAMA & HERO ─── */}
         {activeTab === 'identity' && (
-          <div className="grid lg:grid-cols-12 gap-6 items-start">
+          <div className="grid lg:grid-cols-12 gap-6 items-start w-full min-w-0">
             {/* Form Column */}
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-7 w-full min-w-0">
               <form
                 onSubmit={handleSaveIdentity}
-                className="p-6 rounded-2xl bg-panel border border-line space-y-5"
+                className="p-4 sm:p-6 rounded-2xl bg-panel border border-line space-y-5"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-line/40">
                   <h3 className="text-sm font-bold text-text uppercase tracking-wider font-mono">
@@ -648,8 +650,8 @@ function PlatformSettingsPage() {
             </div>
 
             {/* Live Preview Column */}
-            <div className="lg:col-span-5">
-              <div className="p-6 rounded-2xl bg-panel border border-line space-y-4 sticky top-6">
+            <div className="lg:col-span-5 w-full min-w-0">
+              <div className="p-4 sm:p-6 rounded-2xl bg-panel border border-line space-y-4 sticky top-6">
                 <div className="flex items-center justify-between pb-3 border-b border-line/40">
                   <div className="flex items-center gap-2 text-xs font-mono font-bold text-dim uppercase">
                     <Sparkles className="w-3.5 h-3.5 text-accent" />
@@ -677,10 +679,10 @@ function PlatformSettingsPage() {
                 </div>
 
                 {/* Simulated Hero View */}
-                <div className="p-6 rounded-xl bg-bg border border-line text-center space-y-3 relative overflow-hidden">
+                <div className="p-4 sm:p-6 rounded-xl bg-bg border border-line text-center space-y-3 relative overflow-hidden">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-panel border border-accent/30 text-accent text-[10px] font-mono uppercase">
                     <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                    <span className="truncate max-w-[240px]">{heroPill || 'Pill Hero'}</span>
+                    <span className="truncate max-w-[200px] sm:max-w-[240px]">{heroPill || 'Pill Hero'}</span>
                   </div>
 
                   <h2 className="text-lg sm:text-xl font-black text-text leading-snug">
@@ -708,8 +710,8 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 2: FITUR APLIKASI ─── */}
         {activeTab === 'features' && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-panel border border-line">
+          <div className="space-y-4 w-full min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-xl bg-panel border border-line">
               <div>
                 <h3 className="font-bold text-sm text-text">Daftar Fitur di Landing Page</h3>
                 <p className="text-xs text-dim mt-0.5">
@@ -722,7 +724,7 @@ function PlatformSettingsPage() {
                   setEditingFeature(null)
                   setFeatureModalOpen(true)
                 }}
-                className="btn-interactive flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-[#141414] font-bold text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] transition-all"
+                className="btn-interactive flex items-center justify-center gap-1.5 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-[#141414] font-bold text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tambah Fitur Baru</span>
@@ -742,7 +744,7 @@ function PlatformSettingsPage() {
                 {settings.features.map((feature, idx) => (
                   <div
                     key={feature.id}
-                    className="hover-gold-glow p-5 rounded-2xl bg-panel border border-line flex flex-col justify-between transition-all"
+                    className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line flex flex-col justify-between transition-all"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-3">
@@ -788,8 +790,8 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 3: CARA KERJA ─── */}
         {activeTab === 'workflow' && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-panel border border-line">
+          <div className="space-y-4 w-full min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-xl bg-panel border border-line">
               <div>
                 <h3 className="font-bold text-sm text-text">Langkah-langkah Alur Kerja</h3>
                 <p className="text-xs text-dim mt-0.5">
@@ -802,7 +804,7 @@ function PlatformSettingsPage() {
                   setEditingStep(null)
                   setStepModalOpen(true)
                 }}
-                className="btn-interactive flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-[#141414] font-bold text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] transition-all"
+                className="btn-interactive flex items-center justify-center gap-1.5 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-[#141414] font-bold text-xs shadow-[0_2px_12px_rgba(226,232,0,0.25)] transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tambah Langkah</span>
@@ -822,7 +824,7 @@ function PlatformSettingsPage() {
                 {settings.how_it_works.map((step) => (
                   <div
                     key={step.id}
-                    className="hover-gold-glow p-5 rounded-2xl bg-panel border border-line flex flex-col justify-between transition-all"
+                    className="hover-gold-glow p-4 sm:p-5 rounded-2xl bg-panel border border-line flex flex-col justify-between transition-all"
                   >
                     <div>
                       <div className="font-mono text-2xl font-black text-accent mb-2">
@@ -862,10 +864,10 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 4: PAKET & HARGA ─── */}
         {activeTab === 'pricing' && (
-          <div className="space-y-8">
+          <div className="space-y-8 w-full min-w-0">
             {/* Section 1: Paket Langganan Utama */}
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-panel border border-line">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-xl bg-panel border border-line">
                 <div>
                   <h3 className="font-bold text-sm text-text">Paket Langganan SaaS</h3>
                   <p className="text-xs text-dim mt-0.5">
@@ -891,11 +893,11 @@ function PlatformSettingsPage() {
                   <p className="font-semibold text-text text-sm">Belum ada paket langganan.</p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {settings.pricing_plans.map((plan) => (
                     <div
                       key={plan.id}
-                      className={`hover-gold-glow p-6 rounded-2xl bg-panel flex flex-col justify-between transition-all relative ${
+                      className={`hover-gold-glow p-4 sm:p-6 rounded-2xl bg-panel flex flex-col justify-between transition-all relative ${
                         plan.is_popular
                           ? 'border-2 border-accent shadow-[0_4px_24px_rgba(226,232,0,0.2)]'
                           : 'border border-line'
@@ -938,39 +940,34 @@ function PlatformSettingsPage() {
 
                         <div className="space-y-2 border-t border-line/50 pt-4 mb-4">
                           {plan.features.map((feat, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-xs text-text">
-                              <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                              <span>{feat}</span>
+                            <div key={idx} className="flex items-start gap-2 text-xs">
+                              <Check className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+                              <span className="text-text">{feat}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-line/40 flex items-center justify-between">
-                        <span className="text-[11px] font-mono text-dim">
-                          Btn: {plan.button_text || 'Pilih'}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingPricing(plan)
-                              setPricingModalOpen(true)
-                            }}
-                            className="p-1.5 rounded-lg bg-bg border border-line hover:border-accent text-dim hover:text-text text-xs flex items-center gap-1 transition-all"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-accent" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePricing(plan.id)}
-                            className="p-1.5 rounded-lg bg-bg border border-line hover:border-red-500/40 text-dim hover:text-red-400 text-xs flex items-center gap-1 transition-all"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                            <span>Hapus</span>
-                          </button>
-                        </div>
+                      <div className="pt-3 border-t border-line/40 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingPricing(plan)
+                            setPricingModalOpen(true)
+                          }}
+                          className="p-1.5 rounded-lg bg-bg border border-line hover:border-accent text-dim hover:text-text text-xs flex items-center gap-1 transition-all"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-accent" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePricing(plan.id)}
+                          className="p-1.5 rounded-lg bg-bg border border-line hover:border-red-500/40 text-dim hover:text-red-400 text-xs flex items-center gap-1 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          <span>Hapus</span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -980,7 +977,7 @@ function PlatformSettingsPage() {
 
             {/* Section 2: Paket Hemat Jangka Panjang */}
             <div className="space-y-4 pt-4 border-t border-line">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-panel border border-line">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-xl bg-panel border border-line">
                 <div>
                   <h3 className="font-bold text-sm text-text">Paket Hemat Jangka Panjang (Bundle)</h3>
                   <p className="text-xs text-dim mt-0.5">
@@ -993,7 +990,7 @@ function PlatformSettingsPage() {
                     setEditingLongTerm(null)
                     setLongTermModalOpen(true)
                   }}
-                  className="btn-interactive flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-bg border border-line hover:border-accent text-text font-bold text-xs transition-all"
+                  className="btn-interactive flex items-center justify-center gap-1.5 w-full sm:w-auto px-4 py-2.5 rounded-xl bg-bg border border-line hover:border-accent text-text font-bold text-xs transition-all"
                 >
                   <Plus className="w-4 h-4 text-accent" />
                   <span>Tambah Paket Hemat</span>
@@ -1056,10 +1053,10 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 5: KONTAK & FOOTER ─── */}
         {activeTab === 'contact' && (
-          <div className="w-full">
+          <div className="w-full min-w-0">
             <form
               onSubmit={handleSaveContact}
-              className="p-6 rounded-2xl bg-panel border border-line space-y-5"
+              className="p-4 sm:p-6 rounded-2xl bg-panel border border-line space-y-5"
             >
               <div className="flex items-center justify-between pb-3 border-b border-line/40">
                 <h3 className="text-sm font-bold text-text uppercase tracking-wider font-mono">

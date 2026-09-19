@@ -174,7 +174,7 @@ export function WeeklyScheduleSection({
       {viewMode === 'strip' && (
         <div className="pt-5 space-y-6">
           {/* Horizontal Day Strip: Touch-scrollable with snap on mobile, 7-col grid on tablet+ */}
-          <div className="flex sm:grid sm:grid-cols-7 gap-2 overflow-x-auto sm:overflow-visible pb-2 sm:pb-0 touch-scroll no-scrollbar snap-x -mx-1 px-1">
+          <div className="flex sm:grid sm:grid-cols-7 gap-8 overflow-x-auto sm:overflow-visible pb-2 sm:pb-0 touch-scroll no-scrollbar snap-x -mx-1 px-1">
             {weekDays.map((day) => {
               const isSelected = day.dateStr === selectedDate
               return (

@@ -615,7 +615,7 @@ export function AppLayout({
 
         {/* ── 3. Main View Content Area ── */}
         <div
-          className={`flex-1 flex flex-col min-h-screen w-full pt-14 md:pt-0 pb-16 md:pb-0 transition-all duration-300 ease-in-out ${
+          className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden pt-14 md:pt-0 pb-16 md:pb-0 transition-all duration-300 ease-in-out ${
             isCollapsed ? 'md:pl-20' : 'md:pl-64'
           }`}
         >
