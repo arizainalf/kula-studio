@@ -82,7 +82,7 @@ export function MobileBottomNav({
       {/* ── Fixed Mobile Bottom Navigation Bar (md:hidden) ── */}
       <nav
         aria-label="Mobile Navigation Bar"
-        className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-panel/95 backdrop-blur-xl border-t border-line shadow-[0_-4px_25px_rgba(0,0,0,0.35)] px-2 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] transition-all duration-300"
+        className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-panel/85 backdrop-blur-2xl border-t border-line shadow-[0_-4px_25px_rgba(0,0,0,0.35)] px-2 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] transition-all duration-300"
       >
         <div className="flex items-center justify-around max-w-md mx-auto relative">
           {/* ══════════ ROLE: PLATFORM ADMIN ══════════ */}
@@ -365,12 +365,12 @@ export function MobileBottomNav({
         <div className="fixed inset-0 z-50 md:hidden animate-fade-in flex flex-col justify-end">
           {/* Backdrop Overlay */}
           <div
-            className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
             onClick={() => setIsMoreOpen(false)}
           />
 
           {/* Bottom Sheet Container */}
-          <div className="relative z-10 bg-panel border-t border-line rounded-t-3xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)] max-h-[85vh] flex flex-col animate-slide-up">
+          <div className="relative z-10 bg-panel/95 backdrop-blur-2xl border-t border-line rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.6)] max-h-[85vh] flex flex-col animate-slide-up">
             {/* Top Drag Handle Indicator */}
             <div className="w-12 h-1.5 rounded-full bg-line/60 mx-auto mt-3 mb-1 shrink-0" />
 

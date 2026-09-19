@@ -168,7 +168,7 @@ function ClientPortalPage() {
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased pb-24 sm:pb-12">
       {/* ── 1. Top Global Navigation Bar ── */}
-      <header className="sticky top-0 z-40 bg-panel backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-40 bg-panel/80 backdrop-blur-2xl border-b border-line shadow-sm">
         <div className="mx-auto max-w-5xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand Identity */}
           <div className="flex items-center gap-2.5">
@@ -876,7 +876,7 @@ function ClientPortalPage() {
       {/* ── 5. Mobile Bottom Navigation Bar (Tailored for Client) ── */}
       <nav
         aria-label="Client Bottom Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-panel/95 backdrop-blur-xl border-t border-line shadow-[0_-4px_25px_rgba(0,0,0,0.35)] px-4 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]"
+        className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-panel/85 backdrop-blur-2xl border-t border-line shadow-[0_-4px_25px_rgba(0,0,0,0.35)] px-4 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]"
       >
         <div className="flex items-center justify-around max-w-md mx-auto">
           {/* Tab 1: Progres */}

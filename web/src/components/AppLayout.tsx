@@ -204,7 +204,7 @@ export function AppLayout({
         {isCollapsedDesktop ? (
           <div className="px-2 flex justify-center">
             <div
-              className="w-10 h-10 rounded-xl bg-bg border border-line/50 flex items-center justify-center cursor-default shrink-0"
+              className="w-10 h-10 rounded-xl bg-bg/50 backdrop-blur-md border border-line/50 flex items-center justify-center cursor-default shrink-0"
               title={
                 user.role === 'platform_admin'
                   ? 'Platform SaaS Superadmin'
@@ -220,7 +220,7 @@ export function AppLayout({
           </div>
         ) : (
           <div className="px-3">
-            <div className="p-2.5 rounded-xl bg-bg border border-line/50">
+            <div className="p-2.5 rounded-xl bg-bg/50 backdrop-blur-md border border-line/50">
               {user.role === 'platform_admin' ? (
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
@@ -571,7 +571,7 @@ export function AppLayout({
       <div className="bg-bg text-text min-h-dvh flex font-sans antialiased selection:bg-accent/30 selection:text-text">
         {/* ── 1. Desktop Fixed Left Sidebar ── */}
         <aside
-          className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-30 bg-panel border-r border-line shadow-[4px_0_24px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out ${
+          className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-30 bg-panel/80 backdrop-blur-2xl border-r border-line shadow-[4px_0_30px_rgba(0,0,0,0.3)] transition-all duration-300 ease-in-out ${
             isCollapsed ? 'w-20' : 'w-64'
           }`}
         >
@@ -579,7 +579,7 @@ export function AppLayout({
         </aside>
 
         {/* ── 2. Mobile Compact Top Navigation Bar (Clean & Focused) ── */}
-        <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-panel border-b border-line px-4 flex items-center justify-between shadow-sm">
+        <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-panel/85 backdrop-blur-2xl border-b border-line px-4 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shadow-sm">
               {platformSettings.app_initials || 'TL'}

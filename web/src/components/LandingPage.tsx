@@ -254,7 +254,7 @@ export function LandingPage({
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased overflow-x-hidden">
       {/* ── 1. Sticky Navigation Bar ── */}
-      <header className="sticky top-0 z-50 bg-panel backdrop-blur-xl border-b border-line">
+      <header className="sticky top-0 z-50 bg-panel/80 backdrop-blur-2xl border-b border-line shadow-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-3 group">
             {/* Luxury Monogram Badge */}

@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #141414;
-  --color-panel: #444444;
-  --color-panel-elevated: #505050;
-  --color-line: #979797;
-  --color-line-subtle: #979797;
-  --color-text: #D6D6D6;
-  --color-dim: #979797;
-  --color-muted: #979797;
+  --color-bg: #0c0d12;
+  --color-panel: rgba(22, 25, 34, 0.70);
+  --color-panel-elevated: rgba(30, 35, 48, 0.82);
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-line-subtle: rgba(255, 255, 255, 0.05);
+  --color-text: #F3F4F6;
+  --color-dim: #94A3B8;
+  --color-muted: #64748B;
   --color-accent: #E2E800;
   --color-accent-hover: #c9ce00;
-  --color-black: #141414;
+  --color-black: #0c0d12;
 
   --animate-fade-in: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in-up: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -74,14 +74,17 @@
   animation-delay: 500ms;
 }
 
-/* Luxury card hover glow utility */
+/* Luxury Glass Card Hover Glow Utility */
 .hover-gold-glow {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hover-gold-glow:hover {
   transform: translateY(-2px);
-  border-color: rgba(226, 232, 0, 0.5);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), 0 0 16px -2px rgba(226, 232, 0, 0.2);
+  border-color: rgba(226, 232, 0, 0.45);
+  box-shadow:
+    0 14px 38px 0 rgba(0, 0, 0, 0.45),
+    0 0 20px 0 rgba(226, 232, 0, 0.18),
+    inset 0 1px 0 0 rgba(226, 232, 0, 0.35);
 }
 
 /* Button interactive active state */
@@ -100,15 +103,66 @@
 
 :root {
   color-scheme: dark;
+  --color-bg: #0c0d12;
+  --color-panel: rgba(22, 25, 34, 0.70);
+  --color-panel-elevated: rgba(30, 35, 48, 0.82);
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-line-subtle: rgba(255, 255, 255, 0.05);
+  --color-text: #F3F4F6;
+  --color-dim: #94A3B8;
+  --color-muted: #64748B;
+  --color-accent: #E2E800;
+  --color-accent-hover: #c9ce00;
+  --color-black: #0c0d12;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Ambient Glass Background Glow */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% -5%, rgba(226, 232, 0, 0.07), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(56, 189, 248, 0.05), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 105%, rgba(168, 85, 247, 0.04), transparent 60%),
+    radial-gradient(circle at 10% 75%, rgba(226, 232, 0, 0.03), transparent 45%);
+}
+
+/* Glassmorphic Panel Core */
+.bg-panel {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.bg-panel-elevated {
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
 header, aside {
   background-color: var(--color-panel);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Frosted glass form inputs */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+select,
+textarea {
+  background-color: rgba(12, 14, 18, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* ── Aturan Distribusi Warna Spesifik ──
@@ -122,17 +176,45 @@ header, aside {
 html.light,
 [data-theme="light"] {
   color-scheme: light;
-  --color-bg: #F4F5F7;
-  --color-panel: #FFFFFF;
-  --color-panel-elevated: #EBECEF;
-  --color-line: #D1D5DB;
-  --color-line-subtle: #E5E7EB;
-  --color-text: #141414;
-  --color-dim: #6B7280;
-  --color-muted: #9CA3AF;
+  --color-bg: #EEF2F6;
+  --color-panel: rgba(255, 255, 255, 0.72);
+  --color-panel-elevated: rgba(255, 255, 255, 0.88);
+  --color-line: rgba(15, 23, 42, 0.08);
+  --color-line-subtle: rgba(15, 23, 42, 0.04);
+  --color-text: #0F172A;
+  --color-dim: #475569;
+  --color-muted: #94A3B8;
   --color-accent: #E2E800;
   --color-accent-hover: #c9ce00;
-  --color-black: #141414;
+  --color-black: #0F172A;
+}
+
+html.light body::before,
+[data-theme="light"] body::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 15% -5%, rgba(226, 232, 0, 0.12), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(56, 189, 248, 0.08), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 105%, rgba(168, 85, 247, 0.06), transparent 60%),
+    radial-gradient(circle at 10% 75%, rgba(226, 232, 0, 0.06), transparent 45%);
+}
+
+html.light .bg-panel,
+[data-theme="light"] .bg-panel {
+  box-shadow: 0 8px 28px -4px rgba(15, 23, 42, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+}
+
+html.light .bg-panel-elevated,
+[data-theme="light"] .bg-panel-elevated {
+  box-shadow: 0 12px 36px -4px rgba(15, 23, 42, 0.09), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+}
+
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+html.light select,
+html.light textarea,
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background-color: rgba(255, 255, 255, 0.65);
 }
 
 /* Penyesuaian kontras teks aksen di tema terang agar jelas terbaca di atas latar putih/abu-abu */
@@ -154,16 +236,11 @@ html.light .focus\:border-accent:focus,
 /* Efek hover glow yang halus di tema terang */
 html.light .hover-gold-glow:hover,
 [data-theme="light"] .hover-gold-glow:hover {
-  border-color: rgba(200, 206, 0, 0.6);
-  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.08), 0 0 12px -2px rgba(226, 232, 0, 0.25);
-}
-
-/* Bayangan lembut untuk kartu panel di tema terang */
-html.light .bg-panel.shadow-\[0_8px_24px_rgba\(0\,0\,0\,0\.5\)\],
-[data-theme="light"] .bg-panel.shadow-\[0_8px_24px_rgba\(0\,0\,0\,0\.5\)\],
-html.light [class*="shadow-[0_8px_24px_rgba(0,0,0,0.5)]"],
-[data-theme="light"] [class*="shadow-[0_8px_24px_rgba(0,0,0,0.5)]"] {
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  border-color: rgba(200, 206, 0, 0.65);
+  box-shadow:
+    0 12px 30px -4px rgba(0, 0, 0, 0.08),
+    0 0 16px -2px rgba(226, 232, 0, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 1);
 }
 
 .no-scrollbar::-webkit-scrollbar {
