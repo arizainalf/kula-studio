@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { api, type User } from '../lib/api'
+import { api, extractYouTubeId, getYouTubeThumbnailUrl, type User } from '../lib/api'
 import { UserAvatar, getInitials } from './UserAvatar'
 import {
   X,
@@ -15,7 +15,16 @@ import {
   Camera,
   Upload,
   Trash2,
+  Play,
 } from 'lucide-react'
+
+function YouTubeIcon({ className = "w-3.5 h-3.5 text-red-500" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  )
+}
 
 interface EditProfileModalProps {
   isOpen: boolean
@@ -37,6 +46,7 @@ export function EditProfileModal({
   const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState(currentUser.phone || '')
   const [spec, setSpec] = useState(currentUser.spec || '')
+  const [youtubeUrl, setYoutubeUrl] = useState(currentUser.youtube_url || '')
   const [gender, setGender] = useState<'pria' | 'wanita' | ''>(currentUser.gender || '')
   const [ageBracket, setAgeBracket] = useState(currentUser.age_bracket || '')
   const [problem, setProblem] = useState(currentUser.problem || 'none')
@@ -68,6 +78,7 @@ export function EditProfileModal({
         setAvatarUrl(u.avatar_url || '')
         setPhone(u.phone || '')
         setSpec(u.spec || '')
+        setYoutubeUrl(u.youtube_url || '')
         setGender((u.gender as any) || '')
         setAgeBracket(u.age_bracket || '')
         setProblem(u.problem || 'none')
@@ -79,6 +90,7 @@ export function EditProfileModal({
         setAvatarUrl(currentUser.avatar_url || '')
         setPhone(currentUser.phone || '')
         setSpec(currentUser.spec || '')
+        setYoutubeUrl(currentUser.youtube_url || '')
       } finally {
         if (isMounted) setFetching(false)
       }
@@ -167,6 +179,7 @@ export function EditProfileModal({
         payload.notes = notes.trim() || null
       } else if (isPt) {
         payload.spec = spec.trim() || null
+        payload.youtube_url = youtubeUrl.trim() || null
       }
 
       const res = await api<{ user: User; message?: string }>('/auth/profile', {
@@ -381,24 +394,85 @@ export function EditProfileModal({
               />
             </div>
 
-            {/* Role Specific Fields: PT Specialization */}
+            {/* Role Specific Fields: PT Specialization & YouTube Video */}
             {isPt && (
-              <div>
-                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center gap-1.5">
-                  <Dumbbell className="w-3.5 h-3.5 text-accent" />
-                  <span>Spesialisasi Pelatih (Trainer Specialization)</span>
-                </label>
-                <input
-                  type="text"
-                  value={spec}
-                  onChange={(e) => setSpec(e.target.value)}
-                  placeholder="Contoh: Strength & Conditioning, Hypertrophy, Fat Loss"
-                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm transition-colors"
-                />
-                <p className="text-[10px] text-dim mt-1">
-                  Spesialisasi ini ditampilkan pada profil dan kartu klien Anda.
-                </p>
-              </div>
+              <>
+                <div>
+                  <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center gap-1.5">
+                    <Dumbbell className="w-3.5 h-3.5 text-accent" />
+                    <span>Spesialisasi Pelatih (Trainer Specialization)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={spec}
+                    onChange={(e) => setSpec(e.target.value)}
+                    placeholder="Contoh: Strength & Conditioning, Hypertrophy, Fat Loss"
+                    className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm transition-colors"
+                  />
+                  <p className="text-[10px] text-dim mt-1">
+                    Spesialisasi ini ditampilkan pada profil dan kartu klien Anda.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <YouTubeIcon className="w-3.5 h-3.5 text-red-500" />
+                      <span>Link Video YouTube (Landing Page Showcase)</span>
+                    </span>
+                    <span className="text-[10px] text-dim lowercase font-normal">opsional</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="Contoh: https://www.youtube.com/watch?v=... atau youtu.be/..."
+                    className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono transition-colors"
+                  />
+                  <p className="text-[10px] text-dim mt-1">
+                    Video profil atau tutorial latihan Anda yang akan diputar di halaman depan (Landing Page).
+                  </p>
+
+                  {/* YouTube Preview if valid */}
+                  {(() => {
+                    const yId = extractYouTubeId(youtubeUrl);
+                    if (!yId) return null;
+                    return (
+                      <div className="mt-2.5 p-2 rounded-xl bg-bg border border-line flex items-center gap-3 animate-fade-in">
+                        <div className="relative w-24 h-14 rounded-lg overflow-hidden shrink-0 border border-line bg-black">
+                          <img
+                            src={getYouTubeThumbnailUrl(yId)}
+                            alt="Preview YouTube"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white shadow-lg">
+                              <Play className="w-3 h-3 fill-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1 text-xs">
+                          <div className="flex items-center gap-1 text-emerald-400 font-medium">
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                            <span>Link YouTube Terdeteksi</span>
+                          </div>
+                          <p className="text-[10px] text-dim truncate font-mono mt-0.5">
+                            ID: {yId}
+                          </p>
+                          <a
+                            href={`https://www.youtube.com/watch?v=${yId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-accent hover:underline inline-block mt-0.5"
+                          >
+                            Buka di YouTube &rarr;
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </>
             )}
 
             {/* Role Specific Fields: Client Health & Contact Details */}

@@ -17,7 +17,7 @@ auth.post('/login', async (c) => {
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
   const [user] = await db(c)`
-    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url,
+    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url, u.youtube_url,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.is_active as studio_is_active
     from users u
     left join studios s on s.id = u.studio_id
@@ -38,6 +38,8 @@ auth.post('/login', async (c) => {
       studio_id: user.studio_id ?? null,
       studio_name: user.studio_name ?? null,
       studio_slug: user.studio_slug ?? null,
+      avatar_url: user.avatar_url ?? null,
+      youtube_url: user.youtube_url ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -46,7 +48,7 @@ auth.post('/login', async (c) => {
     'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
   );
-  return c.json({ user: { ...payload.sub, avatar_url: user.avatar_url ?? null } });
+  return c.json({ token, user: { ...payload.sub, avatar_url: user.avatar_url ?? null, youtube_url: user.youtube_url ?? null } });
 });
 
 const clientLoginSchema = z.object({
@@ -104,7 +106,7 @@ auth.post('/client-login', async (c) => {
     'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
   );
-  return c.json({ user: { ...payload.sub, avatar_url: client.avatar_url ?? null } });
+  return c.json({ token, user: { ...payload.sub, avatar_url: client.avatar_url ?? null } });
 });
 
 auth.post('/logout', (c) => {
@@ -138,7 +140,7 @@ auth.get('/me', requireAuth, async (c) => {
   }
 
   const [user] = await sql`
-    select u.id, u.email, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url,
+    select u.id, u.email, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url, u.youtube_url,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier
     from users u
     left join studios s on s.id = u.studio_id
@@ -183,7 +185,7 @@ auth.get('/profile', requireAuth, async (c) => {
   }
 
   const [row] = await sql`
-    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url,
+    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url, u.youtube_url,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier, sp.spec
     from users u
     left join studios s on s.id = u.studio_id
@@ -200,6 +202,7 @@ const updateProfileSchema = z.object({
   password: z.string().min(6).max(100).optional(),
   phone: z.string().max(30).optional().nullable(),
   avatar_url: z.string().max(2000000).optional().nullable(),
+  youtube_url: z.string().max(500).optional().nullable(),
   spec: z.string().max(100).optional().nullable(),
   gender: z.enum(['pria', 'wanita']).optional().nullable(),
   age_bracket: z.string().max(20).optional().nullable(),
@@ -257,6 +260,7 @@ auth.patch('/profile', requireAuth, async (c) => {
     );
 
     return c.json({
+      token,
       user: {
         ...payload.sub,
         avatar_url: updatedClient.avatar_url ?? null,
@@ -284,9 +288,10 @@ auth.patch('/profile', requireAuth, async (c) => {
       name = coalesce(${d.name ?? null}, name),
       email = coalesce(${cleanEmail ?? null}, email),
       password_hash = coalesce(${newHash ?? null}, password_hash),
-      avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`}
+      avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`},
+      youtube_url = ${d.youtube_url !== undefined ? d.youtube_url : sql`youtube_url`}
     where id = ${u.id}
-    returning id, email, name, role, plan_tier, expires_at, is_active, avatar_url
+    returning id, email, name, role, plan_tier, expires_at, is_active, avatar_url, youtube_url
   `;
 
   if (!updatedUser) return c.json({ error: 'user_not_found' }, 404);
@@ -312,6 +317,8 @@ auth.patch('/profile', requireAuth, async (c) => {
       studio_id: u.studio_id ?? null,
       studio_name: u.studio_name ?? null,
       studio_slug: u.studio_slug ?? null,
+      avatar_url: updatedUser.avatar_url ?? null,
+      youtube_url: updatedUser.youtube_url ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -322,9 +329,11 @@ auth.patch('/profile', requireAuth, async (c) => {
   );
 
   return c.json({
+    token,
     user: {
       ...payload.sub,
       avatar_url: updatedUser.avatar_url ?? null,
+      youtube_url: updatedUser.youtube_url ?? null,
       spec: sp?.spec ?? null,
     },
     message: 'Profil akun berhasil diperbarui',
@@ -342,7 +351,7 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
   const [updated] = await sql`
     update users set role = ${targetRole}
     where id = ${u.id}
-    returning id, email, name, role, plan_tier, expires_at, avatar_url
+    returning id, email, name, role, plan_tier, expires_at, avatar_url, youtube_url
   `;
 
   if (!updated) return c.json({ error: 'user_not_found' }, 404);
@@ -358,6 +367,8 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
       studio_id: u.studio_id ?? null,
       studio_name: u.studio_name ?? null,
       studio_slug: u.studio_slug ?? null,
+      avatar_url: updated.avatar_url ?? null,
+      youtube_url: updated.youtube_url ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -368,7 +379,8 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
   );
 
   return c.json({
-    user: { ...payload.sub, avatar_url: updated.avatar_url ?? null },
+    token,
+    user: { ...payload.sub, avatar_url: updated.avatar_url ?? null, youtube_url: updated.youtube_url ?? null },
     message: `Role berhasil diubah menjadi ${targetRole}`,
   });
 });

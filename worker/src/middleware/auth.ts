@@ -17,6 +17,8 @@ export interface SessionUser {
   phone?: string | null;
   pt_id?: string;
   pt_name?: string | null;
+  avatar_url?: string | null;
+  youtube_url?: string | null;
 }
 
 const GRACE_DAYS = 14;

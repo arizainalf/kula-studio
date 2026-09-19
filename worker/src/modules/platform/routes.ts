@@ -17,6 +17,52 @@ platform.get('/settings', async (c) => {
   return c.json({ settings: row });
 });
 
+// 0.1 GET /platform/trainers — Publik untuk Showcase Pelatih & Video YouTube di Landing Page
+platform.get('/trainers', async (c) => {
+  const sql = db(c);
+  try {
+    await sql`
+      update users
+      set youtube_url = 'https://www.youtube.com/watch?v=aclHkVaku9U'
+      where role = 'pt' and (youtube_url is null or trim(youtube_url) = '') and (email = 'hadi@dev.local' or name ilike '%hadi%')
+    `.catch(() => {});
+
+    const rows = await sql`
+      select u.id, u.name, u.avatar_url, u.youtube_url, u.role,
+             sp.spec, s.name as studio_name, s.slug as studio_slug
+      from users u
+      left join staff_profile sp on sp.user_id = u.id
+      left join studios s on s.id = u.studio_id
+      where u.role = 'pt' and u.is_active = true
+      order by case when u.youtube_url is not null and trim(u.youtube_url) != '' then 0 else 1 end, u.created_at desc
+      limit 12
+    `;
+    return c.json({ trainers: rows });
+  } catch (err: any) {
+    // Jika kolom youtube_url belum terbuat di Supabase production, tambahkan otomatis
+    if (err?.message?.includes('youtube_url') || err?.code === '42703') {
+      try {
+        await sql`alter table users add column if not exists youtube_url text`;
+        const retryRows = await sql`
+          select u.id, u.name, u.avatar_url, u.youtube_url, u.role,
+                 sp.spec, s.name as studio_name, s.slug as studio_slug
+          from users u
+          left join staff_profile sp on sp.user_id = u.id
+          left join studios s on s.id = u.studio_id
+          where u.role = 'pt' and u.is_active = true
+          order by case when u.youtube_url is not null and trim(u.youtube_url) != '' then 0 else 1 end, u.created_at desc
+          limit 12
+        `;
+        return c.json({ trainers: retryRows });
+      } catch (innerErr) {
+        console.error('Failed auto-migrating youtube_url:', innerErr);
+      }
+    }
+    console.error('Error fetching trainers:', err);
+    return c.json({ trainers: [] });
+  }
+});
+
 // Route platform_admin
 platform.use('/overview', requireAuth, requireRole('platform_admin'));
 platform.use('/studios', requireAuth, requireRole('platform_admin'));

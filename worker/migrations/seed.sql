@@ -4,11 +4,11 @@
 -- Run: node worker/scripts/hash-seed.js lalu sesuaikan, atau generate via API invite saat runtime.
 
 -- Placeholder: hash untuk "devpass123"
-INSERT INTO users (email, password_hash, name, role, is_active, plan_tier, expires_at) VALUES
-  ('admin@dev.local',  's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Admin Dev',  'admin_studio',   true,  NULL,        NULL),
-  ('boss@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Manager Dev','manager', true,  NULL,        NULL),
-  ('hadi@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Hadi PT',    'pt',      true,  'standard',  CURRENT_DATE + 30),
-  ('expi@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Expired PT', 'pt',      true,  'pro',       CURRENT_DATE - 2);
+INSERT INTO users (email, password_hash, name, role, is_active, plan_tier, expires_at, youtube_url) VALUES
+  ('admin@dev.local',  's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Admin Dev',  'admin_studio',   true,  NULL,        NULL, NULL),
+  ('boss@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Manager Dev','manager', true,  NULL,        NULL, NULL),
+  ('hadi@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Hadi PT',    'pt',      true,  'standard',  CURRENT_DATE + 30, 'https://www.youtube.com/watch?v=aclHkVaku9U'),
+  ('expi@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Expired PT', 'pt',      true,  'pro',       CURRENT_DATE - 2, NULL);
 
 INSERT INTO staff_profile (user_id, manager_id, spec)
 SELECT id, (SELECT id FROM users WHERE email='boss@dev.local'), 'General Fitness'

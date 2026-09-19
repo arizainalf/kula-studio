@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
-import { api, type User, type PlatformSettings } from '../lib/api'
+import { api, type User, type PlatformSettings, type TrainerShowcase } from '../lib/api'
 import { LandingPage } from '../components/LandingPage'
 import {
   StatCard,
@@ -55,6 +55,7 @@ type LoaderData = {
   clients: Client[]
   schedule: ScheduleItem[]
   settings: PlatformSettings | null
+  trainers?: TrainerShowcase[]
   studioCount: number
   activeStudioCount: number
   ptCount: number
@@ -102,12 +103,16 @@ export const Route = createFileRoute('/')({
       }
     } catch (e) {
       if (e && typeof e === 'object' && 'to' in e) throw e
-      const settingsRes = await api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null as any }))
+      const [settingsRes, trainersRes] = await Promise.all([
+        api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null as any })),
+        api<{ trainers: TrainerShowcase[] }>('/platform/trainers').catch(() => ({ trainers: [] })),
+      ])
       return {
         me: null,
         clients: [],
         schedule: [],
         settings: settingsRes.settings,
+        trainers: trainersRes.trainers || [],
         studioCount: 0,
         activeStudioCount: 0,
         ptCount: 0,
@@ -119,10 +124,10 @@ export const Route = createFileRoute('/')({
 })
 
 function RootIndex() {
-  const { me, clients, schedule, settings, studioCount, activeStudioCount, ptCount, activePtCount } = Route.useLoaderData()
+  const { me, clients, schedule, settings, trainers, studioCount, activeStudioCount, ptCount, activePtCount } = Route.useLoaderData()
 
   if (!me) {
-    return <LandingPage currentUser={null} initialSettings={settings} />
+    return <LandingPage currentUser={null} initialSettings={settings} initialTrainers={trainers} />
   }
 
   return (

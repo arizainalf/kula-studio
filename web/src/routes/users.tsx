@@ -18,6 +18,14 @@ import {
   AlertCircle,
 } from 'lucide-react'
 
+function YouTubeIcon({ className = "w-3.5 h-3.5 text-red-500" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  )
+}
+
 export const Route = createFileRoute('/users')({
   beforeLoad: async () => {
     try {
@@ -81,6 +89,7 @@ function UsersPage() {
   const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [addStudioId, setAddStudioId] = useState('')
   const [addSpec, setAddSpec] = useState('')
+  const [addYoutubeUrl, setAddYoutubeUrl] = useState('')
   const [addPlanTier, setAddPlanTier] = useState<'standard' | 'pro'>('standard')
   const [addAvatarUrl, setAddAvatarUrl] = useState('')
   const [addSubmitting, setAddSubmitting] = useState(false)
@@ -91,6 +100,7 @@ function UsersPage() {
   const [editEmail, setEditEmail] = useState('')
   const [editRole, setEditRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [editSpec, setEditSpec] = useState('')
+  const [editYoutubeUrl, setEditYoutubeUrl] = useState('')
   const [editPlanTier, setEditPlanTier] = useState<'standard' | 'pro'>('standard')
   const [editIsActive, setEditIsActive] = useState(true)
   const [editPassword, setEditPassword] = useState('')
@@ -147,6 +157,7 @@ function UsersPage() {
         : (u.role as any)
     )
     setEditSpec(u.spec || '')
+    setEditYoutubeUrl(u.youtube_url || '')
     setEditPlanTier((u.plan_tier as any) || 'standard')
     setEditIsActive(u.is_active ?? true)
     setEditPassword('')
@@ -165,6 +176,7 @@ function UsersPage() {
         name: editName.trim(),
         email: editEmail.trim().toLowerCase(),
         spec: editSpec.trim() || null,
+        youtube_url: editRole === 'pt' ? (editYoutubeUrl.trim() || null) : null,
         plan_tier: editPlanTier,
         is_active: editIsActive,
         avatar_url: editAvatarUrl.trim() || null,
@@ -208,16 +220,19 @@ function UsersPage() {
         throw new Error('Pilih Studio Gym rekanan tujuan penugasan akun ini.')
       }
 
+      const targetRole = currentUser.role === 'platform_admin'
+        ? addRole
+        : currentUser.role === 'admin_studio'
+          ? addRole
+          : 'pt'
+
       const payload: Record<string, any> = {
         name: addName.trim(),
         email: addEmail.trim().toLowerCase(),
         password: addPassword,
-        role: currentUser.role === 'platform_admin'
-          ? addRole
-          : currentUser.role === 'admin_studio'
-            ? addRole
-            : 'pt',
+        role: targetRole,
         spec: addSpec.trim() || undefined,
+        youtube_url: targetRole === 'pt' ? (addYoutubeUrl.trim() || null) : null,
         plan_tier: addPlanTier,
         avatar_url: addAvatarUrl.trim() || null,
         studio_id: currentUser.role === 'platform_admin' ? addStudioId : undefined,
@@ -235,6 +250,7 @@ function UsersPage() {
       setAddEmail('')
       setAddPassword('')
       setAddStudioId('')
+      setAddYoutubeUrl('')
       setAddSpec('')
       setAddAvatarUrl('')
       setTimeout(() => setSuccessMsg(''), 3500)
@@ -498,6 +514,18 @@ function UsersPage() {
                               <div className="text-[10px] font-mono text-dim uppercase">
                                 Tier: {u.plan_tier || 'standard'}
                               </div>
+                              {u.youtube_url && (
+                                <a
+                                  href={u.youtube_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] font-mono text-red-400 hover:text-red-300 hover:underline mt-0.5"
+                                  title="Tonton Video YouTube"
+                                >
+                                  <YouTubeIcon className="w-3 h-3 text-red-500 shrink-0" />
+                                  <span>YouTube</span>
+                                </a>
+                              )}
                             </div>
                           </td>
 
@@ -769,6 +797,26 @@ function UsersPage() {
                 />
               </div>
 
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <YouTubeIcon className="w-3.5 h-3.5 text-red-500" />
+                    <span>Link Video YouTube (Landing Page Showcase)</span>
+                  </span>
+                  <span className="text-[10px] text-dim lowercase font-normal">opsional</span>
+                </label>
+                <input
+                  type="url"
+                  value={addYoutubeUrl}
+                  onChange={(e) => setAddYoutubeUrl(e.target.value)}
+                  placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                />
+                <p className="text-[10px] text-dim mt-1">
+                  Video YouTube ini akan ditampilkan di Coach Showcase pada halaman depan (Landing Page).
+                </p>
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
                 <button
                   type="button"
@@ -946,6 +994,26 @@ function UsersPage() {
                   placeholder="Contoh: Fat Loss, Muscle Gain"
                   className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm"
                 />
+              </div>
+
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <YouTubeIcon className="w-3.5 h-3.5 text-red-500" />
+                    <span>Link Video YouTube (Landing Page Showcase)</span>
+                  </span>
+                  <span className="text-[10px] text-dim lowercase font-normal">opsional</span>
+                </label>
+                <input
+                  type="url"
+                  value={editYoutubeUrl}
+                  onChange={(e) => setEditYoutubeUrl(e.target.value)}
+                  placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3.5 py-2.5 text-text outline-none text-sm font-mono"
+                />
+                <p className="text-[10px] text-dim mt-1">
+                  Video YouTube ini akan ditampilkan di Coach Showcase pada halaman depan (Landing Page).
+                </p>
               </div>
 
               {/* Password Reset */}

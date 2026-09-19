@@ -80,7 +80,8 @@ Sebelum melakukan deploy, siapkan 3 akun gratis berikut:
      7. `0007_user_avatar.sql`
      8. `0008_platform_settings.sql`
      9. `0009_platform_logo.sql`
-     10. *(Opsional)* `seed.sql` jika ingin mengisikan data awal akun demo.
+     10. `0010_user_youtube_url.sql`
+     11. *(Opsional)* `seed.sql` jika ingin mengisikan data awal akun demo.
 
 ---
 
@@ -169,17 +170,20 @@ Buka tab **Actions** di GitHub untuk memantau proses deployment yang berjalan ot
 
 ## 4. Konfigurasi Custom Domain (Opsional / Tingkat Lanjut)
 
-Jika Anda memiliki domain sendiri (misalnya `trainlog.id` atau `fitstudio.com`):
+Jika Anda memiliki domain sendiri (misalnya `trainlog.id` atau `fitstudio.com` dari Niagahoster, Domainesia, Namecheap, dll.), Anda bisa memindahkan pengelolaan DNS-nya ke Cloudflare secara 100% gratis. Panduan langkah demi langkah memindahkan domain dan mengintegrasikannya ke proyek ini telah disusun secara detail di:
+👉 **[Panduan Manajemen Domain & Integrasi Cloudflare](domain_management_cloudflared.md)**
 
+Ringkasan konfigurasi:
 1. **Frontend (Cloudflare Pages)**:
    - Di dashboard Cloudflare &rarr; **Workers & Pages** &rarr; pilih project `trainlog-web`.
    - Masuk ke tab **Custom domains** &rarr; klik **Set up a domain**.
-   - Masukkan domain utama (misal: `app.trainlog.id`).
+   - Masukkan domain utama (misal: `app.trainlog.id` atau `trainlog.id`).
 2. **Backend API (Cloudflare Worker)**:
    - Di dashboard Cloudflare &rarr; **Workers & Pages** &rarr; pilih worker `trainlog-api`.
    - Masuk ke tab **Settings** &rarr; **Triggers** &rarr; **Custom Domains**.
    - Masukkan subdomain API (misal: `api.trainlog.id`).
 3. Set `VITE_API_URL=https://api.trainlog.id` di secret GitHub Actions dan build ulang.
+   *(Dengan custom domain yang sama, masalah cross-site cookie di browser akan hilang secara permanen).*
 
 ---
 

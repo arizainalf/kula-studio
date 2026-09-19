@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { ArrowLeft, Dumbbell, UserCheck, Sparkles, Shield } from 'lucide-react'
-import { api, type User } from '../lib/api'
+import { api, setStoredToken, type User } from '../lib/api'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 
@@ -37,16 +37,18 @@ function LoginPage() {
 
     try {
       if (roleMode === 'pt') {
-        await api('/auth/login', {
+        const res = await api<{ token?: string; user: any }>('/auth/login', {
           method: 'POST',
           body: JSON.stringify({ email, password }),
         })
+        if (res.token) setStoredToken(res.token)
         window.location.href = '/'
       } else {
-        await api('/auth/client-login', {
+        const res = await api<{ token?: string; user: any }>('/auth/client-login', {
           method: 'POST',
           body: JSON.stringify({ email: email || undefined, phone: phone || undefined }),
         })
+        if (res.token) setStoredToken(res.token)
         window.location.href = '/portal'
       }
     } catch (err: any) {
@@ -61,31 +63,6 @@ function LoginPage() {
       )
     } finally {
       setLoading(false)
-    }
-  }
-
-  function fillDemo(type: 'platform_admin' | 'admin_studio' | 'pt' | 'client1' | 'client2') {
-    setErrorMsg('')
-    if (type === 'platform_admin') {
-      setRoleMode('pt')
-      setEmail('superadmin@dev.local')
-      setPassword('devpass123')
-    } else if (type === 'admin_studio') {
-      setRoleMode('pt')
-      setEmail('admin@dev.local')
-      setPassword('devpass123')
-    } else if (type === 'pt') {
-      setRoleMode('pt')
-      setEmail('hadi@dev.local')
-      setPassword('devpass123')
-    } else if (type === 'client1') {
-      setRoleMode('client')
-      setEmail('siti@gmail.com')
-      setPhone('08111111111')
-    } else {
-      setRoleMode('client')
-      setEmail('fajar@gmail.com')
-      setPhone('08122222222')
     }
   }
 
@@ -249,50 +226,7 @@ function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Demo Fast Fill Assist */}
-        <div className="mt-6 pt-4 border-t border-line/60">
-          <span className="text-[10px] font-mono text-dim block mb-2 uppercase tracking-wider text-center">
-            Pilihan Cepat Akun Demo:
-          </span>
-          <div className="flex flex-wrap gap-1.5 justify-center text-[11px]">
-            <button
-              type="button"
-              onClick={() => fillDemo('platform_admin')}
-              className="px-2 py-1 rounded-md bg-accent/20 border border-accent/40 text-accent hover:bg-accent/30 transition-colors font-bold"
-            >
-              🛡️ Platform Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('admin_studio')}
-              className="px-2 py-1 rounded-md bg-accent/20 border border-accent/40 text-accent hover:bg-accent/30 transition-colors font-bold"
-            >
-              👑 Admin Studio
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('pt')}
-              className="px-2 py-1 rounded-md bg-panel border border-line text-dim hover:text-text transition-colors"
-            >
-              Demo PT
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('client1')}
-              className="px-2 py-1 rounded-md bg-panel border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
-            >
-              Demo Klien (Siti)
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('client2')}
-              className="px-2 py-1 rounded-md bg-panel border border-line text-dim hover:text-text transition-colors"
-            >
-              Demo Klien (Fajar)
-            </button>
-          </div>
-        </div>
+        
       </div>
     </main>
   )
