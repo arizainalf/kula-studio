@@ -89,6 +89,7 @@ export function LandingPage({
 
   const appName = s?.app_name || 'TrainLog'
   const appInitials = s?.app_initials || 'TL'
+  const appLogoUrl = s?.logo_url
   const appTagline = s?.app_tagline || 'Pro PT Manager'
   const heroPill = s?.hero_pill || 'Eksklusif untuk Personal Trainer & Studio'
   const heroHeadline = s?.hero_headline || 'Catat Sesi. Susun Program NASM.'
@@ -257,10 +258,18 @@ export function LandingPage({
       <header className="sticky top-0 z-50 bg-panel/80 backdrop-blur-2xl border-b border-line shadow-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-3 group">
-            {/* Luxury Monogram Badge */}
-            <div className="w-9 h-9 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_15px_rgba(226,232,0,0.15)] group-hover:border-accent transition-colors">
-              <span className="font-extrabold text-sm tracking-tighter text-accent">{appInitials}</span>
-            </div>
+            {/* Luxury Logo / Monogram Badge */}
+            {appLogoUrl ? (
+              <img
+                src={appLogoUrl}
+                alt={appName}
+                className="h-9 w-auto max-w-[120px] object-contain rounded-lg p-0.5 bg-panel border border-accent/40 shadow-[0_0_15px_rgba(226,232,0,0.15)] group-hover:border-accent transition-colors"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_15px_rgba(226,232,0,0.15)] group-hover:border-accent transition-colors">
+                <span className="font-extrabold text-sm tracking-tighter text-accent">{appInitials}</span>
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="font-bold text-base tracking-tight leading-none text-text">
                 {appName}
@@ -772,9 +781,17 @@ export function LandingPage({
       <footer className="border-t border-line bg-bg py-10 text-xs text-dim">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded bg-panel border border-accent/30 flex items-center justify-center text-accent text-xs font-bold">
-              {appInitials}
-            </div>
+            {appLogoUrl ? (
+              <img
+                src={appLogoUrl}
+                alt={appName}
+                className="h-6 w-auto max-w-[80px] object-contain rounded bg-panel border border-accent/30 p-0.5"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded bg-panel border border-accent/30 flex items-center justify-center text-accent text-xs font-bold">
+                {appInitials}
+              </div>
+            )}
             <span className="text-text font-medium">{appName}</span>
             <span>&copy; {new Date().getFullYear()} {footerCopyright}</span>
           </div>

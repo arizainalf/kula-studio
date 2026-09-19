@@ -83,6 +83,7 @@ export type PlatformSettings = {
   app_name: string;
   app_tagline: string;
   app_initials: string;
+  logo_url?: string | null;
   hero_pill: string;
   hero_headline: string;
   hero_gradient: string;
@@ -99,8 +100,11 @@ export type PlatformSettings = {
   updated_at?: string;
 };
 
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
+    credentials: 'include',
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });

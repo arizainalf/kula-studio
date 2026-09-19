@@ -148,11 +148,19 @@ export function AppLayout({
               className="flex items-center justify-center group"
               title={`${formatBrandName(platformSettings.app_name)} — ${platformSettings.app_tagline || 'Pro PT Manager'}`}
             >
-              <div className="w-10 h-10 rounded-xl bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0">
-                <span className="font-extrabold text-sm tracking-tighter text-accent">
-                  {platformSettings.app_initials || 'TL'}
-                </span>
-              </div>
+              {platformSettings.logo_url ? (
+                <img
+                  src={platformSettings.logo_url}
+                  alt={platformSettings.app_name}
+                  className="w-10 h-10 object-contain rounded-xl p-1 bg-panel border border-accent/40 shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0">
+                  <span className="font-extrabold text-sm tracking-tighter text-accent">
+                    {platformSettings.app_initials || 'TL'}
+                  </span>
+                </div>
+              )}
             </Link>
 
             {/* Desktop Expand Button */}
@@ -172,11 +180,19 @@ export function AppLayout({
               to="/"
               className="flex items-center gap-2.5 group min-w-0"
             >
-              <div className="w-9 h-9 rounded-xl bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0">
-                <span className="font-extrabold text-sm tracking-tighter text-accent">
-                  {platformSettings.app_initials || 'TL'}
-                </span>
-              </div>
+              {platformSettings.logo_url ? (
+                <img
+                  src={platformSettings.logo_url}
+                  alt={platformSettings.app_name}
+                  className="w-9 h-9 object-contain rounded-xl p-1 bg-panel border border-accent/40 shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0">
+                  <span className="font-extrabold text-sm tracking-tighter text-accent">
+                    {platformSettings.app_initials || 'TL'}
+                  </span>
+                </div>
+              )}
               <div className="flex flex-col min-w-0">
                 <span className="font-bold text-base tracking-tight leading-none text-text truncate">
                   {formatBrandName(platformSettings.app_name)}
@@ -581,9 +597,17 @@ export function AppLayout({
         {/* ── 2. Mobile Compact Top Navigation Bar (Clean & Focused) ── */}
         <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-panel/85 backdrop-blur-2xl border-b border-line px-4 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shadow-sm">
-              {platformSettings.app_initials || 'TL'}
-            </div>
+            {platformSettings.logo_url ? (
+              <img
+                src={platformSettings.logo_url}
+                alt={platformSettings.app_name}
+                className="w-8 h-8 object-contain rounded-xl p-0.5 bg-bg border border-accent/40 shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shadow-sm shrink-0">
+                {platformSettings.app_initials || 'TL'}
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="font-bold text-sm tracking-tight text-text leading-none">
                 {formatBrandName(platformSettings.app_name)}

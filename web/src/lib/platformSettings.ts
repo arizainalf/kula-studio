@@ -6,6 +6,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   app_name: 'TrainLog',
   app_tagline: 'Pro PT Manager',
   app_initials: 'TL',
+  logo_url: null,
   hero_pill: 'Eksklusif untuk Personal Trainer & Studio',
   hero_headline: 'Catat Sesi. Susun Program NASM.',
   hero_gradient: 'Pantau Progress Klien.',

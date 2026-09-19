@@ -1,0 +1,89 @@
+name: CI/CD Deploy to Cloudflare
+
+on:
+  push:
+    branches:
+      - main
+      - multi-tenant
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Typecheck & Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            worker/package-lock.json
+
+      - name: Validate Worker (Backend)
+        run: |
+          cd worker
+          npm ci
+          npx tsc --noEmit
+
+      - name: Validate Web (Frontend)
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+  deploy-worker:
+    name: Deploy API to Cloudflare Workers
+    needs: validate
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/multi-tenant'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy Worker with Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: 'worker'
+          command: deploy
+
+  deploy-frontend:
+    name: Deploy Web to Cloudflare Pages
+    needs: validate
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/multi-tenant'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build Web
+        run: |
+          cd web
+          npm ci
+          npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: trainlog-web
+          directory: web/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

@@ -44,7 +44,7 @@ auth.post('/login', async (c) => {
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
-    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${7 * 86400}`,
+    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
   );
   return c.json({ user: { ...payload.sub, avatar_url: user.avatar_url ?? null } });
 });
@@ -102,13 +102,13 @@ auth.post('/client-login', async (c) => {
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
-    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${30 * 86400}`,
+    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
   );
   return c.json({ user: { ...payload.sub, avatar_url: client.avatar_url ?? null } });
 });
 
 auth.post('/logout', (c) => {
-  c.header('Set-Cookie', 'tl_session=; HttpOnly; Secure; Path=/; Max-Age=0');
+  c.header('Set-Cookie', 'tl_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0');
   return c.json({ ok: true });
 });
 
@@ -253,7 +253,7 @@ auth.patch('/profile', requireAuth, async (c) => {
     const token = signToken(payload, c.env.SESSION_SECRET);
     c.header(
       'Set-Cookie',
-      `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${30 * 86400}`,
+      `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${30 * 86400}`,
     );
 
     return c.json({
@@ -318,7 +318,7 @@ auth.patch('/profile', requireAuth, async (c) => {
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
-    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${7 * 86400}`,
+    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
   );
 
   return c.json({
@@ -364,7 +364,7 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
   const token = signToken(payload, c.env.SESSION_SECRET);
   c.header(
     'Set-Cookie',
-    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${7 * 86400}`,
+    `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${7 * 86400}`,
   );
 
   return c.json({

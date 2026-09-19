@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { api, type User } from '../lib/api'
+import { api, API_BASE, type User } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
 import { ExportPdfModal } from '../components/ExportPdfModal'
 import { AppLayout } from '../components/AppLayout'
@@ -232,7 +232,11 @@ function ClientDetail() {
     const fd = new FormData()
     fd.append('file', file)
     try {
-      const res = await fetch(`/api/photos/${client.id}`, { method: 'POST', body: fd })
+      const res = await fetch(`${API_BASE}/api/photos/${client.id}`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+      })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'gagal')
       const data = await res.json()
       setPhotos((prev) => [data.photo, ...prev])

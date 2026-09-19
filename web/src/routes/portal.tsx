@@ -172,11 +172,19 @@ function ClientPortalPage() {
         <div className="mx-auto max-w-5xl px-3.5 sm:px-8 md:px-10 h-14 sm:h-16 flex items-center justify-between">
           {/* Brand Identity */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)]">
-              <span className="font-extrabold text-xs tracking-tighter text-accent">
-                {platformSettings.app_initials || 'TL'}
-              </span>
-            </div>
+            {platformSettings.logo_url ? (
+              <img
+                src={platformSettings.logo_url}
+                alt={platformSettings.app_name}
+                className="w-8 h-8 object-contain rounded-lg p-0.5 bg-panel border border-accent/40 shadow-[0_0_12px_rgba(226,232,0,0.2)] shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] shrink-0">
+                <span className="font-extrabold text-xs tracking-tighter text-accent">
+                  {platformSettings.app_initials || 'TL'}
+                </span>
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="font-bold text-sm sm:text-base tracking-tight leading-none text-text">
                 {formatBrandName(platformSettings.app_name)}{' '}

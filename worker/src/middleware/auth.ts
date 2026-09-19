@@ -39,7 +39,7 @@ declare module 'hono' {
 }
 
 export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
-  const token = getCookie(c, 'tl_session');
+  const token = getCookie(c, 'tl_session') || c.req.header('Authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return c.json({ error: 'unauthorized' }, 401);
   const payload = verifyToken<{ sub: SessionUser; exp: number }>(token, c.env.SESSION_SECRET);
   if (!payload || payload.exp < Date.now()) return c.json({ error: 'unauthorized' }, 401);

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import type { Env } from './env';
 import authRoutes from './modules/auth/routes';
 import staffRoutes from './modules/staff/routes';
@@ -11,6 +12,15 @@ import exerciseRoutes from './modules/exercises/routes';
 import { platform as platformRoutes } from './modules/platform/routes';
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.use('*', cors({
+  origin: (origin) => origin || '*',
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
+  exposeHeaders: ['Content-Length'],
+  maxAge: 600,
+  credentials: true,
+}));
 
 app.get('/health', (c) => c.json({ ok: true, env: c.env?.ENV ?? 'unset' }));
 

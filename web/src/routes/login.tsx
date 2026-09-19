@@ -106,9 +106,17 @@ function LoginPage() {
       <div className="bg-panel border border-line w-full max-w-sm rounded-2xl p-6 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.7)] animate-fade-in">
         {/* Brand Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-extrabold text-sm shadow-sm">
-            {platformSettings.app_initials || 'TL'}
-          </div>
+          {platformSettings.logo_url ? (
+            <img
+              src={platformSettings.logo_url}
+              alt={platformSettings.app_name}
+              className="w-10 h-10 object-contain rounded-xl p-1 bg-bg border border-accent/40 shadow-sm shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-extrabold text-sm shadow-sm shrink-0">
+              {platformSettings.app_initials || 'TL'}
+            </div>
+          )}
           <div>
             <h1 className="text-xl font-bold tracking-tight text-text leading-none">
               {formatBrandName(platformSettings.app_name)}

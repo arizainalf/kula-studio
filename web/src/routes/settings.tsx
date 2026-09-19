@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import {
   api,
@@ -28,6 +28,8 @@ import {
   Users,
   ClipboardList,
   Zap,
+  Upload,
+  Image as ImageIcon,
   Calendar,
   TrendingUp,
   Share2,
@@ -154,6 +156,8 @@ function PlatformSettingsPage() {
   const [appName, setAppName] = useState(settings.app_name || 'TrainLog')
   const [appTagline, setAppTagline] = useState(settings.app_tagline || 'Pro PT Manager')
   const [appInitials, setAppInitials] = useState(settings.app_initials || 'TL')
+  const [appLogoUrl, setAppLogoUrl] = useState(settings.logo_url || '')
+  const logoFileInputRef = useRef<HTMLInputElement>(null)
   const [heroPill, setHeroPill] = useState(
     settings.hero_pill || 'Eksklusif untuk Personal Trainer & Studio'
   )
@@ -187,6 +191,42 @@ function PlatformSettingsPage() {
   const [longTermModalOpen, setLongTermModalOpen] = useState(false)
   const [editingLongTerm, setEditingLongTerm] = useState<LongTermPlan | null>(null)
 
+  function handleLogoFileChange(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      showError('File logo harus berupa gambar (PNG/JPG/WEBP/SVG).')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_W = 400
+        const MAX_H = 160
+        let w = img.width
+        let h = img.height
+        if (w > MAX_W) {
+          h = Math.round((h * MAX_W) / w)
+          w = MAX_W
+        }
+        if (h > MAX_H) {
+          w = Math.round((w * MAX_H) / h)
+          h = MAX_H
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, w, h)
+        const isPng = file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/svg+xml'
+        const compressed = isPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.85)
+        setAppLogoUrl(compressed)
+      }
+      img.src = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+
   // Helper notification
   function showSuccess(msg: string) {
     setSuccessMsg(msg)
@@ -217,6 +257,7 @@ function PlatformSettingsPage() {
             app_name: appName,
             app_tagline: appTagline,
             app_initials: appInitials,
+            logo_url: appLogoUrl.trim() || null,
             hero_pill: heroPill,
             hero_headline: heroHeadline,
             hero_gradient: heroGradient,
@@ -583,6 +624,79 @@ function PlatformSettingsPage() {
                   />
                 </div>
 
+                {/* Logo Section */}
+                <div className="p-3.5 sm:p-4 rounded-xl bg-bg border border-line/70 space-y-3">
+                  <label className="text-dim font-semibold block font-mono uppercase text-[11px] flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-accent">
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Logo Aplikasi Publik (Opsional)</span>
+                    </span>
+                    <span className="text-[10px] text-dim lowercase">
+                      {appLogoUrl ? 'Logo Kustom Aktif' : 'Fallback: Inisial Monogram'}
+                    </span>
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="relative group shrink-0">
+                      <div className="w-16 h-16 rounded-xl bg-panel border border-line flex items-center justify-center overflow-hidden shadow-inner p-1">
+                        {appLogoUrl ? (
+                          <img
+                            src={appLogoUrl}
+                            alt="Logo Aplikasi"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-bg border border-accent/40 flex items-center justify-center text-accent font-black text-sm">
+                            {appInitials || 'TL'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          ref={logoFileInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          onChange={(e) => handleLogoFileChange(e.target.files?.[0])}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => logoFileInputRef.current?.click()}
+                          className="btn-interactive px-3 py-1.5 rounded-lg bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Upload className="w-3.5 h-3.5 text-accent" />
+                          <span>Upload File Logo</span>
+                        </button>
+
+                        {appLogoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setAppLogoUrl('')}
+                            className="btn-interactive px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-medium flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Hapus Logo</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        type="url"
+                        value={appLogoUrl.startsWith('data:') ? '' : appLogoUrl}
+                        onChange={(e) => setAppLogoUrl(e.target.value)}
+                        placeholder="Atau tempel link URL gambar logo (https://...)"
+                        className="w-full bg-panel border border-line focus:border-accent rounded-lg px-3 py-1.5 text-text outline-none text-xs"
+                      />
+                      <p className="text-[10px] text-dim">
+                        Format disarankan: PNG atau SVG transparan. Ukuran ideal ~200x60px.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-dim mb-1.5">
                     Hero Eyebrow (Pill Teks Atas)
@@ -663,9 +777,17 @@ function PlatformSettingsPage() {
                 {/* Simulated Header Navbar */}
                 <div className="p-3 rounded-xl bg-bg border border-line flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-panel border border-accent/40 flex items-center justify-center text-accent text-xs font-extrabold">
-                      {appInitials || 'TL'}
-                    </div>
+                    {appLogoUrl ? (
+                      <img
+                        src={appLogoUrl}
+                        alt={appName || 'TrainLog'}
+                        className="h-7 w-auto max-w-[80px] object-contain rounded-md"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-lg bg-panel border border-accent/40 flex items-center justify-center text-accent text-xs font-extrabold">
+                        {appInitials || 'TL'}
+                      </div>
+                    )}
                     <div>
                       <div className="font-bold text-xs text-text">{appName || 'TrainLog'}</div>
                       <div className="text-[9px] font-mono text-dim uppercase">
