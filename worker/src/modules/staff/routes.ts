@@ -8,35 +8,43 @@ import type { Env } from '../../env';
 const staff = new Hono<{ Bindings: Env }>();
 staff.use('*', requireAuth, rejectGraceWrite);
 
-// Manager mengundang PT, Admin dapat mengundang PT/Manager/Admin
+// Manager mengundang PT, Admin dapat mengundang PT/Manager/Admin di studionya, Platform Admin dapat mengundang ke studio mana saja
 const inviteSchema = z.object({
   email: z.string().email().transform((s) => s.toLowerCase().trim()),
   name: z.string().min(1).max(100),
   password: z.string().min(6).max(100),
-  role: z.enum(['admin', 'manager', 'pt']).default('pt'),
+  role: z.enum(['admin_studio', 'manager', 'pt']).default('pt'),
   spec: z.string().max(100).optional(),
   plan_tier: z.enum(['standard', 'pro']).default('standard'),
   expires_at: z.string().date().nullable().default(null),
+  studio_id: z.string().uuid().optional().nullable(),
 });
 
-staff.post('/invite', requireRole('manager', 'admin'), async (c) => {
+staff.post('/invite', requireRole('manager', 'admin_studio', 'platform_admin'), async (c) => {
   const parsed = inviteSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
   const inviter = c.get('user');
   if (inviter.email === parsed.data.email) return c.json({ error: 'self_invite' }, 400);
 
-  // Hanya admin yang bisa membuat role selain 'pt'
-  const assignedRole = inviter.role === 'admin' ? parsed.data.role : 'pt';
+  const assignedRole = inviter.role === 'platform_admin'
+    ? parsed.data.role
+    : inviter.role === 'admin_studio'
+      ? parsed.data.role
+      : 'pt';
+
+  const assignedStudioId = inviter.role === 'platform_admin'
+    ? (parsed.data.studio_id ?? null)
+    : inviter.studio_id;
 
   const sql = db(c);
   const exists = await sql`select 1 from users where email = ${parsed.data.email}`;
   if (exists.length) return c.json({ error: 'email_taken' }, 409);
 
   const [newUser] = await sql`
-    insert into users (email, password_hash, name, role, is_active, plan_tier, expires_at)
+    insert into users (email, password_hash, name, role, is_active, plan_tier, expires_at, studio_id)
     values (${parsed.data.email}, ${hashPassword(parsed.data.password)}, ${parsed.data.name},
-            ${assignedRole}, true, ${parsed.data.plan_tier}, ${parsed.data.expires_at})
-    returning id, email, name, role, plan_tier, expires_at, is_active, created_at`;
+            ${assignedRole}, true, ${parsed.data.plan_tier}, ${parsed.data.expires_at}, ${assignedStudioId ?? null})
+    returning id, email, name, role, plan_tier, expires_at, is_active, studio_id, created_at`;
 
   if (assignedRole === 'pt') {
     await sql`
@@ -47,45 +55,68 @@ staff.post('/invite', requireRole('manager', 'admin'), async (c) => {
   return c.json({ pt: newUser, user: newUser }, 201);
 });
 
-// Daftar staff/users (PT di bawah manager, atau semua jenis user untuk admin)
-staff.get('/', requireRole('manager', 'admin'), async (c) => {
+// Daftar staff/users (PT di bawah manager, semua user di studio untuk admin_studio, atau semua studio untuk platform_admin)
+staff.get('/', requireRole('manager', 'admin_studio', 'platform_admin'), async (c) => {
   const u = c.get('user');
   const roleQuery = c.req.query('role'); // 'pt', 'all', dsb.
+  const studioFilter = c.req.query('studioId');
   const sql = db(c);
 
-  if (u.role === 'admin') {
+  if (u.role === 'platform_admin') {
+    const rows = await sql`
+      select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+             u.studio_id, s.name as studio_name,
+             sp.manager_id, sp.spec,
+             coalesce(count(distinct cl.id), 0)::int as client_count
+      from users u
+      left join studios s on s.id = u.studio_id
+      left join staff_profile sp on sp.user_id = u.id
+      left join clients cl on cl.pt_id = u.id
+      where u.role <> 'platform_admin'
+        ${roleQuery === 'pt' ? sql`and u.role = 'pt'` : sql``}
+        ${studioFilter ? sql`and u.studio_id = ${studioFilter}` : sql``}
+      group by u.id, s.name, sp.manager_id, sp.spec
+      order by case when u.role = 'admin_studio' then 1 when u.role = 'manager' then 2 else 3 end, u.created_at desc`;
+    return c.json({ staff: rows });
+  }
+
+  if (u.role === 'admin_studio') {
     const rows = roleQuery === 'pt'
       ? await sql`
           select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+                 u.studio_id,
                  sp.manager_id, sp.spec,
                  coalesce(count(distinct cl.id), 0)::int as client_count
           from users u
           left join staff_profile sp on sp.user_id = u.id
           left join clients cl on cl.pt_id = u.id
-          where u.role = 'pt'
+          where u.role = 'pt' and u.studio_id = ${u.studio_id ?? null}
           group by u.id, sp.manager_id, sp.spec
           order by u.created_at desc`
       : await sql`
           select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+                 u.studio_id,
                  sp.manager_id, sp.spec,
                  coalesce(count(distinct cl.id), 0)::int as client_count
           from users u
           left join staff_profile sp on sp.user_id = u.id
           left join clients cl on cl.pt_id = u.id
+          where u.studio_id = ${u.studio_id ?? null} and u.role <> 'platform_admin'
           group by u.id, sp.manager_id, sp.spec
-          order by case when u.role = 'admin' then 1 when u.role = 'manager' then 2 else 3 end, u.created_at desc`;
+          order by case when u.role = 'admin_studio' then 1 when u.role = 'manager' then 2 else 3 end, u.created_at desc`;
     return c.json({ staff: rows });
   }
 
   // Role: manager
   const rows = await sql`
     select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+           u.studio_id,
            sp.manager_id, sp.spec,
            coalesce(count(distinct cl.id), 0)::int as client_count
     from users u
     join staff_profile sp on sp.user_id = u.id
     left join clients cl on cl.pt_id = u.id
-    where sp.manager_id = ${u.id}
+    where sp.manager_id = ${u.id} and u.studio_id = ${u.studio_id ?? null}
     group by u.id, sp.manager_id, sp.spec
     order by u.created_at desc`;
   return c.json({ staff: rows });
@@ -96,14 +127,14 @@ const patchSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   email: z.string().email().transform((s) => s.toLowerCase().trim()).optional(),
   password: z.string().min(6).max(100).optional(),
-  role: z.enum(['admin', 'manager', 'pt']).optional(),
+  role: z.enum(['admin_studio', 'manager', 'pt']).optional(),
   spec: z.string().max(100).nullable().optional(),
   plan_tier: z.enum(['standard', 'pro']).optional(),
   expires_at: z.string().date().nullable().optional(),
   is_active: z.boolean().optional(),
 });
 
-staff.patch('/:id', requireRole('manager', 'admin'), async (c) => {
+staff.patch('/:id', requireRole('manager', 'admin_studio', 'platform_admin'), async (c) => {
   const parsed = patchSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
   const id = c.req.param('id') as string;
@@ -115,6 +146,9 @@ staff.patch('/:id', requireRole('manager', 'admin'), async (c) => {
   if (u.role === 'manager') {
     const owns = await sql`select 1 from staff_profile where user_id = ${id} and manager_id = ${u.id}`;
     if (!owns.length) return c.json({ error: 'forbidden' }, 403);
+  } else if (u.role === 'admin_studio') {
+    const [target] = await sql`select studio_id from users where id = ${id}`;
+    if (!target || target.studio_id !== u.studio_id) return c.json({ error: 'forbidden' }, 403);
   }
 
   if (d.email) {
@@ -123,7 +157,7 @@ staff.patch('/:id', requireRole('manager', 'admin'), async (c) => {
   }
 
   const pwdHash = d.password ? hashPassword(d.password) : null;
-  const newRole = u.role === 'admin' ? d.role : undefined;
+  const newRole = (u.role === 'admin_studio' || u.role === 'platform_admin') ? d.role : undefined;
 
   if (d.spec !== undefined) {
     await sql`
@@ -143,7 +177,7 @@ staff.patch('/:id', requireRole('manager', 'admin'), async (c) => {
       expires_at = coalesce(${d.expires_at ?? null}, expires_at),
       is_active = coalesce(${d.is_active ?? null}, is_active)
     where id = ${id}
-    returning id, email, name, role, plan_tier, expires_at, is_active, created_at`;
+    returning id, email, name, role, plan_tier, expires_at, is_active, studio_id, created_at`;
 
   if (!row) return c.json({ error: 'not_found' }, 404);
 
@@ -151,13 +185,17 @@ staff.patch('/:id', requireRole('manager', 'admin'), async (c) => {
   return c.json({ pt: { ...row, spec: sp?.spec ?? null }, user: { ...row, spec: sp?.spec ?? null } });
 });
 
-// Hapus user/staff (Khusus admin, tidak bisa hapus akun diri sendiri)
-staff.delete('/:id', requireRole('admin'), async (c) => {
+// Hapus user/staff (Khusus admin studio atau platform admin, tidak bisa hapus akun diri sendiri)
+staff.delete('/:id', requireRole('admin_studio', 'platform_admin'), async (c) => {
   const u = c.get('user');
   const id = c.req.param('id') as string;
   if (id === u.id) return c.json({ error: 'cannot_delete_self' }, 400);
 
   const sql = db(c);
+  if (u.role === 'admin_studio') {
+    const [target] = await sql`select studio_id from users where id = ${id}`;
+    if (!target || target.studio_id !== u.studio_id) return c.json({ error: 'forbidden' }, 403);
+  }
   const res = await sql`delete from users where id = ${id}`;
   return res.count ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);
 });

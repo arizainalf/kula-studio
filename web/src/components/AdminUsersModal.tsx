@@ -28,13 +28,13 @@ export function AdminUsersModal({
   const [usersList, setUsersList] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'manager' | 'pt'>('all')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin_studio' | 'manager' | 'pt'>('all')
 
   // Edit User State
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
-  const [editRole, setEditRole] = useState<'admin' | 'manager' | 'pt'>('pt')
+  const [editRole, setEditRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [editSpec, setEditSpec] = useState('')
   const [editPlanTier, setEditPlanTier] = useState<'standard' | 'pro'>('standard')
   const [editIsActive, setEditIsActive] = useState(true)
@@ -46,7 +46,7 @@ export function AdminUsersModal({
   const [addName, setAddName] = useState('')
   const [addEmail, setAddEmail] = useState('')
   const [addPassword, setAddPassword] = useState('')
-  const [addRole, setAddRole] = useState<'admin' | 'manager' | 'pt'>('pt')
+  const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [addSpec, setAddSpec] = useState('')
   const [addPlanTier, setAddPlanTier] = useState<'standard' | 'pro'>('standard')
   const [addSubmitting, setAddSubmitting] = useState(false)
@@ -54,7 +54,7 @@ export function AdminUsersModal({
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
-  const isAdmin = currentUser.role === 'admin'
+  const isAdmin = currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
 
   async function loadUsers() {
     setLoading(true)
@@ -83,7 +83,7 @@ export function AdminUsersModal({
     setEditingUser(u)
     setEditName(u.name)
     setEditEmail(u.email)
-    setEditRole(u.role as any)
+    setEditRole((u.role === 'admin_studio' || (u.role as string) === 'admin' || (u.role as string) === 'platform_admin' ? 'admin_studio' : u.role) as any)
     setEditSpec(u.spec || '')
     setEditPlanTier((u.plan_tier as any) || 'standard')
     setEditIsActive(u.is_active ?? true)
@@ -305,7 +305,7 @@ export function AdminUsersModal({
                     >
                       <option value="pt">Personal Trainer (PT)</option>
                       <option value="manager">Manager Studio</option>
-                      <option value="admin">Administrator (Admin)</option>
+                      <option value="admin_studio">Admin Studio</option>
                     </select>
                   ) : (
                     <div className="px-3 py-2 bg-panel border border-line rounded-xl text-dim font-mono uppercase text-xs">
@@ -465,7 +465,7 @@ export function AdminUsersModal({
                     >
                       <option value="pt">Personal Trainer (PT)</option>
                       <option value="manager">Manager Studio</option>
-                      <option value="admin">Administrator (Admin)</option>
+                      <option value="admin_studio">Admin Studio</option>
                     </select>
                   ) : (
                     <div className="px-3 py-2 bg-panel border border-line rounded-xl text-dim font-mono uppercase text-xs">
@@ -581,12 +581,12 @@ export function AdminUsersModal({
                         Manager
                       </button>
                       <button
-                        onClick={() => setRoleFilter('admin')}
+                        onClick={() => setRoleFilter('admin_studio')}
                         className={`px-2.5 py-1 rounded-lg transition-colors ${
-                          roleFilter === 'admin' ? 'bg-panel text-accent font-bold' : 'text-dim hover:text-text'
+                          roleFilter === 'admin_studio' ? 'bg-panel text-accent font-bold' : 'text-dim hover:text-text'
                         }`}
                       >
-                        Admin
+                        Admin Studio
                       </button>
                     </>
                   )}
@@ -649,14 +649,14 @@ export function AdminUsersModal({
                               )}
                               <span
                                 className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${
-                                  u.role === 'admin'
+                                  u.role === 'admin_studio' || (u.role as string) === 'admin'
                                     ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
                                     : u.role === 'manager'
                                       ? 'bg-sky-400/15 text-sky-300 border border-sky-400/30'
                                       : 'bg-accent/15 text-accent border border-accent/30'
                                 }`}
                               >
-                                {u.role}
+                                {u.role === 'admin_studio' || (u.role as string) === 'admin' ? 'Admin Studio' : u.role}
                               </span>
                               {u.is_active ? (
                                 <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">

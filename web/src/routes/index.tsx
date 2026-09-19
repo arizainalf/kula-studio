@@ -14,6 +14,7 @@ import { ExportPdfModal } from '../components/ExportPdfModal'
 import { AdminExerciseModal } from '../components/AdminExerciseModal'
 import { EditProfileModal } from '../components/EditProfileModal'
 import { AdminUsersModal } from '../components/AdminUsersModal'
+import { PlatformAdminModal } from '../components/PlatformAdminModal'
 import {
   formatDate,
   formatShortDate,
@@ -34,6 +35,8 @@ import {
   Printer,
   Dumbbell,
   UserCog,
+  Building2,
+  ShieldCheck,
 } from 'lucide-react'
 
 export type Client = ClientSummary & {
@@ -107,6 +110,7 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
   const [isAdminExerciseOpen, setIsAdminExerciseOpen] = useState(false)
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [isAdminUsersOpen, setIsAdminUsersOpen] = useState(false)
+  const [isPlatformAdminOpen, setIsPlatformAdminOpen] = useState(false)
 
   async function logout() {
     await api('/auth/logout', { method: 'POST' })
@@ -156,7 +160,17 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
             <Link to="/schedule" className="hover:text-accent transition-colors">
               Jadwal
             </Link>
-            {(currentUser.role === 'admin' || currentUser.role === 'manager') && (
+            {currentUser.role === 'platform_admin' && (
+              <button
+                type="button"
+                onClick={() => setIsPlatformAdminOpen(true)}
+                className="hover:text-accent transition-colors flex items-center gap-1.5 text-amber-400 font-bold cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Kelola Studio (SaaS)</span>
+              </button>
+            )}
+            {(currentUser.role === 'admin_studio' || currentUser.role === 'manager' || currentUser.role === 'platform_admin') && (
               <button
                 type="button"
                 onClick={() => setIsAdminUsersOpen(true)}
@@ -252,9 +266,24 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
                   Selamat Datang, {currentUser.name}
                 </h1>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase">
-                    {currentUser.role}
-                  </span>
+                  {currentUser.role === 'platform_admin' ? (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-400 border border-amber-400/40 uppercase flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      PLATFORM ADMIN (SAAS)
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase">
+                        {currentUser.role === 'admin_studio' ? 'Admin Studio' : currentUser.role}
+                      </span>
+                      {currentUser.studio_name && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-bg text-text border border-line flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-accent" />
+                          <span>{currentUser.studio_name}</span>
+                        </span>
+                      )}
+                    </>
+                  )}
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-bg text-text border border-line">
                     {currentUser.plan_tier ? `${currentUser.plan_tier.toUpperCase()} TIER` : 'STANDARD'}
                   </span>
@@ -270,6 +299,18 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
 
             {/* Action Buttons */}
             <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60 flex items-center gap-2 flex-wrap">
+              {currentUser.role === 'platform_admin' && (
+                <button
+                  type="button"
+                  onClick={() => setIsPlatformAdminOpen(true)}
+                  className="btn-interactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#141414] text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md"
+                  title="Kelola Semua Studio Gym di Platform"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span>Kelola Studio (SaaS)</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setIsEditProfileOpen(true)}
@@ -289,11 +330,11 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
                 <Dumbbell className="w-4 h-4 text-accent" />
                 <span>Master Gerakan</span>
                 <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${
-                  currentUser.role === 'admin'
+                  currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
                     ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
                     : 'bg-bg text-dim border border-line'
                 }`}>
-                  {currentUser.role}
+                  {currentUser.role === 'admin_studio' ? 'Admin Studio' : currentUser.role}
                 </span>
               </button>
 
@@ -561,6 +602,12 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
     <AdminUsersModal
       isOpen={isAdminUsersOpen}
       onClose={() => setIsAdminUsersOpen(false)}
+      currentUser={currentUser}
+    />
+
+    <PlatformAdminModal
+      isOpen={isPlatformAdminOpen}
+      onClose={() => setIsPlatformAdminOpen(false)}
       currentUser={currentUser}
     />
   </div>

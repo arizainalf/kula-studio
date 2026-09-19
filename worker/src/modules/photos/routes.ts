@@ -12,13 +12,17 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const OK_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
-async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string }) {
+async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string; studio_id?: string | null }) {
   const [row] = await sql`
     select 1 from clients c
     where c.id = ${clientId}
-      and (${u.role} = 'admin' or c.pt_id = ${u.id}
-           or (${u.role} = 'manager' and exists(
-                select 1 from staff_profile sp where sp.user_id = c.pt_id and sp.manager_id = ${u.id})))`;
+      and (
+        ${u.role} = 'platform_admin'
+        or (${u.role} = 'admin_studio' and (${u.studio_id ? sql`c.studio_id = ${u.studio_id}` : sql`true`}))
+        or c.pt_id = ${u.id}
+        or (${u.role} = 'manager' and exists(
+             select 1 from staff_profile sp where sp.user_id = c.pt_id and sp.manager_id = ${u.id}))
+      )`;
   return !!row;
 }
 
@@ -61,9 +65,13 @@ photos.get('/raw/:id', async (c) => {
   if (!c.env.PHOTOS_BUCKET) return c.json({ error: 'storage_not_configured' }, 501);
   const sql = db(c);
   const [row] = await sql`
-    select p.r2_key, c.pt_id from photos p join clients c on c.id = p.client_id where p.id = ${c.req.param('id')}`;
+    select p.r2_key, c.pt_id, c.studio_id from photos p join clients c on c.id = p.client_id where p.id = ${c.req.param('id')}`;
   if (!row) return c.json({ error: 'not_found' }, 404);
-  if (u.role !== 'admin' && row.pt_id !== u.id && u.role !== 'manager') 
+  const isPlatform = u.role === 'platform_admin';
+  const isStudioAdmin = u.role === 'admin_studio' && (!u.studio_id || row.studio_id === u.studio_id);
+  const isOwnerPt = row.pt_id === u.id;
+  const isManager = u.role === 'manager';
+  if (!isPlatform && !isStudioAdmin && !isOwnerPt && !isManager) 
     return c.json({ error: 'forbidden' }, 403);
   const obj = await c.env.PHOTOS_BUCKET.get(row.r2_key);
   if (!obj) return c.json({ error: 'not_found' }, 404);

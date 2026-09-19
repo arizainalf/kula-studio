@@ -17,18 +17,27 @@ auth.post('/login', async (c) => {
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
   const [user] = await db(c)`
-    select id, email, password_hash, name, role, is_active, plan_tier, expires_at
-    from users where email = ${parsed.data.email}`;
+    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.plan_tier, u.expires_at,
+           u.studio_id, s.name as studio_name, s.slug as studio_slug, s.is_active as studio_is_active
+    from users u
+    left join studios s on s.id = u.studio_id
+    where u.email = ${parsed.data.email}`;
 
   // Pesan generik — jangan bocorkan email terdaftar
   if (!user || !verifyPassword(parsed.data.password, user.password_hash))
     return c.json({ error: 'invalid_credentials' }, 401);
   if (!user.is_active) return c.json({ error: 'pending_activation' }, 403);
+  if (user.role !== 'platform_admin' && user.studio_id && user.studio_is_active === false) {
+    return c.json({ error: 'studio_suspended' }, 403);
+  }
 
   const payload = {
     sub: {
       id: user.id, email: user.email, role: user.role, name: user.name,
       plan_tier: user.plan_tier, expires_at: user.expires_at,
+      studio_id: user.studio_id ?? null,
+      studio_name: user.studio_name ?? null,
+      studio_slug: user.studio_slug ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -139,8 +148,10 @@ auth.get('/profile', requireAuth, async (c) => {
   }
 
   const [row] = await sql`
-    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, sp.spec
+    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+           u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier, sp.spec
     from users u
+    left join studios s on s.id = u.studio_id
     left join staff_profile sp on sp.user_id = u.id
     where u.id = ${u.id}
   `;
@@ -277,13 +288,13 @@ auth.patch('/profile', requireAuth, async (c) => {
   });
 });
 
-// POST /api/auth/toggle-admin — Memungkinkan akun PT menjadi akun Admin (dan sebaliknya)
+// POST /api/auth/toggle-admin — Memungkinkan akun PT menjadi akun Admin Studio (dan sebaliknya)
 auth.post('/toggle-admin', requireAuth, async (c) => {
   const u = c.get('user');
-  if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
+  if (u.role === 'client' || u.role === 'platform_admin') return c.json({ error: 'forbidden' }, 403);
 
   const sql = db(c);
-  const targetRole = u.role === 'admin' ? 'pt' : 'admin';
+  const targetRole = u.role === 'admin_studio' ? 'pt' : 'admin_studio';
 
   const [updated] = await sql`
     update users set role = ${targetRole}
@@ -301,6 +312,9 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
       name: updated.name,
       plan_tier: updated.plan_tier,
       expires_at: updated.expires_at,
+      studio_id: u.studio_id ?? null,
+      studio_name: u.studio_name ?? null,
+      studio_slug: u.studio_slug ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };

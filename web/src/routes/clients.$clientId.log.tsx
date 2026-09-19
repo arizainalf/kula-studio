@@ -251,7 +251,7 @@ function LogSession() {
           category_slug: categorySlug,
           name: item.name.trim(),
           default_detail: item.detail?.trim() || undefined,
-          is_global: user?.role === 'admin',
+          is_global: user?.role === 'admin_studio' || user?.role === 'platform_admin',
         }),
       })
       setCopyNotice(`Gerakan "${item.name}" berhasil disimpan ke Library Master!`)
@@ -415,8 +415,10 @@ function LogSession() {
             >
               <Dumbbell className="w-3.5 h-3.5 text-accent" />
               <span className="hidden sm:inline">Master Gerakan</span>
-              {user?.role === 'admin' ? (
-                <span className="text-[9px] font-mono font-bold bg-amber-400/20 text-amber-400 px-1.5 py-0.2 rounded">Admin</span>
+              {user?.role === 'admin_studio' || user?.role === 'platform_admin' ? (
+                <span className="text-[9px] font-mono font-bold bg-amber-400/20 text-amber-400 px-1.5 py-0.2 rounded">
+                  {user?.role === 'platform_admin' ? 'Superadmin' : 'Admin'}
+                </span>
               ) : (
                 <span className="text-[9px] font-mono bg-bg text-dim px-1.5 py-0.2 rounded border border-line">PT</span>
               )}

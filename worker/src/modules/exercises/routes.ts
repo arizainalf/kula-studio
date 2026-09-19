@@ -40,8 +40,8 @@ exercises.get('/categories', async (c) => {
   return c.json({ categories: rows });
 });
 
-// POST /api/exercises/categories — Tambah kategori baru (Khusus Admin)
-exercises.post('/categories', requireAuth, requireRole('admin'), rejectGraceWrite, async (c) => {
+// POST /api/exercises/categories — Tambah kategori baru (Khusus Admin Studio / Platform Admin)
+exercises.post('/categories', requireAuth, requireRole('admin_studio', 'platform_admin'), rejectGraceWrite, async (c) => {
   const parsed = categorySchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
 
@@ -60,8 +60,8 @@ exercises.post('/categories', requireAuth, requireRole('admin'), rejectGraceWrit
   return c.json({ category: row }, 201);
 });
 
-// PATCH /api/exercises/categories/:slug — Edit kategori (Khusus Admin)
-exercises.patch('/categories/:slug', requireAuth, requireRole('admin'), rejectGraceWrite, async (c) => {
+// PATCH /api/exercises/categories/:slug — Edit kategori (Khusus Admin Studio / Platform Admin)
+exercises.patch('/categories/:slug', requireAuth, requireRole('admin_studio', 'platform_admin'), rejectGraceWrite, async (c) => {
   const slug = c.req.param('slug') as string;
   const patchCatSchema = categorySchema.partial().omit({ slug: true });
   const parsed = patchCatSchema.safeParse(await c.req.json().catch(() => null));
@@ -84,8 +84,8 @@ exercises.patch('/categories/:slug', requireAuth, requireRole('admin'), rejectGr
   return c.json({ category: row });
 });
 
-// DELETE /api/exercises/categories/:slug — Hapus kategori (Khusus Admin)
-exercises.delete('/categories/:slug', requireAuth, requireRole('admin'), rejectGraceWrite, async (c) => {
+// DELETE /api/exercises/categories/:slug — Hapus kategori (Khusus Admin Studio / Platform Admin)
+exercises.delete('/categories/:slug', requireAuth, requireRole('admin_studio', 'platform_admin'), rejectGraceWrite, async (c) => {
   const slug = c.req.param('slug') as string;
   const sql = db(c);
 
@@ -104,9 +104,13 @@ exercises.get('/', async (c) => {
   const q = c.req.query('q');
 
   let userId: string | null = null;
+  let studioId: string | null = null;
   try {
     const u = c.get('user');
-    if (u) userId = u.id;
+    if (u) {
+      userId = u.id;
+      studioId = u.studio_id ?? null;
+    }
   } catch {
     // optional
   }
@@ -119,7 +123,10 @@ exercises.get('/', async (c) => {
       (case when l.pt_id is null then true else false end) as is_global
     from exercise_library l
     join exercise_categories c on c.slug = l.category_slug
-    where (l.pt_id is null or l.pt_id = ${userId})
+    where (
+      (l.pt_id is null and (l.studio_id is null or l.studio_id = ${studioId}))
+      or l.pt_id = ${userId}
+    )
       ${category ? sql`and l.category_slug = ${category}` : sql``}
       ${q ? sql`and (l.name ilike ${'%' + q + '%'} or l.muscle_group ilike ${'%' + q + '%'} or l.default_detail ilike ${'%' + q + '%'})` : sql``}
     order by l.category_slug asc, l.is_favorite desc, l.name asc
@@ -143,19 +150,20 @@ exercises.post('/', requireAuth, rejectGraceWrite, async (c) => {
   const [cat] = await sql`select 1 from exercise_categories where slug = ${d.category_slug}`;
   if (!cat) return c.json({ error: 'invalid_category' }, 400);
 
-  // Jika admin mencentang is_global, set pt_id = null
-  const ptId = (u.role === 'admin' && d.is_global) ? null : u.id;
+  // Jika admin studio atau platform admin mencentang is_global, set pt_id = null
+  const isStudioAdmin = u.role === 'admin_studio' || u.role === 'platform_admin';
+  const ptId = (isStudioAdmin && d.is_global) ? null : u.id;
 
   const [row] = await sql`
-    insert into exercise_library (pt_id, category_slug, name, default_detail, muscle_group, is_favorite)
-    values (${ptId}, ${d.category_slug}, ${d.name.trim()}, ${d.default_detail?.trim() ?? null}, ${d.muscle_group?.trim() ?? null}, ${d.is_favorite})
+    insert into exercise_library (pt_id, category_slug, name, default_detail, muscle_group, is_favorite, studio_id)
+    values (${ptId}, ${d.category_slug}, ${d.name.trim()}, ${d.default_detail?.trim() ?? null}, ${d.muscle_group?.trim() ?? null}, ${d.is_favorite}, ${u.studio_id ?? null})
     returning *
   `;
 
   return c.json({ exercise: row }, 201);
 });
 
-// PATCH /api/exercises/:id — Edit gerakan di library (Admin bisa edit semua, PT edit miliknya)
+// PATCH /api/exercises/:id — Edit gerakan di library (Admin bisa edit semua di studionya, PT edit miliknya)
 exercises.patch('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const u = c.get('user');
   if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
@@ -169,10 +177,15 @@ exercises.patch('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const d = parsed.data;
 
   // Cek otorisasi
-  const [existing] = await sql`select pt_id from exercise_library where id = ${id}`;
+  const [existing] = await sql`select pt_id, studio_id from exercise_library where id = ${id}`;
   if (!existing) return c.json({ error: 'not_found' }, 404);
 
-  if (u.role !== 'admin' && existing.pt_id !== u.id) {
+  const canEdit =
+    u.role === 'platform_admin' ||
+    (u.role === 'admin_studio' && (!u.studio_id || existing.studio_id === u.studio_id || existing.pt_id === null)) ||
+    existing.pt_id === u.id;
+
+  if (!canEdit) {
     return c.json({ error: 'forbidden' }, 403);
   }
 
@@ -190,7 +203,7 @@ exercises.patch('/:id', requireAuth, rejectGraceWrite, async (c) => {
   return c.json({ exercise: row });
 });
 
-// DELETE /api/exercises/:id — Hapus gerakan di library (Admin bisa hapus semua, PT hapus miliknya)
+// DELETE /api/exercises/:id — Hapus gerakan di library (Admin bisa hapus di studionya, PT hapus miliknya)
 exercises.delete('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const u = c.get('user');
   if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
@@ -198,8 +211,11 @@ exercises.delete('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const id = c.req.param('id') as string;
   const sql = db(c);
 
-  const res = u.role === 'admin'
-    ? await sql`delete from exercise_library where id = ${id}`
+  const canDeleteAll = u.role === 'platform_admin' || u.role === 'admin_studio';
+  const res = canDeleteAll
+    ? (u.role === 'platform_admin'
+        ? await sql`delete from exercise_library where id = ${id}`
+        : await sql`delete from exercise_library where id = ${id} and (studio_id = ${u.studio_id ?? null} or pt_id = ${u.id})`)
     : await sql`delete from exercise_library where id = ${id} and pt_id = ${u.id}`;
 
   if (res.count === 0) {

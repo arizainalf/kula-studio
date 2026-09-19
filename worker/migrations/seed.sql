@@ -5,7 +5,7 @@
 
 -- Placeholder: hash untuk "devpass123"
 INSERT INTO users (email, password_hash, name, role, is_active, plan_tier, expires_at) VALUES
-  ('admin@dev.local',  's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Admin Dev',  'admin',   true,  NULL,        NULL),
+  ('admin@dev.local',  's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Admin Dev',  'admin_studio',   true,  NULL,        NULL),
   ('boss@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Manager Dev','manager', true,  NULL,        NULL),
   ('hadi@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Hadi PT',    'pt',      true,  'standard',  CURRENT_DATE + 30),
   ('expi@dev.local',   's1$kIeyQK0OOX79vXAWZqrsPg$uEJkpx4Hm6-1WtP_gr4-HiVUnFBhjRR-HfrjIROa3L4', 'Expired PT', 'pt',      true,  'pro',       CURRENT_DATE - 2);

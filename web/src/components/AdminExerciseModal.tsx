@@ -644,8 +644,8 @@ export function AdminExerciseModal({
                   </span>
                 </div>
                 <p className="text-xs text-dim mt-1.5">
-                  {userRole === 'admin'
-                    ? 'Akun Admin memiliki wewenang mengelola kategori latihan, mengedit seluruh preset global, dan manajemen staf.'
+                  {userRole === 'admin_studio' || (userRole as string) === 'admin'
+                    ? 'Akun Admin Studio memiliki wewenang mengelola kategori latihan, mengedit seluruh preset studio, dan manajemen staf.'
                     : 'Akun PT fokus pada manajemen klien, jadwal, dan pencatatan sesi latihan.'}
                 </p>
               </div>
@@ -658,7 +658,7 @@ export function AdminExerciseModal({
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${roleLoading ? 'animate-spin' : ''}`} />
                 <span>
-                  {userRole === 'admin' ? 'Ubah Menjadi Akun PT' : 'Jadikan Akun Admin'}
+                  {userRole === 'admin_studio' || (userRole as string) === 'admin' ? 'Ubah Menjadi Akun PT' : 'Jadikan Akun Admin Studio'}
                 </span>
               </button>
             </div>

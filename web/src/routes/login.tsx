@@ -62,9 +62,13 @@ function LoginPage() {
     }
   }
 
-  function fillDemo(type: 'admin' | 'pt' | 'client1' | 'client2') {
+  function fillDemo(type: 'platform_admin' | 'admin_studio' | 'pt' | 'client1' | 'client2') {
     setErrorMsg('')
-    if (type === 'admin') {
+    if (type === 'platform_admin') {
+      setRoleMode('pt')
+      setEmail('superadmin@dev.local')
+      setPassword('devpass123')
+    } else if (type === 'admin_studio') {
       setRoleMode('pt')
       setEmail('admin@dev.local')
       setPassword('devpass123')
@@ -242,6 +246,27 @@ function LoginPage() {
           <div className="flex flex-wrap gap-1.5 justify-center text-[11px]">
             <button
               type="button"
+              onClick={() => fillDemo('platform_admin')}
+              className="px-2 py-1 rounded-md bg-amber-400/20 border border-amber-400/40 text-amber-300 hover:bg-amber-400/30 transition-colors font-bold"
+            >
+              🛡️ Platform Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo('admin_studio')}
+              className="px-2 py-1 rounded-md bg-accent/20 border border-accent/40 text-accent hover:bg-accent/30 transition-colors font-bold"
+            >
+              👑 Admin Studio
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo('pt')}
+              className="px-2 py-1 rounded-md bg-panel border border-line text-dim hover:text-text transition-colors"
+            >
+              Demo PT
+            </button>
+            <button
+              type="button"
               onClick={() => fillDemo('client1')}
               className="px-2 py-1 rounded-md bg-panel border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
             >
@@ -253,20 +278,6 @@ function LoginPage() {
               className="px-2 py-1 rounded-md bg-panel border border-line text-dim hover:text-text transition-colors"
             >
               Demo Klien (Fajar)
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('admin')}
-              className="px-2 py-1 rounded-md bg-amber-400/15 border border-amber-400/40 text-amber-300 hover:bg-amber-400/25 transition-colors font-bold"
-            >
-              👑 Demo Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('pt')}
-              className="px-2 py-1 rounded-md bg-panel border border-line text-dim hover:text-text transition-colors"
-            >
-              Demo PT (Hadi)
             </button>
           </div>
         </div>

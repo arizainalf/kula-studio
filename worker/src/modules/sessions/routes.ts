@@ -21,12 +21,16 @@ const sessionSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-// PT harus punya client-nya (manager/admin read-only list; client read own)
-async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string }) {
+// PT harus punya client-nya (manager/admin_studio read-only list; client read own)
+async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string; studio_id?: string | null }) {
   if (u.role === 'client') return u.id === clientId ? { pt_id: null } : null;
-  const [row] = await sql`select pt_id from clients where id = ${clientId}`;
+  const [row] = await sql`select pt_id, studio_id from clients where id = ${clientId}`;
   if (!row) return null;
-  if (u.role === 'admin') return row;
+  if (u.role === 'platform_admin') return row;
+  if (u.role === 'admin_studio') {
+    if (!u.studio_id || row.studio_id === u.studio_id) return row;
+    return null;
+  }
   if (row.pt_id === u.id) return row;
   if (u.role === 'manager') {
     const [m] = await sql`select 1 from staff_profile where user_id = ${row.pt_id} and manager_id = ${u.id}`;
@@ -60,9 +64,13 @@ sessions.get('/', async (c) => {
     from sessions s
     join clients c on c.id = s.client_id
     join users p on p.id = s.pt_id
-    where (${u.role} = 'admin' or s.pt_id = ${u.id}
-           or (${u.role} = 'manager' and exists(
-                select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id})))
+    where (
+      ${u.role} = 'platform_admin'
+      or (${u.role} = 'admin_studio' and (${u.studio_id ? sql`c.studio_id = ${u.studio_id}` : sql`true`}))
+      or s.pt_id = ${u.id}
+      or (${u.role} = 'manager' and exists(
+           select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id}))
+    )
       ${from ? sql`and s.date >= ${from}` : sql``}
       ${to ? sql`and s.date <= ${to}` : sql``}
       ${clientId ? sql`and s.client_id = ${clientId}` : sql``}

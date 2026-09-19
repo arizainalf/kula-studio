@@ -25,10 +25,14 @@ schedule.get('/', async (c) => {
     select s.*, c.name as client_name, c.phone as client_phone
     from schedule s join clients c on c.id = s.client_id
     where s.date between ${from} and ${to}
-      and (${u.role} = 'admin' or s.pt_id = ${u.id}
-           or (${u.role} = 'client' and s.client_id = ${u.id})
-           or (${u.role} = 'manager' and exists(
-                select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id})))
+      and (
+        ${u.role} = 'platform_admin'
+        or (${u.role} = 'admin_studio' and (${u.studio_id ? sql`c.studio_id = ${u.studio_id}` : sql`true`}))
+        or s.pt_id = ${u.id}
+        or (${u.role} = 'client' and s.client_id = ${u.id})
+        or (${u.role} = 'manager' and exists(
+             select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id}))
+      )
     order by s.date, s.time`;
   return c.json({ schedule: rows });
 });
