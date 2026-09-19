@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
 import { WeeklyScheduleSection } from '../components/WeeklyScheduleSection'
-import { MobileBottomNav } from '../components/MobileBottomNav'
 import { AppLayout } from '../components/AppLayout'
 import { getLocalTodayString, getLocalFutureDateString } from '../lib/date'
 import type { Client, ScheduleItem } from './index'
@@ -86,9 +85,6 @@ function SchedulePage() {
           </div>
         </div>
       </main>
-
-      {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </AppLayout>
   )
 }

@@ -12,8 +12,6 @@ import {
   UserCheck,
   UserCog,
   LogOut,
-  Menu,
-  X,
   Sliders,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,6 +25,7 @@ import { AdminExerciseModal } from './AdminExerciseModal'
 import { ExportPdfModal } from './ExportPdfModal'
 import { UserAvatar } from './UserAvatar'
 import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
+import { MobileBottomNav } from './MobileBottomNav'
 
 export interface AppLayoutContextValue {
   openEditProfile: () => void
@@ -63,6 +62,9 @@ export interface AppLayoutProps {
     | 'exercises'
     | 'settings'
     | 'other'
+  clientId?: string
+  canLogSession?: boolean
+  onScheduleClick?: () => void
 }
 
 export function AppLayout({
@@ -70,11 +72,13 @@ export function AppLayout({
   children,
   onProfileUpdated,
   activeRoute,
+  clientId,
+  canLogSession,
+  onScheduleClick,
 }: AppLayoutProps) {
   const location = useLocation()
   const pathname = location.pathname
 
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [user, setUser] = useState<User>(currentUser)
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
@@ -164,7 +168,6 @@ export function AppLayout({
           <div className="p-4 sm:p-5 pb-3 border-b border-line/40 flex items-center justify-between gap-2">
             <Link
               to="/"
-              onClick={() => setMobileDrawerOpen(false)}
               className="flex items-center gap-2.5 group min-w-0"
             >
               <div className="w-9 h-9 rounded-xl bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors shrink-0">
@@ -186,21 +189,11 @@ export function AppLayout({
             <button
               type="button"
               onClick={toggleCollapsed}
-              className="hidden md:flex p-1.5 rounded-lg hover:bg-panel-elevated text-dim hover:text-accent border border-transparent hover:border-line transition-all shrink-0"
+              className="p-1.5 rounded-lg hover:bg-panel-elevated text-dim hover:text-accent border border-transparent hover:border-line transition-all shrink-0"
               title="Kecilkan Sidebar (Shrink)"
               aria-label="Kecilkan Sidebar"
             >
               <PanelLeftClose className="w-4 h-4" />
-            </button>
-
-            {/* Close button for mobile drawer */}
-            <button
-              type="button"
-              onClick={() => setMobileDrawerOpen(false)}
-              className="md:hidden p-1.5 rounded-lg hover:bg-panel-elevated text-dim hover:text-text transition-colors shrink-0"
-              title="Tutup Menu"
-            >
-              <X className="w-5 h-5" />
             </button>
           </div>
         )}
@@ -270,7 +263,6 @@ export function AppLayout({
 
             <Link
               to="/"
-              onClick={() => setMobileDrawerOpen(false)}
               title="Dashboard"
               className={`${
                 isCollapsedDesktop
@@ -288,7 +280,6 @@ export function AppLayout({
 
             <Link
               to="/clients"
-              onClick={() => setMobileDrawerOpen(false)}
               title="Daftar Klien"
               className={`${
                 isCollapsedDesktop
@@ -306,7 +297,6 @@ export function AppLayout({
 
             <Link
               to="/schedule"
-              onClick={() => setMobileDrawerOpen(false)}
               title="Jadwal Sesi"
               className={`${
                 isCollapsedDesktop
@@ -335,7 +325,6 @@ export function AppLayout({
               <>
                 <Link
                   to="/studios"
-                  onClick={() => setMobileDrawerOpen(false)}
                   title="Kelola Studio (SaaS)"
                   className={`${
                     isCollapsedDesktop
@@ -360,7 +349,6 @@ export function AppLayout({
 
                 <Link
                   to="/settings"
-                  onClick={() => setMobileDrawerOpen(false)}
                   title="Identitas & SaaS (Config)"
                   className={`${
                     isCollapsedDesktop
@@ -388,7 +376,6 @@ export function AppLayout({
             {(user.role === 'admin_studio' || user.role === 'manager' || user.role === 'platform_admin') && (
               <Link
                 to="/users"
-                onClick={() => setMobileDrawerOpen(false)}
                 title="Kelola Akun Staf"
                 className={`${
                   isCollapsedDesktop
@@ -407,7 +394,6 @@ export function AppLayout({
 
             <Link
               to="/exercises"
-              onClick={() => setMobileDrawerOpen(false)}
               title="Master Gerakan"
               className={`${
                 isCollapsedDesktop
@@ -427,7 +413,6 @@ export function AppLayout({
               type="button"
               onClick={() => {
                 setIsExportPdfOpen(true)
-                setMobileDrawerOpen(false)
               }}
               title="Cetak Laporan PDF"
               className={`${
@@ -547,10 +532,7 @@ export function AppLayout({
 
             <button
               type="button"
-              onClick={() => {
-                setIsEditProfileOpen(true)
-                setMobileDrawerOpen(false)
-              }}
+              onClick={() => setIsEditProfileOpen(true)}
               className="p-2 rounded-xl hover:bg-panel text-dim hover:text-accent border border-transparent hover:border-line transition-all btn-interactive"
               title="Edit Profil Akun"
             >
@@ -594,27 +576,21 @@ export function AppLayout({
           {renderSidebarContent(isCollapsed)}
         </aside>
 
-        {/* ── 2. Mobile Compact Top Navigation Bar ── */}
-        <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-panel border-b border-line px-3.5 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setMobileDrawerOpen(true)}
-              className="p-2 rounded-xl bg-bg border border-line text-dim hover:text-text transition-colors btn-interactive"
-              title="Buka Navigasi Sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shadow-sm">
-                {platformSettings.app_initials || 'TL'}
-              </div>
-              <span className="font-bold text-sm tracking-tight text-text">
+        {/* ── 2. Mobile Compact Top Navigation Bar (Clean & Focused) ── */}
+        <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-panel border-b border-line px-4 flex items-center justify-between shadow-sm">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shadow-sm">
+              {platformSettings.app_initials || 'TL'}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm tracking-tight text-text leading-none">
                 {formatBrandName(platformSettings.app_name)}
               </span>
-            </Link>
-          </div>
+              <span className="text-[9px] text-dim tracking-wider uppercase font-mono mt-0.5">
+                {platformSettings.app_tagline || 'Pro PT Manager'}
+              </span>
+            </div>
+          </Link>
 
           <div className="flex items-center gap-2">
             <ThemeToggle showLabel={false} />
@@ -635,30 +611,25 @@ export function AppLayout({
           </div>
         </div>
 
-        {/* ── 3. Mobile Slide-over Drawer ── */}
-        {mobileDrawerOpen && (
-          <div className="md:hidden fixed inset-0 z-50 animate-fade-in">
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-              onClick={() => setMobileDrawerOpen(false)}
-            />
-
-            {/* Drawer Panel */}
-            <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-panel border-r border-line shadow-2xl flex flex-col justify-between animate-scale-in">
-              {renderSidebarContent(false)}
-            </aside>
-          </div>
-        )}
-
-        {/* ── 4. Main View Content Area ── */}
+        {/* ── 3. Main View Content Area ── */}
         <div
-          className={`flex-1 flex flex-col min-h-screen w-full pt-14 md:pt-0 transition-all duration-300 ease-in-out ${
+          className={`flex-1 flex flex-col min-h-screen w-full pt-14 md:pt-0 pb-16 md:pb-0 transition-all duration-300 ease-in-out ${
             isCollapsed ? 'md:pl-20' : 'md:pl-64'
           }`}
         >
           {children}
         </div>
+
+        {/* ── 4. Mobile Bottom Navigation Bar (With Slide-up Menu Sheet) ── */}
+        <MobileBottomNav
+          currentUser={user}
+          clientId={clientId}
+          canLogSession={canLogSession !== undefined ? canLogSession : user.role === 'pt'}
+          onScheduleClick={onScheduleClick}
+          openExportPdf={() => setIsExportPdfOpen(true)}
+          openEditProfile={() => setIsEditProfileOpen(true)}
+          handleLogout={handleLogout}
+        />
 
         {/* ── Global Modals (Accessible from anywhere in AppLayout) ── */}
         <PlatformAdminModal

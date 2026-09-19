@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
-import { MobileBottomNav } from '../components/MobileBottomNav'
 import { ExportPdfModal } from '../components/ExportPdfModal'
 import { AppLayout } from '../components/AppLayout'
 import { UserAvatar } from '../components/UserAvatar'
@@ -371,6 +370,9 @@ function ClientDetail() {
     <AppLayout
       currentUser={meUser || ({} as User)}
       activeRoute="clients"
+      clientId={client.id}
+      canLogSession={canLogSession}
+      onScheduleClick={() => setActiveTab('schedule')}
       onProfileUpdated={(updated) => setMeUser((prev) => (prev ? ({ ...prev, ...updated }) : undefined))}
     >
       <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12 selection:bg-accent/30 selection:text-text font-sans antialiased">
@@ -1394,13 +1396,6 @@ function ClientDetail() {
           </div>
         )}
       </div>
-
-      {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav
-        clientId={client.id}
-        canLogSession={canLogSession}
-        onScheduleClick={() => setActiveTab('schedule')}
-      />
 
       {/* ── Export PDF Modal ── */}
       <ExportPdfModal

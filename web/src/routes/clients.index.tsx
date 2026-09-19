@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
-import { MobileBottomNav } from '../components/MobileBottomNav'
 import { AppLayout } from '../components/AppLayout'
 import { formatDate } from '../lib/date'
 import type { Client } from './index'
@@ -679,9 +678,6 @@ function ClientsDirectoryPage() {
           </div>
         </div>
       )}
-
-      {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </AppLayout>
   )
 }

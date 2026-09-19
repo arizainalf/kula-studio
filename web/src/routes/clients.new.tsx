@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { ArrowLeft, UserPlus, Dumbbell, ShieldCheck } from 'lucide-react'
 import { api, type User } from '../lib/api'
-import { MobileBottomNav } from '../components/MobileBottomNav'
 import { AppLayout } from '../components/AppLayout'
 
 export type TrainerOption = {
@@ -243,9 +242,6 @@ function NewClient() {
           </form>
         </div>
       </main>
-
-      {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </AppLayout>
   )
 }

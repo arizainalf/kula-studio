@@ -8,7 +8,6 @@ import {
   RpeSpectrumCard,
   type ClientSummary,
 } from '../components/DashboardCharts'
-import { MobileBottomNav } from '../components/MobileBottomNav'
 import { AppLayout } from '../components/AppLayout'
 import { usePlatformSettings } from '../lib/platformSettings'
 import {
@@ -566,8 +565,6 @@ function DashboardContent({
           </div>
         </section>
       </div>
-      {/* ── Mobile Bottom Navigation Bar (App Experience) ── */}
-      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </main>
   )
 }
