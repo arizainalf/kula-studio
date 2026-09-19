@@ -1,6 +1,6 @@
-# Design System: TrainLog Luxury Noir
+# Design System: Kula Studio — Luxury Noir
 
-Sistem desain resmi untuk **TrainLog Replica**. Berbeda dengan versi aslinya yang menggunakan nuansa sporty neon (dark navy + neon lime), desain ini mengadopsi estetika **Luxury Dark (Noir, Dark Charcoal, & Champagne Gold)** untuk memberikan impresi eksklusif, mewah, dan berkelas tinggi layaknya private trainer & bespoke fitness concierge.
+Sistem desain resmi untuk **Kula Studio**. Desain ini mengadopsi estetika **Luxury Dark (Noir, Dark Charcoal, & Champagne Gold)** untuk memberikan impresi eksklusif, mewah, dan berkelas tinggi layaknya private trainer & bespoke fitness concierge.
 
 ---
 

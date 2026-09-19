@@ -5,16 +5,20 @@ import postgres from 'postgres';
 
 const cache = new WeakMap<object, ReturnType<typeof postgres>>();
 
-type DbContext = { env: { DATABASE_URL: string } } | { DATABASE_URL: string };
+// Terima Context<{ Bindings: Env }> (memiliki .env), atau objek langsung dengan DATABASE_URL
+type DbContext =
+  | { env: { DATABASE_URL: string } }
+  | { env: Record<string, string> }
+  | { DATABASE_URL: string };
 
 export function db(c: DbContext) {
   let sql = cache.get(c);
   if (!sql) {
     const url =
-      'env' in c && c.env && typeof c.env.DATABASE_URL === 'string'
-        ? c.env.DATABASE_URL
-        : 'DATABASE_URL' in c && typeof c.DATABASE_URL === 'string'
-          ? c.DATABASE_URL
+      'env' in c && c.env && typeof (c.env as Record<string, string>).DATABASE_URL === 'string'
+        ? (c.env as Record<string, string>).DATABASE_URL
+        : 'DATABASE_URL' in c && typeof (c as { DATABASE_URL: string }).DATABASE_URL === 'string'
+          ? (c as { DATABASE_URL: string }).DATABASE_URL
           : undefined;
 
     if (!url) {

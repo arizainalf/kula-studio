@@ -1,4 +1,4 @@
-# Panduan Deployment TrainLog (SaaS & Multi-Tenant)
+# Panduan Deployment Kula Studio (SaaS & Multi-Tenant)
 
 Dokumen ini berisi panduan lengkap persiapan akun, konfigurasi database, deployment backend & frontend, serta otomatisasi CI/CD melalui **GitHub Actions**.
 
@@ -6,7 +6,7 @@ Dokumen ini berisi panduan lengkap persiapan akun, konfigurasi database, deploym
 
 ## 1. Arsitektur Infrastruktur Produksi
 
-Aplikasi TrainLog dibangun dengan arsitektur modern yang hemat biaya (dapat berjalan 100% pada **Free Tier**):
+Aplikasi Kula Studio dibangun dengan arsitektur modern yang hemat biaya (dapat berjalan 100% pada **Free Tier**):
 
 ```
                        ┌──────────────────────────────┐
@@ -19,7 +19,7 @@ Aplikasi TrainLog dibangun dengan arsitektur modern yang hemat biaya (dapat berj
             ▼                                                   ▼
 ┌───────────────────────────────┐               ┌───────────────────────────────┐
 │       Cloudflare Pages        │               │      Cloudflare Workers       │
-│        (Frontend React)       │──────────────▶│         (Hono Backend)        │
+│     (Frontend React SPA)      │──────────────▶│         (Hono Backend)        │
 └───────────────────────────────┘               └───────────────┬───────────────┘
                                                                 │
                                         ┌───────────────────────┴───────────────────────┐
@@ -57,7 +57,7 @@ Sebelum melakukan deploy, siapkan 3 akun gratis berikut:
 
 1. Buka dashboard [Supabase](https://supabase.com/dashboard) &rarr; klik **New Project**.
 2. Isi formulir:
-   - **Name**: `trainlog-db`
+   - **Name**: `kula-studio-db`
    - **Database Password**: Buat password kuat (simpan dengan aman).
    - **Region**: Pilih yang terdekat dengan Indonesia (misal: `Singapore (ap-southeast-1)`).
 3. Setelah database selesai dibuat:
@@ -81,7 +81,8 @@ Sebelum melakukan deploy, siapkan 3 akun gratis berikut:
      8. `0008_platform_settings.sql`
      9. `0009_platform_logo.sql`
      10. `0010_user_youtube_url.sql`
-     11. *(Opsional)* `seed.sql` jika ingin mengisikan data awal akun demo.
+     11. `0011_studio_gmaps_and_user_phone.sql`
+     12. *(Opsional)* `seed.sql` jika ingin mengisikan data awal akun demo.
 
 ---
 
@@ -96,7 +97,7 @@ Sebelum melakukan deploy, siapkan 3 akun gratis berikut:
    - Berikan izin (*Permissions*):
      - `Account` &rarr; `Cloudflare Pages` &rarr; `Edit`
      - `Account` &rarr; `Workers Scripts` &rarr; `Edit`
-     - `Account` &rarr; `Workers R2 Storage` &rarr; `Edit` *(opsional)*
+     - `Account` &rarr; `Workers R2 Storage` &rarr; `Edit` *(opsional, hanya jika menggunakan R2 untuk foto)*
    - Klik **Continue to summary** &rarr; **Create Token**, lalu salin token tersebut.
 
 ---
@@ -107,7 +108,7 @@ Sebelum mengaktifkan GitHub Actions, Anda bisa mencoba deploy langsung dari term
 
 #### 1. Deploy Backend (Cloudflare Worker):
 ```bash
-cd /home/arizainalf/Project/trainlog-replica/worker
+cd worker
 
 # Login ke Cloudflare di terminal
 npx wrangler login
@@ -120,35 +121,35 @@ npx wrangler secret put DATABASE_URL
 npx wrangler secret put SESSION_SECRET
 # (Ketikkan string rahasia acak minimal 32 karakter)
 
-# (Opsional) Buat R2 Bucket untuk upload foto jika menggunakan R2:
-npx wrangler r2 bucket create trainlog-photos
-# Catatan: Jika belum mengaktifkan R2 di Cloudflare, Anda bisa mengosongkan `"r2_buckets": []`
-# di file `worker/wrangler.jsonc` terlebih dahulu agar deploy tidak gagal dengan error code 10085.
+# (Opsional) Buat R2 Bucket untuk upload foto:
+npx wrangler r2 bucket create kulastudio-photos
+# Catatan: Jika belum mengaktifkan R2, kosongkan `"r2_buckets": []`
+# di file `worker/wrangler.jsonc` agar deploy tidak gagal dengan error code 10085.
 
 # Jalankan deploy
 npm run deploy
 ```
-*Output akan memberikan URL API publik, contoh: `https://trainlog-api.<subdomain>.workers.dev`.*
+*Output akan memberikan URL API publik: `https://api.kula-studio.my.id`*
 
 #### 2. Deploy Frontend (Cloudflare Pages):
 ```bash
-cd /home/arizainalf/Project/trainlog-replica/web
+cd web
 
-# Build frontend
-npm run build
+# Build frontend dengan API URL produksi
+VITE_API_URL=https://api.kula-studio.my.id npm run build
 
 # Deploy ke Cloudflare Pages
-npx wrangler pages deploy dist --project-name=trainlog-web
+npx wrangler pages deploy dist --project-name=kula-studio-web
 ```
 
 ---
 
 ### Langkah 4: Otomatisasi CI/CD via GitHub Actions
 
-Proyek ini telah dilengkapi file workflow [`.github/workflows/deploy.yml`](file:///home/arizainalf/Project/trainlog-replica/.github/workflows/deploy.yml). Setiap kali Anda melakukan `git push` ke branch `main` atau `multi-tenant`, GitHub akan secara otomatis memvalidasi kode, menjalankan build, dan mendeploy ke Cloudflare tanpa intervensi manual.
+Proyek ini telah dilengkapi file workflow di `.github/workflows/deploy.yml`. Setiap kali Anda melakukan `git push` ke branch `main` atau `multi-tenant`, GitHub akan secara otomatis memvalidasi kode, menjalankan build, dan mendeploy ke Cloudflare tanpa intervensi manual.
 
 #### Konfigurasi Repository Secrets di GitHub:
-1. Buka repository Anda di GitHub: `https://github.com/arizainalf/trainlog-replica`.
+1. Buka repository Anda di GitHub.
 2. Masuk ke menu **Settings** &rarr; **Secrets and variables** &rarr; **Actions**.
 3. Klik **New repository secret** dan tambahkan variabel berikut:
 
@@ -156,7 +157,7 @@ Proyek ini telah dilengkapi file workflow [`.github/workflows/deploy.yml`](file:
 | :--- | :--- |
 | **`CLOUDFLARE_API_TOKEN`** | Token API Cloudflare yang dibuat pada Langkah 2. |
 | **`CLOUDFLARE_ACCOUNT_ID`** | Account ID Cloudflare Anda. |
-| **`VITE_API_URL`** | *(Opsional)* URL publik Worker backend Anda (contoh: `https://trainlog-api.<subdomain>.workers.dev`). Jika menggunakan custom domain / proxy, biarkan kosong. |
+| **`VITE_API_URL`** | URL publik Worker backend: `https://api.kula-studio.my.id` |
 
 Setiap kali Anda push commit baru:
 ```bash
@@ -168,41 +169,31 @@ Buka tab **Actions** di GitHub untuk memantau proses deployment yang berjalan ot
 
 ---
 
-## 4. Konfigurasi Custom Domain (Opsional / Tingkat Lanjut)
+## 4. Konfigurasi Custom Domain
 
-Jika Anda memiliki domain sendiri (misalnya `trainlog.id` atau `fitstudio.com` dari Niagahoster, Domainesia, Namecheap, dll.), Anda bisa memindahkan pengelolaan DNS-nya ke Cloudflare secara 100% gratis. Panduan langkah demi langkah memindahkan domain dan mengintegrasikannya ke proyek ini telah disusun secara detail di:
-👉 **[Panduan Manajemen Domain & Integrasi Cloudflare](domain_management_cloudflared.md)**
+Domain Kula Studio sudah aktif di Cloudflare:
+- **Frontend**: `app.kula-studio.my.id` → Cloudflare Pages (`kula-studio-web`)
+- **API**: `api.kula-studio.my.id` → Cloudflare Workers (`trainlog-api`)
 
-Ringkasan konfigurasi:
-1. **Frontend (Cloudflare Pages)**:
-   - Di dashboard Cloudflare &rarr; **Workers & Pages** &rarr; pilih project `trainlog-web`.
-   - Masuk ke tab **Custom domains** &rarr; klik **Set up a domain**.
-   - Masukkan domain utama (misal: `app.trainlog.id` atau `trainlog.id`).
-2. **Backend API (Cloudflare Worker)**:
-   - Di dashboard Cloudflare &rarr; **Workers & Pages** &rarr; pilih worker `trainlog-api`.
-   - Masuk ke tab **Settings** &rarr; **Triggers** &rarr; **Custom Domains**.
-   - Masukkan subdomain API (misal: `api.trainlog.id`).
-3. Set `VITE_API_URL=https://api.trainlog.id` di secret GitHub Actions dan build ulang.
-   *(Dengan custom domain yang sama, masalah cross-site cookie di browser akan hilang secara permanen).*
+Untuk panduan lengkap konfigurasi domain, lihat: 👉 **[Panduan Manajemen Domain & Integrasi Cloudflare](domain_management_cloudflared.md)**
 
 ---
 
 ## 5. Checklist Verifikasi Pasca-Deploy
 
 Setelah deployment selesai, lakukan pengujian berikut:
-- [ ] Buka URL web di browser & pastikan halaman login / beranda publik muncul sempurna.
-- [ ] Login menggunakan akun Platform Admin (`admin@dev.local` / password yang diset).
+- [ ] Buka [app.kula-studio.my.id](https://app.kula-studio.my.id) & pastikan halaman login / beranda publik muncul sempurna.
+- [ ] Login menggunakan akun Platform Admin.
 - [ ] Masuk ke menu **Kelola Studio** & pastikan data studio terbaca dari Supabase.
 - [ ] Masuk ke menu **Pengaturan (Settings)** & coba ganti nama brand atau upload logo baru.
-- [ ] Buka di perangkat mobile untuk memastikan tampilan responsif dan glassmorphism berjalan mulus.
+- [ ] Buka di perangkat mobile untuk memastikan tampilan responsif berjalan mulus.
 
 ---
 
 ## 6. Troubleshooting & FAQ
 
-### Tanya: Muncul error `R2 bucket 'trainlog-photos' not found. [code: 10085]` saat deploy backend. Apakah ini karena belum push ke GitHub?
-**Jawab: BUKAN karena belum push ke GitHub.**
-Error ini terjadi karena di konfigurasi `worker/wrangler.jsonc` ada deklarasi binding ke bucket Cloudflare R2 bernama `trainlog-photos`. Saat `wrangler deploy` dijalankan (baik secara manual dari komputer lokal maupun otomatis via GitHub Actions), Cloudflare akan memeriksa apakah bucket tersebut sudah ada di akun Cloudflare Anda. Jika belum dibuat, deploy langsung ditolak oleh Cloudflare.
+### Tanya: Muncul error `R2 bucket 'kulastudio-photos' not found. [code: 10085]` saat deploy backend.
+**Jawab: Error ini terjadi karena binding R2 aktif di `worker/wrangler.jsonc` tapi bucket belum dibuat.**
 
 **Cara Mengatasinya:**
 1. **Solusi Cepat (Default)**:
@@ -210,19 +201,19 @@ Error ini terjadi karena di konfigurasi `worker/wrangler.jsonc` ada deklarasi bi
    ```jsonc
    "r2_buckets": []
    ```
-   Seluruh fitur inti TrainLog (Multi-tenant Studio, Latihan, Beban, Setting, Logo) berjalan 100% menggunakan Supabase PostgreSQL. Dengan mengosongkan `r2_buckets`, deploy backend akan langsung sukses tanpa perlu langganan/kartu kredit di Cloudflare R2.
+   Seluruh fitur inti Kula Studio (Multi-tenant Studio, Latihan, Beban, Setting, Logo) berjalan 100% menggunakan Supabase PostgreSQL. Dengan mengosongkan `r2_buckets`, deploy backend akan langsung sukses tanpa perlu R2.
 2. **Solusi Jika Ingin Menggunakan R2**:
    Buat bucket tersebut terlebih dahulu:
    ```bash
    cd worker
-   npx wrangler r2 bucket create trainlog-photos
+   npx wrangler r2 bucket create kulastudio-photos
    ```
    Lalu aktifkan kembali di `worker/wrangler.jsonc`:
    ```jsonc
    "r2_buckets": [
      {
        "binding": "PHOTOS_BUCKET",
-       "bucket_name": "trainlog-photos"
+       "bucket_name": "kulastudio-photos"
      }
    ]
    ```
@@ -232,7 +223,6 @@ Setelah Anda memasukkan secret `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID
 ```bash
 git add .
 git commit -m "update konfigurasi deploy"
-git push origin multi-tenant
+git push origin main
 ```
 Maka GitHub Actions akan otomatis menjalankan build dan deploy untuk Worker maupun Pages ke Cloudflare tanpa Anda perlu deploy manual dari laptop lagi.
-

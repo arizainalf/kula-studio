@@ -1,6 +1,9 @@
-# TrainLog Replica
+# Kula Studio
 
-Reverse-engineering & rebuild [trainlog.id](https://trainlog.id) — sistem manajemen sesi latihan personal trainer — sebagai proyek belajar fullstack (docs-first).
+Sistem manajemen sesi latihan personal trainer — dibangun dari awal sebagai proyek fullstack (docs-first) dengan desain eksklusif **Luxury Dark Noir**.
+
+🌐 **Live:** [app.kula-studio.my.id](https://app.kula-studio.my.id)  
+⚙️ **API:** [api.kula-studio.my.id](https://api.kula-studio.my.id)
 
 ## Stack
 
@@ -17,32 +20,28 @@ Reverse-engineering & rebuild [trainlog.id](https://trainlog.id) — sistem mana
 
 ```
 trainlog-replica/
-├─ web/                  # Vite SPA → CF Pages
-├─ worker/               # Hono API → CF Workers
+├─ web/                  # Vite SPA → CF Pages (kula-studio-web)
+├─ worker/               # Hono API → CF Workers (kula-studio-api)
 │  └─ wrangler.jsonc
 └─ docs/
    ├─ plan.md            # roadmap eksekusi
    ├─ design-system.md   # spesifikasi warna luxury noir, charcoal & gold
    ├─ erd.md             # skema Postgres relasional (redisain)
-   ├─ analisa-trainlog.md    # hasil analisa stack asli & color way
-   ├─ analisa-app.md         # eksplorasi dalam app (bagian 2)
-   └─ erd-asli.md            # ERD rekonstruksi TrainLog asli (document-store)
+   └─ deploy.md          # panduan deploy ke Cloudflare
 ```
 
-## Fitur target (MVP)
-
-Dipetakan dari analisa TrainLog asli, dipotong ke skala belajar:
+## Fitur (MVP)
 
 1. **Auth** — login email/password, role `admin|manager|pt`, whitelist + aktivasi admin
-2. **Client CRUD** — profil client (goal, paket sesi, telepon, catatan) milik PT
-3. **Sesi latihan** — catat per tanggal: latihan (warmup/resistance/cardio/cooldown), RPE, berat badan, catatan
-4. **Jadwal** — entri per tanggal+jam per client
-5. **Progress** — chart berat/RPE/volume per client
-6. **Foto progress** — upload ke R2, tampil per client
-7. **Export** — riwayat sesi → PDF (print native)
-8. **Tier & grace** — paket standard/pro, expired → read-only 14 hari
-
-Diluar scope MVP (later): generate program AI, import PDF, template sesi, integrasi WhatsApp.
+2. **Multi-tenant Studio** — setiap studio punya branding, logo, dan URL Google Maps sendiri
+3. **Client CRUD** — profil client (goal, paket sesi, telepon, catatan) milik PT
+4. **Sesi latihan** — catat per tanggal: latihan (warmup/resistance/cardio/cooldown), RPE, berat badan, catatan
+5. **Jadwal** — entri per tanggal+jam per client
+6. **Progress** — chart berat/RPE/volume per client
+7. **Foto progress** — upload ke R2, tampil per client
+8. **Export** — riwayat sesi → PDF (print native)
+9. **Landing page** — halaman marketing dengan daftar coach + WhatsApp deep-link
+10. **Tier & grace** — paket standard/pro, expired → read-only 14 hari
 
 ## Prinsip
 
@@ -51,16 +50,32 @@ Diluar scope MVP (later): generate program AI, import PDF, template sesi, integr
 - Anti-slop: tidak ada abstraksi tanpa dua implementasi, UI mengikuti design token (Luxury Dark: hitam obsidian, abu tua charcoal + aksen emas champagne, lihat docs/design-system.md)
 - Semua tabel milik `owner` — akun PT tidak pernah baca data PT lain (pengganti RLS di lapisan Hono)
 
+## Deploy
+
+```bash
+# Backend (Worker)
+cd worker
+npm run deploy
+
+# Frontend (Pages)
+cd web
+VITE_API_URL=https://api.kula-studio.my.id npm run build
+npx wrangler pages deploy dist --project-name=kula-studio-web
+```
+
 ## Status
 
-- [x] Analisa TrainLog asli (stack, color way, arsitektur, audit XSS)
 - [x] ERD redisain relasional
-- [ ] Skema SQL + migrasi Supabase
-- [ ] API contract (Hono routes)
-- [ ] Scaffold web/ + worker/
-- [ ] Implementasi per modul
-- [ ] Deploy
-
-## Sumber analisa
-
-Dokumen asli + artefak mentah (HTML/CSS/JS terdekde) di `~/Project/haditrain/`.
+- [x] Skema SQL + migrasi Supabase
+- [x] API contract (Hono routes)
+- [x] Scaffold web/ + worker/
+- [x] Auth (login, role-based access)
+- [x] Multi-tenant studio management
+- [x] Client CRUD + session log
+- [x] Landing page Luxury Noir
+- [x] Custom domain kula-studio.my.id
+- [x] WhatsApp deep-link untuk coach
+- [x] Google Maps URL untuk studio
+- [ ] Upload foto progress (R2)
+- [ ] Chart progress SVG
+- [ ] Export PDF

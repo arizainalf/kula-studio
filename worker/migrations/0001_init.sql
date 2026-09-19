@@ -1,4 +1,4 @@
--- 0001_init.sql — TrainLog replica: users, staff_profile, clients, sessions, schedule, photos
+-- 0001_init.sql — Kula Studio: users, staff_profile, clients, sessions, schedule, photos
 create extension if not exists "pgcrypto";
 
 create table users (

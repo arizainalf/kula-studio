@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 import {
   api,
   type User,
@@ -7,7 +7,7 @@ import {
   extractYouTubeId,
   getYouTubeThumbnailUrl,
   getYouTubeEmbedUrl,
-} from '../lib/api'
+} from "../lib/api";
 import {
   Check,
   ArrowRight,
@@ -37,57 +37,57 @@ import {
   Video,
   Building2,
   MapPin,
-} from 'lucide-react'
-import { ThemeToggle } from './ThemeToggle'
+} from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 function renderFeatureIcon(iconKey?: string) {
-  const cls = 'w-5 h-5'
+  const cls = "w-5 h-5";
   switch (iconKey) {
-    case 'users':
-      return <Users className={cls} />
-    case 'clipboard':
-      return <ClipboardList className={cls} />
-    case 'dumbbell':
-      return <Dumbbell className={cls} />
-    case 'zap':
-      return <Zap className={cls} />
-    case 'calendar':
-      return <Calendar className={cls} />
-    case 'chart':
-      return <TrendingUp className={cls} />
-    case 'share':
-      return <Share2 className={cls} />
-    case 'timer':
-      return <Timer className={cls} />
-    case 'trophy':
-      return <Trophy className={cls} />
-    case 'target':
-      return <Target className={cls} />
-    case 'heart':
-      return <Activity className={cls} />
-    case 'flame':
-      return <Flame className={cls} />
-    case 'scale':
-      return <Scale className={cls} />
-    case 'smartphone':
-      return <Smartphone className={cls} />
-    case 'cloud':
-      return <Cloud className={cls} />
-    case 'message':
-      return <MessageCircle className={cls} />
-    case 'file-text':
-      return <FileText className={cls} />
-    case 'shield':
-      return <ShieldCheck className={cls} />
-    case 'crown':
-      return <Crown className={cls} />
-    case 'gauge':
-      return <Gauge className={cls} />
-    case 'award':
-      return <Award className={cls} />
-    case 'sparkles':
+    case "users":
+      return <Users className={cls} />;
+    case "clipboard":
+      return <ClipboardList className={cls} />;
+    case "dumbbell":
+      return <Dumbbell className={cls} />;
+    case "zap":
+      return <Zap className={cls} />;
+    case "calendar":
+      return <Calendar className={cls} />;
+    case "chart":
+      return <TrendingUp className={cls} />;
+    case "share":
+      return <Share2 className={cls} />;
+    case "timer":
+      return <Timer className={cls} />;
+    case "trophy":
+      return <Trophy className={cls} />;
+    case "target":
+      return <Target className={cls} />;
+    case "heart":
+      return <Activity className={cls} />;
+    case "flame":
+      return <Flame className={cls} />;
+    case "scale":
+      return <Scale className={cls} />;
+    case "smartphone":
+      return <Smartphone className={cls} />;
+    case "cloud":
+      return <Cloud className={cls} />;
+    case "message":
+      return <MessageCircle className={cls} />;
+    case "file-text":
+      return <FileText className={cls} />;
+    case "shield":
+      return <ShieldCheck className={cls} />;
+    case "crown":
+      return <Crown className={cls} />;
+    case "gauge":
+      return <Gauge className={cls} />;
+    case "award":
+      return <Award className={cls} />;
+    case "sparkles":
     default:
-      return <Sparkles className={cls} />
+      return <Sparkles className={cls} />;
   }
 }
 
@@ -96,193 +96,196 @@ export function LandingPage({
   initialSettings,
   initialTrainers,
 }: {
-  currentUser?: User | null
-  initialSettings?: PlatformSettings | null
-  initialTrainers?: TrainerShowcase[] | null
+  currentUser?: User | null;
+  initialSettings?: PlatformSettings | null;
+  initialTrainers?: TrainerShowcase[] | null;
 }) {
-  const [trainers, setTrainers] = useState<TrainerShowcase[]>(initialTrainers || [])
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null)
+  const [trainers, setTrainers] = useState<TrainerShowcase[]>(
+    initialTrainers || [],
+  );
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialTrainers && initialTrainers.length > 0) {
-      setTrainers(initialTrainers)
+      setTrainers(initialTrainers);
     } else {
-      api<{ trainers: TrainerShowcase[] }>('/platform/trainers')
+      api<{ trainers: TrainerShowcase[] }>("/platform/trainers")
         .then((res) => {
           if (res.trainers && res.trainers.length > 0) {
-            setTrainers(res.trainers)
+            setTrainers(res.trainers);
           }
         })
-        .catch(() => {})
+        .catch(() => {});
     }
-  }, [initialTrainers])
+  }, [initialTrainers]);
 
-  const s = initialSettings
+  const s = initialSettings;
 
-  const appName = s?.app_name || 'Kula Studio'
-  const appInitials = s?.app_initials || 'KS'
-  const appLogoUrl = s?.logo_url
-  const appTagline = s?.app_tagline || 'Pro PT Manager'
-  const heroPill = s?.hero_pill || 'Eksklusif untuk Personal Trainer & Studio'
-  const heroHeadline = s?.hero_headline || 'Catat Sesi. Susun Program NASM.'
-  const heroGradient = s?.hero_gradient || 'Pantau Progress Klien.'
+  const appName = s?.app_name || "Kula Studio";
+  const appInitials = s?.app_initials || "KS";
+  const appLogoUrl = s?.logo_url;
+  const appTagline = s?.app_tagline || "Pro PT Manager";
+  const heroPill = s?.hero_pill || "Eksklusif untuk Personal Trainer & Studio";
+  const heroHeadline = s?.hero_headline || "Catat Sesi. Susun Program NASM.";
+  const heroGradient = s?.hero_gradient || "Pantau Progress Klien.";
   const heroSubheadline =
     s?.hero_subheadline ||
-    'Tinggalkan buku catatan kertas dan spreadsheet yang tercecer. Satu platform terpadu untuk mengatur jadwal, mencatat beban & RPE, merancang program berbasis sains, dan membagikan rekap sesi ke WhatsApp klien.'
+    "Tinggalkan buku catatan kertas dan spreadsheet yang tercecer. Satu platform terpadu untuk mengatur jadwal, mencatat beban & RPE, merancang program berbasis sains, dan membagikan rekap sesi ke WhatsApp klien.";
 
   const features =
     s?.features && s.features.length > 0
       ? s.features
       : [
           {
-            id: 'f1',
-            icon: 'users',
-            title: 'Manajemen Profil Klien',
+            id: "f1",
+            icon: "users",
+            title: "Manajemen Profil Klien",
             description:
-              'Kelola profil klien lengkap dengan target kebugaran (Fat Loss, Muscle Gain, General Fitness), nomor WhatsApp, paket kuota sesi, dan catatan kondisi fisik khusus.',
+              "Kelola profil klien lengkap dengan target kebugaran (Fat Loss, Muscle Gain, General Fitness), nomor WhatsApp, paket kuota sesi, dan catatan kondisi fisik khusus.",
           },
           {
-            id: 'f2',
-            icon: 'clipboard',
-            title: 'Log Sesi 4 Fase Terstruktur',
+            id: "f2",
+            icon: "clipboard",
+            title: "Log Sesi 4 Fase Terstruktur",
             description:
-              'Pencatatan sesi sesuai standar internasional: Warm-Up, Resistance, Cardio, dan Cool-Down dengan data set, repetisi, beban (kg), dan slider skala intensitas RPE 1–10.',
+              "Pencatatan sesi sesuai standar internasional: Warm-Up, Resistance, Cardio, dan Cool-Down dengan data set, repetisi, beban (kg), dan slider skala intensitas RPE 1–10.",
           },
           {
-            id: 'f3',
-            icon: 'zap',
-            title: 'Generate Program NASM (AI)',
+            id: "f3",
+            icon: "zap",
+            title: "Generate Program NASM (AI)",
             description:
-              'Rancang program latihan komprehensif berbasis metodologi NASM OPT Model bertenaga kecerdasan buatan, disesuaikan dengan usia, jenis kelamin, serta riwayat cedera sendi.',
+              "Rancang program latihan komprehensif berbasis metodologi NASM OPT Model bertenaga kecerdasan buatan, disesuaikan dengan usia, jenis kelamin, serta riwayat cedera sendi.",
           },
           {
-            id: 'f4',
-            icon: 'calendar',
-            title: 'Jadwal Kalender Mingguan',
+            id: "f4",
+            icon: "calendar",
+            title: "Jadwal Kalender Mingguan",
             description:
-              'Tampilan jadwal per jam (05:00–23:00) yang rapi untuk 7 hari dalam sepekan. Cegah bentrok jadwal sesi personal training dan pantau slot waktu kosong dengan mudah.',
+              "Tampilan jadwal per jam (05:00–23:00) yang rapi untuk 7 hari dalam sepekan. Cegah bentrok jadwal sesi personal training dan pantau slot waktu kosong dengan mudah.",
           },
           {
-            id: 'f5',
-            icon: 'chart',
-            title: 'Grafik & Foto Progres Klien',
+            id: "f5",
+            icon: "chart",
+            title: "Grafik & Foto Progres Klien",
             description:
-              'Pantau grafik penurunan berat badan, perubahan RPE rata-rata, dan galeri foto transformasi klien yang tersimpan rapi dan aman di cloud storage.',
+              "Pantau grafik penurunan berat badan, perubahan RPE rata-rata, dan galeri foto transformasi klien yang tersimpan rapi dan aman di cloud storage.",
           },
           {
-            id: 'f6',
-            icon: 'share',
-            title: 'Export PDF & WhatsApp Share',
+            id: "f6",
+            icon: "share",
+            title: "Export PDF & WhatsApp Share",
             description:
-              'Cetak riwayat latihan langsung ke format PDF elegan atau kirimkan pesan ringkasan latihan harian langsung ke nomor WhatsApp klien dengan satu ketukan.',
+              "Cetak riwayat latihan langsung ke format PDF elegan atau kirimkan pesan ringkasan latihan harian langsung ke nomor WhatsApp klien dengan satu ketukan.",
           },
-        ]
+        ];
 
   const howItWorks =
     s?.how_it_works && s.how_it_works.length > 0
       ? s.how_it_works
       : [
           {
-            id: 's1',
-            step: '01',
-            title: 'Tambahkan Profil Klien',
+            id: "s1",
+            step: "01",
+            title: "Tambahkan Profil Klien",
             description:
-              'Masukkan nama klien, target latihan, dan jumlah paket sesi yang diambil. Sistem akan mengawasi kuota sesi otomatis.',
+              "Masukkan nama klien, target latihan, dan jumlah paket sesi yang diambil. Sistem akan mengawasi kuota sesi otomatis.",
           },
           {
-            id: 's2',
-            step: '02',
-            title: 'Catat Saat Latihan Berlangsung',
+            id: "s2",
+            step: "02",
+            title: "Catat Saat Latihan Berlangsung",
             description:
-              'Gunakan smartphone saat mendampingi klien di gym. Masukkan beban, repetisi, dan RPE dalam hitungan detik.',
+              "Gunakan smartphone saat mendampingi klien di gym. Masukkan beban, repetisi, dan RPE dalam hitungan detik.",
           },
           {
-            id: 's3',
-            step: '03',
-            title: 'Kirim Rekap & Evaluasi',
+            id: "s3",
+            step: "03",
+            title: "Kirim Rekap & Evaluasi",
             description:
-              'Kirimkan ringkasan latihan ke WhatsApp klien dan evaluasi grafik kemajuan beban dari waktu ke waktu.',
+              "Kirimkan ringkasan latihan ke WhatsApp klien dan evaluasi grafik kemajuan beban dari waktu ke waktu.",
           },
-        ]
+        ];
 
   const pricingPlans =
     s?.pricing_plans && s.pricing_plans.length > 0
       ? s.pricing_plans
       : [
           {
-            id: 'p1',
-            name: 'Standard',
-            badge: 'Dasar',
-            price: 'Rp59.000',
-            period: '/ bulan',
+            id: "p1",
+            name: "Standard",
+            badge: "Dasar",
+            price: "Rp59.000",
+            period: "/ bulan",
             description:
-              'Cocok untuk personal trainer yang fokus pada pencatatan harian yang cepat, akurat, dan pelaporan rapi.',
+              "Cocok untuk personal trainer yang fokus pada pencatatan harian yang cepat, akurat, dan pelaporan rapi.",
             features: [
-              'Manajemen Klien & Sesi Unlimited',
-              'Kalender Jadwal Mingguan',
-              'Foto & Grafik Progress Klien',
-              'Session Template Rutin',
-              'Sinkronisasi Cloud Otomatis',
-              'Kuota Generate AI Terbatas',
+              "Manajemen Klien & Sesi Unlimited",
+              "Kalender Jadwal Mingguan",
+              "Foto & Grafik Progress Klien",
+              "Session Template Rutin",
+              "Sinkronisasi Cloud Otomatis",
+              "Kuota Generate AI Terbatas",
             ],
-            button_text: 'Pilih Standard',
-            button_link: '/login',
+            button_text: "Pilih Standard",
+            button_link: "/login",
             is_popular: false,
           },
           {
-            id: 'p2',
-            name: 'Pro',
-            badge: 'Paling Diminati',
-            price: 'Rp89.000',
-            period: '/ bulan',
+            id: "p2",
+            name: "Pro",
+            badge: "Paling Diminati",
+            price: "Rp89.000",
+            period: "/ bulan",
             description:
-              'Solusi komprehensif bagi pelatih elit yang memanfaatkan kekuatan AI berbasis metodologi sains NASM.',
+              "Solusi komprehensif bagi pelatih elit yang memanfaatkan kekuatan AI berbasis metodologi sains NASM.",
             features: [
-              'Seluruh Fitur Paket Standard',
-              'Generate Program NASM Tanpa Batas',
-              'Kustomisasi & Modifikasi Gerakan Instan',
-              'Export PDF Bersih Tanpa Watermark',
-              'Prioritas Dukungan Admin Langsung via WA',
+              "Seluruh Fitur Paket Standard",
+              "Generate Program NASM Tanpa Batas",
+              "Kustomisasi & Modifikasi Gerakan Instan",
+              "Export PDF Bersih Tanpa Watermark",
+              "Prioritas Dukungan Admin Langsung via WA",
             ],
-            button_text: 'Mulai Paket Pro',
-            button_link: '/login',
+            button_text: "Mulai Paket Pro",
+            button_link: "/login",
             is_popular: true,
           },
-        ]
+        ];
 
   const longTermPlans =
     s?.long_term_plans && s.long_term_plans.length > 0
       ? s.long_term_plans
       : [
           {
-            id: 'lt1',
-            title: '1 Bulan',
-            price: 'Rp89.000',
-            description: 'Fleksibel bulanan, berhenti kapan saja.',
+            id: "lt1",
+            title: "1 Bulan",
+            price: "Rp89.000",
+            description: "Fleksibel bulanan, berhenti kapan saja.",
             is_highlight: false,
           },
           {
-            id: 'lt2',
-            title: '3 Bulan (Hemat 10%)',
-            price: 'Rp239.000',
-            description: 'Setara Rp79.600 / bulan. Hemat Rp28.000.',
+            id: "lt2",
+            title: "3 Bulan (Hemat 10%)",
+            price: "Rp239.000",
+            description: "Setara Rp79.600 / bulan. Hemat Rp28.000.",
             is_highlight: false,
           },
           {
-            id: 'lt3',
-            title: '6 Bulan (Bayar 5, Dapat 6)',
-            price: 'Rp445.000',
-            description: 'Setara Rp74.200 / bulan. Hemat Rp89.000.',
+            id: "lt3",
+            title: "6 Bulan (Bayar 5, Dapat 6)",
+            price: "Rp445.000",
+            description: "Setara Rp74.200 / bulan. Hemat Rp89.000.",
             is_highlight: true,
           },
-        ]
+        ];
 
-  const ctaHeadline = s?.cta_headline || 'Mulai Catat Sesi Latihan Hari Ini.'
+  const ctaHeadline = s?.cta_headline || "Mulai Catat Sesi Latihan Hari Ini.";
   const ctaSubheadline =
     s?.cta_subheadline ||
-    'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.'
-  const contactWa = s?.contact_whatsapp || '6287884241516'
-  const footerCopyright = s?.footer_copyright || 'Kula Studio. Hak Cipta Dilindungi.'
+    "Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.";
+  const contactWa = s?.contact_whatsapp || "6287884241516";
+  const footerCopyright =
+    s?.footer_copyright || "Kula Studio. Hak Cipta Dilindungi.";
 
   return (
     <div className="bg-bg text-text min-h-dvh selection:bg-accent/30 selection:text-text font-sans antialiased overflow-x-hidden">
@@ -299,7 +302,9 @@ export function LandingPage({
               />
             ) : (
               <div className="w-9 h-9 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_15px_rgba(226,232,0,0.15)] group-hover:border-accent transition-colors">
-                <span className="font-extrabold text-sm tracking-tighter text-accent">{appInitials}</span>
+                <span className="font-extrabold text-sm tracking-tighter text-accent">
+                  {appInitials}
+                </span>
               </div>
             )}
             <div className="flex flex-col">
@@ -314,11 +319,21 @@ export function LandingPage({
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-dim">
-            <a href="#fitur" className="hover:text-accent transition-colors">Fitur</a>
-            <a href="#cara" className="hover:text-accent transition-colors">Cara Kerja</a>
-            <a href="#pelatih" className="hover:text-accent transition-colors">Pelatih</a>
-            <a href="#peran" className="hover:text-accent transition-colors">Untuk Siapa</a>
-            <a href="#paket" className="hover:text-accent transition-colors">Harga</a>
+            <a href="#fitur" className="hover:text-accent transition-colors">
+              Fitur
+            </a>
+            <a href="#cara" className="hover:text-accent transition-colors">
+              Cara Kerja
+            </a>
+            <a href="#pelatih" className="hover:text-accent transition-colors">
+              Pelatih
+            </a>
+            <a href="#peran" className="hover:text-accent transition-colors">
+              Untuk Siapa
+            </a>
+            <a href="#paket" className="hover:text-accent transition-colors">
+              Harga
+            </a>
           </nav>
 
           {/* Right Action CTA */}
@@ -331,15 +346,15 @@ export function LandingPage({
                 className="btn-interactive bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs sm:text-sm px-4 py-2 rounded-lg transition-all shadow-[0_2px_12px_rgba(226,232,0,0.25)] flex items-center gap-1.5"
               >
                 <span>Buka Dashboard</span>
-                <span className="text-[11px] opacity-75 font-normal">({currentUser.name.split(' ')[0]})</span>
+                <span className="text-[11px] opacity-75 font-normal">
+                  ({currentUser.name.split(" ")[0]})
+                </span>
               </a>
             ) : (
               <>
-                <a
-                  href="/login"
-                  className="btn-interactive text-dim hover:text-text text-xs sm:text-sm font-medium px-3 py-2 transition-colors"
-                >
-                  Masuk
+                <a href="/login"
+                  className="btn-interactive bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs sm:text-sm px-4 py-2 rounded-lg transition-all shadow-[0_2px_12px_rgba(226,232,0,0.25)] flex items-center gap-1.5">
+                  <span>Masuk</span>
                 </a>
               </>
             )}
@@ -372,7 +387,7 @@ export function LandingPage({
 
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-text leading-[1.12] mb-3 sm:mb-6">
-            {heroHeadline}{' '}
+            {heroHeadline}{" "}
             <span className="block mt-1 bg-gradient-to-r from-text via-accent to-accent-hover bg-clip-text text-transparent">
               {heroGradient}
             </span>
@@ -430,7 +445,9 @@ export function LandingPage({
             <div className="flex items-center gap-1.5 text-xs text-dim">
               <span className="text-amber-400 font-bold">★ 4.9/5</span>
               <span className="text-line">•</span>
-              <span className="text-text font-medium">120+ Pelatih &amp; Studio</span>
+              <span className="text-text font-medium">
+                120+ Pelatih &amp; Studio
+              </span>
             </div>
           </div>
         </div>
@@ -444,11 +461,13 @@ export function LandingPage({
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-                <span className="ml-2 text-xs font-mono text-dim">{appName.toLowerCase()}.id / dashboard</span>
+                <span className="ml-2 text-xs font-mono text-dim">
+                  {appName}
+                </span>
               </div>
-              <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20">
+              {/* <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20">
                 PRO EDITION
-              </span>
+              </span> */}
             </div>
 
             {/* Mockup Content Grid */}
@@ -465,19 +484,30 @@ export function LandingPage({
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-sm text-text truncate">Siti Rahma</span>
-                        <span className="text-xs font-mono text-accent">18/20</span>
+                        <span className="font-semibold text-sm text-text truncate">
+                          Siti Rahma
+                        </span>
+                        <span className="text-xs font-mono text-accent">
+                          18/20
+                        </span>
                       </div>
-                      <p className="text-[11px] text-dim truncate">Fat Loss &amp; Hypertrophy</p>
+                      <p className="text-[11px] text-dim truncate">
+                        Fat Loss &amp; Hypertrophy
+                      </p>
                     </div>
                   </div>
                   <div className="w-full bg-line h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-accent h-full rounded-full" style={{ width: '90%' }} />
+                    <div
+                      className="bg-accent h-full rounded-full"
+                      style={{ width: "90%" }}
+                    />
                   </div>
                 </div>
                 <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between text-[11px] text-dim">
                   <span>Sisa 2 sesi</span>
-                  <span className="text-amber-400 font-medium">Perlu Upsell</span>
+                  <span className="text-amber-400 font-medium">
+                    Perlu Upsell
+                  </span>
                 </div>
               </div>
 
@@ -493,24 +523,46 @@ export function LandingPage({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2.5 rounded-lg bg-panel border border-line/50">
-                    <div className="text-dim text-[10px] uppercase font-mono mb-1">Warm-Up</div>
-                    <div className="font-medium text-text">Foam Roll + Glute Bridge</div>
+                    <div className="text-dim text-[10px] uppercase font-mono mb-1">
+                      Warm-Up
+                    </div>
+                    <div className="font-medium text-text">
+                      Foam Roll + Glute Bridge
+                    </div>
                     <div className="text-dim text-[11px]">2 set x 15 rep</div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-panel border border-line/50">
-                    <div className="text-dim text-[10px] uppercase font-mono mb-1">Resistance</div>
-                    <div className="font-medium text-text">Barbell Back Squat</div>
-                    <div className="text-dim text-[11px]">4 set x 10 rep @ 65 kg</div>
+                    <div className="text-dim text-[10px] uppercase font-mono mb-1">
+                      Resistance
+                    </div>
+                    <div className="font-medium text-text">
+                      Barbell Back Squat
+                    </div>
+                    <div className="text-dim text-[11px]">
+                      4 set x 10 rep @ 65 kg
+                    </div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-panel border border-line/50">
-                    <div className="text-dim text-[10px] uppercase font-mono mb-1">Cardio</div>
-                    <div className="font-medium text-text">Incline Treadmill Walk</div>
-                    <div className="text-dim text-[11px]">15 mnt, Incline 10, Spd 4.8</div>
+                    <div className="text-dim text-[10px] uppercase font-mono mb-1">
+                      Cardio
+                    </div>
+                    <div className="font-medium text-text">
+                      Incline Treadmill Walk
+                    </div>
+                    <div className="text-dim text-[11px]">
+                      15 mnt, Incline 10, Spd 4.8
+                    </div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-panel border border-line/50">
-                    <div className="text-dim text-[10px] uppercase font-mono mb-1">Cool-Down</div>
-                    <div className="font-medium text-text">Hip Flexor &amp; Hamstring</div>
-                    <div className="text-dim text-[11px]">Static stretch 30s per leg</div>
+                    <div className="text-dim text-[10px] uppercase font-mono mb-1">
+                      Cool-Down
+                    </div>
+                    <div className="font-medium text-text">
+                      Hip Flexor &amp; Hamstring
+                    </div>
+                    <div className="text-dim text-[11px]">
+                      Static stretch 30s per leg
+                    </div>
                   </div>
                 </div>
               </div>
@@ -520,7 +572,10 @@ export function LandingPage({
       </section>
 
       {/* ── 3. Feature Highlights Section (`#fitur`) ── */}
-      <section id="fitur" className="py-10 md:py-20 border-t border-line bg-panel/30">
+      <section
+        id="fitur"
+        className="py-10 md:py-20 border-t border-line bg-panel/30"
+      >
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-8 md:mb-14">
             <h2 className="text-xs font-mono tracking-widest text-accent uppercase mb-2">
@@ -530,7 +585,8 @@ export function LandingPage({
               Dibuat Khusus Sesuai Alur Kerja Pelatih Profesional
             </h3>
             <p className="mt-2.5 sm:mt-3 text-sm sm:text-base text-dim">
-              Setiap detail dirancang untuk mempercepat pencatatan di lantai gym dan memperjelas progres klien.
+              Setiap detail dirancang untuk mempercepat pencatatan di lantai gym
+              dan memperjelas progres klien.
             </p>
           </div>
 
@@ -543,8 +599,12 @@ export function LandingPage({
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-bg border border-line flex items-center justify-center text-accent mb-3 sm:mb-4 group-hover:border-accent/60 group-hover:scale-110 transition-all duration-300">
                   {renderFeatureIcon(feature.icon)}
                 </div>
-                <h4 className="font-bold text-base sm:text-lg text-text mb-1.5 sm:mb-2">{feature.title}</h4>
-                <p className="text-xs sm:text-sm text-dim leading-relaxed">{feature.description}</p>
+                <h4 className="font-bold text-base sm:text-lg text-text mb-1.5 sm:mb-2">
+                  {feature.title}
+                </h4>
+                <p className="text-xs sm:text-sm text-dim leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -569,9 +629,15 @@ export function LandingPage({
                 key={step.id}
                 className="hover-gold-glow p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-panel border border-line flex flex-col transition-all duration-300"
               >
-                <div className="font-mono text-xl sm:text-2xl font-bold text-accent mb-2 sm:mb-3">{step.step}</div>
-                <h4 className="font-bold text-base text-text mb-1.5 sm:mb-2">{step.title}</h4>
-                <p className="text-xs sm:text-sm text-dim leading-relaxed">{step.description}</p>
+                <div className="font-mono text-xl sm:text-2xl font-bold text-accent mb-2 sm:mb-3">
+                  {step.step}
+                </div>
+                <h4 className="font-bold text-base text-text mb-1.5 sm:mb-2">
+                  {step.title}
+                </h4>
+                <p className="text-xs sm:text-sm text-dim leading-relaxed">
+                  {step.description}
+                </p>
               </div>
             ))}
           </div>
@@ -579,7 +645,10 @@ export function LandingPage({
       </section>
 
       {/* ── 5. Coach Showcase & YouTube Videos (`#pelatih`) ── */}
-      <section id="pelatih" className="py-10 md:py-20 border-t border-line relative overflow-hidden">
+      <section
+        id="pelatih"
+        className="py-10 md:py-20 border-t border-line relative overflow-hidden"
+      >
         {/* Ambient Gold Glow Backdrop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-accent/5 blur-[140px] pointer-events-none rounded-full" />
 
@@ -593,7 +662,9 @@ export function LandingPage({
               Belajar &amp; Berlatih Bersama Pelatih Terbaik
             </h3>
             <p className="mt-2.5 sm:mt-3 text-sm text-dim leading-relaxed">
-              Tonton video panduan latihan, teknik gerakan, dan profil personal trainer profesional kami yang berdedikasi membimbing perjalanan kebugaran Anda.
+              Tonton video panduan latihan, teknik gerakan, dan profil personal
+              trainer profesional kami yang berdedikasi membimbing perjalanan
+              kebugaran Anda.
             </p>
           </div>
 
@@ -602,18 +673,19 @@ export function LandingPage({
               ? trainers
               : [
                   {
-                    id: 'demo-hadi',
-                    name: 'Coach Hadi',
-                    role: 'pt',
-                    spec: 'NASM Hypertrophy & Fat Loss',
-                    studio_name: 'FitZone Studio Utama',
-                    youtube_url: 'https://www.youtube.com/watch?v=aclHkVaku9U',
-                    avatar_url: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80',
+                    id: "demo-hadi",
+                    name: "Coach Hadi",
+                    role: "pt",
+                    spec: "NASM Hypertrophy & Fat Loss",
+                    studio_name: "FitZone Studio Utama",
+                    youtube_url: "https://www.youtube.com/watch?v=aclHkVaku9U",
+                    avatar_url:
+                      "https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&w=400&q=80",
                   },
                 ]
             ).map((trainer) => {
-              const ytId = extractYouTubeId(trainer.youtube_url)
-              const isPlaying = playingVideoId === trainer.id
+              const ytId = extractYouTubeId(trainer.youtube_url);
+              const isPlaying = playingVideoId === trainer.id;
 
               return (
                 <div
@@ -673,8 +745,12 @@ export function LandingPage({
                           <div className="w-12 h-12 rounded-xl bg-accent/15 border border-accent/30 backdrop-blur-md flex items-center justify-center text-accent mb-2 shadow-[0_0_15px_rgba(226,232,0,0.2)]">
                             <Dumbbell className="w-6 h-6" />
                           </div>
-                          <span className="text-xs font-semibold text-text">Sesi Pembinaan Eksklusif</span>
-                          <span className="text-[11px] text-dim mt-1">1-on-1 Personal Coaching</span>
+                          <span className="text-xs font-semibold text-text">
+                            Sesi Pembinaan Eksklusif
+                          </span>
+                          <span className="text-[11px] text-dim mt-1">
+                            1-on-1 Personal Coaching
+                          </span>
                         </div>
                       </div>
                     )}
@@ -694,10 +770,10 @@ export function LandingPage({
                         ) : (
                           <div className="w-11 h-11 rounded-xl bg-accent/15 border border-accent/30 text-accent font-bold text-sm flex items-center justify-center shrink-0">
                             {trainer.name
-                              .split(' ')
+                              .split(" ")
                               .map((n) => n[0])
                               .slice(0, 2)
-                              .join('')
+                              .join("")
                               .toUpperCase()}
                           </div>
                         )}
@@ -707,7 +783,7 @@ export function LandingPage({
                             {trainer.name}
                           </h4>
                           <div className="text-xs text-accent font-mono truncate">
-                            {trainer.spec || 'Personal Trainer'}
+                            {trainer.spec || "Personal Trainer"}
                           </div>
                         </div>
                       </div>
@@ -716,7 +792,9 @@ export function LandingPage({
                       {trainer.studio_name && (
                         <div className="flex items-center gap-1.5 text-xs text-dim mb-4 bg-bg px-2.5 py-1 rounded-lg border border-line/60 w-fit flex-wrap">
                           <Building2 className="w-3.5 h-3.5 text-dim shrink-0" />
-                          <span className="truncate">{trainer.studio_name}</span>
+                          <span className="truncate">
+                            {trainer.studio_name}
+                          </span>
                           {trainer.studio_gmaps_url && (
                             <a
                               href={trainer.studio_gmaps_url}
@@ -745,7 +823,9 @@ export function LandingPage({
                           <span className="w-5 h-5 rounded-md bg-red-600/15 border border-red-600/30 flex items-center justify-center text-red-500 group-hover/yt:bg-red-600 group-hover/yt:text-white transition-colors">
                             <Play className="w-2.5 h-2.5 ml-0.5 fill-current" />
                           </span>
-                          <span className="underline-offset-2 group-hover/yt:underline">Tonton di YT</span>
+                          <span className="underline-offset-2 group-hover/yt:underline">
+                            Tonton di YT
+                          </span>
                         </a>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] text-dim font-mono">
@@ -755,36 +835,45 @@ export function LandingPage({
                       )}
 
                       {(() => {
-                        const ptPhone = (trainer.phone || contactWa || '').replace(/[^0-9]/g, '')
+                        const ptPhone = (
+                          trainer.phone ||
+                          contactWa ||
+                          ""
+                        ).replace(/[^0-9]/g, "");
                         const waMessage = encodeURIComponent(
-                          `Halo Coach ${trainer.name}, saya tertarik untuk latihan bareng personal training dan ingin didaftarkan akun di Kula Studio. Boleh info jadwal latihan & ketersediaan slotnya Coach?`
-                        )
-                        const waUrl = ptPhone ? `https://wa.me/${ptPhone}?text=${waMessage}` : '/login'
+                          `Halo Coach ${trainer.name}, saya tertarik untuk latihan bareng personal training dan ingin didaftarkan akun di Kula Studio. Boleh info jadwal latihan & ketersediaan slotnya Coach?`,
+                        );
+                        const waUrl = ptPhone
+                          ? `https://wa.me/${ptPhone}?text=${waMessage}`
+                          : "/login";
 
                         return (
                           <a
                             href={waUrl}
-                            target={ptPhone ? '_blank' : undefined}
-                            rel={ptPhone ? 'noreferrer' : undefined}
+                            target={ptPhone ? "_blank" : undefined}
+                            rel={ptPhone ? "noreferrer" : undefined}
                             className="btn-interactive inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-[#141414] font-bold text-xs shadow-[0_2px_10px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_16px_rgba(226,232,0,0.4)] transition-all shrink-0"
                             title={`Hubungi Coach ${trainer.name} via WhatsApp untuk pendaftaran`}
                           >
                             <MessageCircle className="w-3.5 h-3.5" />
                             <span>Latihan Bareng</span>
                           </a>
-                        )
+                        );
                       })()}
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       </section>
 
       {/* ── 6. Target Audience (`#peran`) ── */}
-      <section id="peran" className="py-10 md:py-20 border-t border-line bg-panel/30">
+      <section
+        id="peran"
+        className="py-10 md:py-20 border-t border-line bg-panel/30"
+      >
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="text-center max-w-xl mx-auto mb-8 md:mb-14">
             <h2 className="text-xs font-mono tracking-widest text-accent uppercase mb-2">
@@ -816,22 +905,32 @@ export function LandingPage({
 
               <div className="p-5 sm:p-7 pt-2 flex-1 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-lg sm:text-xl font-bold text-text mb-2 sm:mb-3">Untuk Personal Trainer Mandiri</h4>
+                  <h4 className="text-lg sm:text-xl font-bold text-text mb-2 sm:mb-3">
+                    Untuk Personal Trainer Mandiri
+                  </h4>
                   <p className="text-xs sm:text-sm text-dim leading-relaxed mb-4 sm:mb-6">
-                    Tingkatkan kredibilitas profesional Anda. Tidak perlu lagi mengingat di kepala atau mencari riwayat beban di chat WhatsApp yang hilang. Semua tersusun sistematis.
+                    Tingkatkan kredibilitas profesional Anda. Tidak perlu lagi
+                    mengingat di kepala atau mencari riwayat beban di chat
+                    WhatsApp yang hilang. Semua tersusun sistematis.
                   </p>
                   <ul className="space-y-2 sm:space-y-2.5 text-xs text-text mb-4 sm:mb-6">
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                      <span>Mengurangi waktu administrasi manual hingga 80%</span>
+                      <span>
+                        Mengurangi waktu administrasi manual hingga 80%
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                      <span>Notifikasi upsell otomatis saat sesi tersisa &le; 3 kali</span>
+                      <span>
+                        Notifikasi upsell otomatis saat sesi tersisa &le; 3 kali
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                      <span>Akses cepat dari smartphone saat berada di area gym</span>
+                      <span>
+                        Akses cepat dari smartphone saat berada di area gym
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -865,22 +964,32 @@ export function LandingPage({
 
               <div className="p-5 sm:p-7 pt-2 flex-1 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-lg sm:text-xl font-bold text-text mb-2 sm:mb-3">Untuk Studio &amp; Gym Manager</h4>
+                  <h4 className="text-lg sm:text-xl font-bold text-text mb-2 sm:mb-3">
+                    Untuk Studio &amp; Gym Manager
+                  </h4>
                   <p className="text-xs sm:text-sm text-dim leading-relaxed mb-4 sm:mb-6">
-                    Pantau seluruh pelatih di bawah naungan studio Anda. Lihat total utilisasi sesi latihan secara transparan dan atur hak akses tim pelatih dengan aman.
+                    Pantau seluruh pelatih di bawah naungan studio Anda. Lihat
+                    total utilisasi sesi latihan secara transparan dan atur hak
+                    akses tim pelatih dengan aman.
                   </p>
                   <ul className="space-y-2 sm:space-y-2.5 text-xs text-text mb-4 sm:mb-6">
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                      <span>Monitoring performa dan sesi dari seluruh PT tim</span>
+                      <span>
+                        Monitoring performa dan sesi dari seluruh PT tim
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                      <span>Sistem persetujuan registrasi (whitelist verification)</span>
+                      <span>
+                        Sistem persetujuan registrasi (whitelist verification)
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
-                      <span>Kontrol terpusat lisensi paket Standard dan Pro</span>
+                      <span>
+                        Kontrol terpusat lisensi paket Standard dan Pro
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -908,17 +1017,18 @@ export function LandingPage({
               Investasi Terjangkau untuk Hasil Maksimal
             </h3>
             <p className="mt-2.5 sm:mt-3 text-sm text-dim">
-              Pilih paket yang paling cocok untuk kebutuhan pembinaan klien Anda.
+              Pilih paket yang paling cocok untuk kebutuhan pembinaan klien
+              Anda.
             </p>
           </div>
 
           <div
             className={`grid gap-4 sm:gap-8 max-w-5xl mx-auto ${
               pricingPlans.length === 1
-                ? 'max-w-md'
+                ? "max-w-md"
                 : pricingPlans.length === 2
-                  ? 'md:grid-cols-2'
-                  : 'md:grid-cols-3'
+                  ? "md:grid-cols-2"
+                  : "md:grid-cols-3"
             }`}
           >
             {pricingPlans.map((plan) => (
@@ -926,18 +1036,20 @@ export function LandingPage({
                 key={plan.id}
                 className={`hover-gold-glow p-5 sm:p-8 rounded-xl sm:rounded-2xl bg-panel flex flex-col justify-between transition-all duration-300 relative ${
                   plan.is_popular
-                    ? 'border-2 border-accent shadow-[0_8px_32px_rgba(226,232,0,0.2)] hover:shadow-[0_12px_44px_rgba(226,232,0,0.35)]'
-                    : 'border border-line'
+                    ? "border-2 border-accent shadow-[0_8px_32px_rgba(226,232,0,0.2)] hover:shadow-[0_12px_44px_rgba(226,232,0,0.35)]"
+                    : "border border-line"
                 }`}
               >
                 {plan.is_popular && (
                   <div className="absolute -top-3.5 left-8 px-3 py-0.5 rounded-full bg-accent text-[#141414] font-mono text-[11px] font-bold tracking-wider uppercase shadow-[0_0_12px_rgba(226,232,0,0.4)]">
-                    {plan.badge || 'Paling Diminati'}
+                    {plan.badge || "Paling Diminati"}
                   </div>
                 )}
                 <div>
                   <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <h4 className="text-lg sm:text-xl font-bold text-text">{plan.name}</h4>
+                    <h4 className="text-lg sm:text-xl font-bold text-text">
+                      {plan.name}
+                    </h4>
                     {plan.badge && !plan.is_popular && (
                       <span className="text-xs font-mono text-dim bg-bg px-2.5 py-1 rounded border border-line">
                         {plan.badge}
@@ -945,20 +1057,22 @@ export function LandingPage({
                     )}
                     {plan.is_popular && (
                       <span className="text-xs font-mono text-accent bg-accent/15 px-2.5 py-1 rounded border border-accent/30 font-semibold">
-                        {plan.badge || 'Pro Tier'}
+                        {plan.badge || "Pro Tier"}
                       </span>
                     )}
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-3 sm:mb-4">
                     <span
                       className={`text-2xl sm:text-4xl font-extrabold ${
-                        plan.is_popular ? 'text-accent' : 'text-text'
+                        plan.is_popular ? "text-accent" : "text-text"
                       }`}
                     >
                       {plan.price}
                     </span>
                     {plan.period && (
-                      <span className="text-xs text-dim font-mono">{plan.period}</span>
+                      <span className="text-xs text-dim font-mono">
+                        {plan.period}
+                      </span>
                     )}
                   </div>
                   {plan.description && (
@@ -971,7 +1085,9 @@ export function LandingPage({
                       <div
                         key={idx}
                         className={`flex items-center gap-2 ${
-                          plan.is_popular ? 'text-text font-medium' : 'text-text'
+                          plan.is_popular
+                            ? "text-text font-medium"
+                            : "text-text"
                         }`}
                       >
                         <Check className="w-3.5 h-3.5 text-accent shrink-0 stroke-[2.5]" />
@@ -981,14 +1097,14 @@ export function LandingPage({
                   </div>
                 </div>
                 <a
-                  href={plan.button_link || '/login'}
+                  href={plan.button_link || "/login"}
                   className={`btn-interactive w-full py-2.5 sm:py-3 px-4 rounded-xl text-center text-sm font-semibold transition-all ${
                     plan.is_popular
-                      ? 'bg-accent hover:bg-accent/90 text-[#141414] shadow-[0_2px_16px_rgba(226,232,0,0.3)]'
-                      : 'bg-bg border border-line hover:border-accent text-text'
+                      ? "bg-accent hover:bg-accent/90 text-[#141414] shadow-[0_2px_16px_rgba(226,232,0,0.3)]"
+                      : "bg-bg border border-line hover:border-accent text-text"
                   }`}
                 >
-                  {plan.button_text || 'Pilih Paket'}
+                  {plan.button_text || "Pilih Paket"}
                 </a>
               </div>
             ))}
@@ -998,16 +1114,20 @@ export function LandingPage({
           {longTermPlans.length > 0 && (
             <div className="hover-gold-glow mt-6 md:mt-12 max-w-4xl mx-auto rounded-xl sm:rounded-2xl border border-line bg-panel p-4 sm:p-8 transition-all duration-300">
               <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-2 mb-4 sm:mb-6">
-                <h4 className="font-bold text-base sm:text-lg text-text">Paket Hemat Jangka Panjang</h4>
-                <span className="text-[11px] sm:text-xs text-dim font-mono">Bayar di muka, harga per bulan lebih terjangkau</span>
+                <h4 className="font-bold text-base sm:text-lg text-text">
+                  Paket Hemat Jangka Panjang
+                </h4>
+                <span className="text-[11px] sm:text-xs text-dim font-mono">
+                  Bayar di muka, harga per bulan lebih terjangkau
+                </span>
               </div>
               <div
                 className={`grid gap-3 sm:gap-4 ${
                   longTermPlans.length === 1
-                    ? 'sm:grid-cols-1'
+                    ? "sm:grid-cols-1"
                     : longTermPlans.length === 2
-                      ? 'sm:grid-cols-2'
-                      : 'sm:grid-cols-3'
+                      ? "sm:grid-cols-2"
+                      : "sm:grid-cols-3"
                 }`}
               >
                 {longTermPlans.map((plan) => (
@@ -1015,26 +1135,30 @@ export function LandingPage({
                     key={plan.id}
                     className={`hover-gold-glow p-3.5 sm:p-4 rounded-xl bg-bg text-left transition-all duration-300 ${
                       plan.is_highlight
-                        ? 'border border-accent'
-                        : 'border border-line'
+                        ? "border border-accent"
+                        : "border border-line"
                     }`}
                   >
                     <div
                       className={`text-xs font-mono mb-1 ${
-                        plan.is_highlight ? 'text-accent font-semibold' : 'text-dim'
+                        plan.is_highlight
+                          ? "text-accent font-semibold"
+                          : "text-dim"
                       }`}
                     >
                       {plan.title}
                     </div>
                     <div
                       className={`text-lg sm:text-xl font-bold mb-1 ${
-                        plan.is_highlight ? 'text-accent' : 'text-text'
+                        plan.is_highlight ? "text-accent" : "text-text"
                       }`}
                     >
                       {plan.price}
                     </div>
                     {plan.description && (
-                      <p className="text-[11px] sm:text-xs text-dim">{plan.description}</p>
+                      <p className="text-[11px] sm:text-xs text-dim">
+                        {plan.description}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -1102,17 +1226,27 @@ export function LandingPage({
               </div>
             )}
             <span className="text-text font-medium">{appName}</span>
-            <span>&copy; {new Date().getFullYear()} {footerCopyright}</span>
+            <span>
+              &copy; {new Date().getFullYear()} {footerCopyright}
+            </span>
           </div>
 
           <div className="flex items-center gap-6">
-            <a href="#fitur" className="hover:text-accent transition-colors">Fitur</a>
-            <a href="#cara" className="hover:text-accent transition-colors">Cara Kerja</a>
-            <a href="#pelatih" className="hover:text-accent transition-colors">Pelatih</a>
-            <a href="#paket" className="hover:text-accent transition-colors">Harga</a>
+            <a href="#fitur" className="hover:text-accent transition-colors">
+              Fitur
+            </a>
+            <a href="#cara" className="hover:text-accent transition-colors">
+              Cara Kerja
+            </a>
+            <a href="#pelatih" className="hover:text-accent transition-colors">
+              Pelatih
+            </a>
+            <a href="#paket" className="hover:text-accent transition-colors">
+              Harga
+            </a>
             {contactWa && (
               <a
-                href={`https://wa.me/${contactWa.replace(/[^0-9]/g, '')}`}
+                href={`https://wa.me/${contactWa.replace(/[^0-9]/g, "")}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-accent hover:underline flex items-center gap-1"
@@ -1124,5 +1258,5 @@ export function LandingPage({
         </div>
       </footer>
     </div>
-  )
+  );
 }

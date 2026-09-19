@@ -10,7 +10,7 @@ export const platform = new Hono<{ Bindings: Env }>();
 // 0. GET /platform/settings — Publik untuk Landing Page & Identitas Aplikasi
 platform.get('/settings', async (c) => {
   const sql = db(c);
-  // Auto-migrate legacy 'TrainLog' default data to 'Kula Studio'
+  // Auto-migrate data lama ke branding Kula Studio jika masih ada nilai default lama
   try {
     await sql`
       update platform_settings set

@@ -53,7 +53,9 @@ export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
   c.set('user', payload.sub);
   await next();
 }
-export function requireRole(...roles: SessionUser['role'][]) {
+export type Role = SessionUser['role'];
+
+export function requireRole(...roles: Role[]) {
   return async (c: Context<{ Bindings: Env }>, next: Next) => {
     const u = c.get('user');
     if (!u || !roles.includes(u.role)) return c.json({ error: 'forbidden' }, 403);

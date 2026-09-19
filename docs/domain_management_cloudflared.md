@@ -1,6 +1,6 @@
-# Panduan Manajemen Domain & Integrasi Cloudflare untuk TrainLog
+# Panduan Manajemen Domain & Integrasi Cloudflare untuk Kula Studio
 
-Dokumen ini menjelaskan panduan langkah demi langkah memindahkan pengelolaan DNS domain dari registrar pihak ketiga (Niagahoster, Domainesia, Rumahweb, Namecheap, GoDaddy, dll.) ke **Cloudflare**, serta mengintegrasikannya dengan proyek TrainLog (**Cloudflare Pages** untuk Frontend dan **Cloudflare Workers** untuk Backend).
+Dokumen ini menjelaskan panduan langkah demi langkah memindahkan pengelolaan DNS domain dari registrar pihak ketiga (Niagahoster, Domainesia, Rumahweb, Namecheap, GoDaddy, dll.) ke **Cloudflare**, serta mengintegrasikannya dengan proyek Kula Studio (**Cloudflare Pages** untuk Frontend dan **Cloudflare Workers** untuk Backend).
 
 ---
 
@@ -15,8 +15,8 @@ Mengalihkan DNS domain ke Cloudflare memberikan keuntungan signifikan:
 ### Rekomendasi Skema Domain:
 | Komponen | Subdomain Rekomendasi | Layanan Cloudflare | Keterangan |
 | :--- | :--- | :--- | :--- |
-| **Frontend Web** | `app.domainanda.com` *(atau `domainanda.com`)* | Cloudflare Pages (`trainlog-web`) | Halaman aplikasi React & Dashboard |
-| **Backend API** | `api.domainanda.com` | Cloudflare Workers (`trainlog-api`) | Serverless API Hono |
+| **Frontend Web** | `app.domainanda.com` *(atau `domainanda.com`)* | Cloudflare Pages (`kula-studio-web`) | Halaman aplikasi React & Dashboard |
+| **Backend API** | `api.domainanda.com` | Cloudflare Workers (`kula-studio-api`) | Serverless API Hono |
 
 ---
 
@@ -58,7 +58,7 @@ Anda tidak perlu mentransfer kepemilikan domain (tagihan perpanjangan tahunan do
 Setelah domain aktif di Cloudflare, hubungkan subdomain Frontend (`app.domainanda.com`):
 
 1. Di dashboard Cloudflare, buka menu **Compute (Workers & Pages)**.
-2. Klik project Frontend Anda: **`trainlog-web`**.
+2. Klik project Frontend Anda: **`kula-studio-web`**.
 3. Masuk ke tab **Custom domains**.
 4. Klik tombol **Set up a domain**.
 5. Masukkan subdomain yang Anda inginkan:
@@ -74,7 +74,7 @@ Setelah domain aktif di Cloudflare, hubungkan subdomain Frontend (`app.domainand
 Hubungkan subdomain API (`api.domainanda.com`) ke backend Worker:
 
 1. Di dashboard Cloudflare, buka menu **Compute (Workers & Pages)**.
-2. Klik worker Backend Anda: **`trainlog-api`**.
+2. Klik worker Backend Anda: **`kula-studio-api`**.
 3. Masuk ke tab **Settings** &rarr; klik sub-tab **Triggers** (atau **Domains & Routes** pada tampilan dashboard terbaru).
 4. Di bagian **Custom Domains**, klik tombol **Add Custom Domain**.
 5. Masukkan subdomain API Anda:
@@ -98,7 +98,7 @@ cd /home/arizainalf/Project/trainlog-replica/web
 VITE_API_URL=https://api.kulastudio.com npm run build
 
 # Deploy ke Cloudflare Pages
-npx wrangler pages deploy dist --project-name=trainlog-web
+npx wrangler pages deploy dist --project-name=kula-studio-web
 ```
 
 ### Opsi B: Update di Otomatisasi GitHub Actions (CI/CD)

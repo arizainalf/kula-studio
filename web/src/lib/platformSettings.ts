@@ -37,7 +37,7 @@ export function getCachedPlatformSettings(): PlatformSettings {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed && parsed.app_name) {
-        // Sanitize legacy TrainLog name if cached
+        // Sanitize legacy cache jika masih menyimpan nama lama
         if (parsed.app_name.toLowerCase().includes('trainlog')) {
           parsed.app_name = 'Kula Studio'
           parsed.app_initials = 'KS'

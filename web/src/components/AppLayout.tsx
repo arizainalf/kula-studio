@@ -84,10 +84,7 @@ export function AppLayout({
   const [user, setUser] = useState<User>(currentUser)
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
-      return (
-        localStorage.getItem('kulastudio_sidebar_collapsed') === 'true' ||
-        localStorage.getItem('trainlog_sidebar_collapsed') === 'true'
-      )
+      return localStorage.getItem('kulastudio_sidebar_collapsed') === 'true'
     } catch {
       return false
     }
