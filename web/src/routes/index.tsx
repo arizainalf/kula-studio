@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
-import { api, type User } from '../lib/api'
+import { api, type User, type PlatformSettings } from '../lib/api'
 import { LandingPage } from '../components/LandingPage'
 import {
   StatCard,
@@ -10,6 +10,7 @@ import {
 } from '../components/DashboardCharts'
 import { MobileBottomNav } from '../components/MobileBottomNav'
 import { AppLayout, useAppLayout } from '../components/AppLayout'
+import { usePlatformSettings } from '../lib/platformSettings'
 import {
   formatDate,
   formatShortDate,
@@ -31,6 +32,7 @@ import {
   Building2,
   ShieldCheck,
 } from 'lucide-react'
+import { UserAvatar } from '../components/UserAvatar'
 
 export type Client = ClientSummary & {
   notes?: string | null
@@ -56,6 +58,7 @@ type LoaderData = {
   me: User | null
   clients: Client[]
   schedule: ScheduleItem[]
+  settings: PlatformSettings | null
 }
 
 export const Route = createFileRoute('/')({
@@ -69,36 +72,50 @@ export const Route = createFileRoute('/')({
       const today = getLocalTodayString()
       const nextWeekDate = getLocalFutureDateString(7)
 
-      const [clientsRes, schedRes] = await Promise.all([
+      const [clientsRes, schedRes, settingsRes] = await Promise.all([
         api<{ clients: Client[] }>('/clients').catch(() => ({ clients: [] })),
         api<{ schedule: ScheduleItem[] }>(`/schedule?from=${today}&to=${nextWeekDate}`).catch(() => ({ schedule: [] })),
+        api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null })),
       ])
 
       return {
         me: meRes.user,
         clients: clientsRes.clients,
         schedule: schedRes.schedule,
+        settings: settingsRes.settings,
       }
     } catch (e) {
       if (e && typeof e === 'object' && 'to' in e) throw e
-      return { me: null, clients: [], schedule: [] }
+      const settingsRes = await api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null }))
+      return { me: null, clients: [], schedule: [], settings: settingsRes.settings }
     }
   },
   component: RootIndex,
 })
 
 function RootIndex() {
-  const { me, clients, schedule } = Route.useLoaderData()
+  const { me, clients, schedule, settings } = Route.useLoaderData()
 
   if (!me) {
-    return <LandingPage currentUser={null} />
+    return <LandingPage currentUser={null} initialSettings={settings} />
   }
 
-  return <Dashboard me={me} clients={clients} schedule={schedule} />
+  return <Dashboard me={me} clients={clients} schedule={schedule} settings={settings} />
 }
 
-function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Client[]; schedule: ScheduleItem[] }) {
+function Dashboard({
+  me: initialMe,
+  clients,
+  schedule,
+  settings,
+}: {
+  me: User
+  clients: Client[]
+  schedule: ScheduleItem[]
+  settings: PlatformSettings | null
+}) {
   const [currentUser, setCurrentUser] = useState<User>(initialMe)
+  const platformSettings = usePlatformSettings(settings)
 
   return (
     <AppLayout
@@ -106,13 +123,28 @@ function Dashboard({ me: initialMe, clients, schedule }: { me: User; clients: Cl
       activeRoute="dashboard"
       onProfileUpdated={(updated) => setCurrentUser((prev) => ({ ...prev, ...updated }))}
     >
-      <DashboardContent currentUser={currentUser} clients={clients} schedule={schedule} />
+      <DashboardContent
+        currentUser={currentUser}
+        clients={clients}
+        schedule={schedule}
+        platformSettings={platformSettings}
+      />
     </AppLayout>
   )
 }
 
-function DashboardContent({ currentUser, clients, schedule }: { currentUser: User; clients: Client[]; schedule: ScheduleItem[] }) {
-  const { openEditProfile, openAdminExercise, openExportPdf, openPlatformAdmin } = useAppLayout()
+function DashboardContent({
+  currentUser,
+  clients,
+  schedule,
+  platformSettings,
+}: {
+  currentUser: User
+  clients: Client[]
+  schedule: ScheduleItem[]
+  platformSettings: PlatformSettings
+}) {
+  const { openEditProfile, openExportPdf } = useAppLayout()
 
   // Analytics Computations
   const totalClients = clients.length
@@ -134,9 +166,14 @@ function DashboardContent({ currentUser, clients, schedule }: { currentUser: Use
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {/* Coach Avatar with Online Badge */}
               <div className="relative shrink-0">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-extrabold text-base sm:text-lg shadow-[0_0_20px_rgba(212,175,55,0.18)]">
-                  {currentUser.name.slice(0, 2).toUpperCase()}
-                </div>
+                <UserAvatar
+                  name={currentUser.name}
+                  avatarUrl={currentUser.avatar_url}
+                  role={currentUser.role}
+                  size="xl"
+                  shape="rounded-2xl"
+                  showRoleBadge
+                />
                 <span
                   className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-panel animate-pulse"
                   title="Akun Aktif"
@@ -193,15 +230,14 @@ function DashboardContent({ currentUser, clients, schedule }: { currentUser: Use
             {/* Action Buttons */}
             <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60 flex items-center gap-2 flex-wrap">
               {currentUser.role === 'platform_admin' && (
-                <button
-                  type="button"
-                  onClick={openPlatformAdmin}
+                <Link
+                  to="/studios"
                   className="btn-interactive flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#141414] text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md"
                   title="Kelola Semua Studio Gym di Platform"
                 >
                   <Building2 className="w-4 h-4" />
                   <span>Kelola Studio (SaaS)</span>
-                </button>
+                </Link>
               )}
 
               <button
@@ -214,9 +250,8 @@ function DashboardContent({ currentUser, clients, schedule }: { currentUser: Use
                 <span>Edit Profil</span>
               </button>
 
-              <button
-                type="button"
-                onClick={openAdminExercise}
+              <Link
+                to="/exercises"
                 className="btn-interactive flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                 title="Kelola Master Gerakan & Kategori Latihan"
               >
@@ -229,7 +264,7 @@ function DashboardContent({ currentUser, clients, schedule }: { currentUser: Use
                 }`}>
                   {currentUser.role === 'admin_studio' ? 'Admin Studio' : currentUser.role}
                 </span>
-              </button>
+              </Link>
 
               <button
                 type="button"
@@ -301,18 +336,28 @@ function DashboardContent({ currentUser, clients, schedule }: { currentUser: Use
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
               {upsellClients.map((cl) => {
                 const remaining = cl.pkg_total - cl.pkg_used
+                const appName = platformSettings.app_name || 'TrainLog'
                 const waMessage = encodeURIComponent(
-                  `Halo ${cl.name}, sesi latihan personal training kamu di TrainLog tersisa ${remaining} sesi lagi. Yuk kita amankan slot jadwal untuk paket berikutnya!`
+                  `Halo ${cl.name}, sesi latihan personal training kamu di ${appName} tersisa ${remaining} sesi lagi. Yuk kita amankan slot jadwal untuk paket berikutnya!`
                 )
                 return (
                   <div
                     key={cl.id}
                     className="p-3.5 rounded-xl bg-panel border border-line hover-gold-glow flex items-center justify-between gap-2 transition-all duration-300"
                   >
-                    <div>
-                      <div className="font-semibold text-xs text-text">{cl.name}</div>
-                      <div className="text-[11px] font-mono text-amber-400 font-medium">
-                        {remaining <= 0 ? 'Habis (0 sesi)' : `Sisa ${remaining} sesi (${cl.pkg_used}/${cl.pkg_total})`}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <UserAvatar
+                        name={cl.name}
+                        avatarUrl={cl.avatar_url}
+                        role="client"
+                        size="sm"
+                        shape="rounded-xl"
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-xs text-text truncate">{cl.name}</div>
+                        <div className="text-[11px] font-mono text-amber-400 font-medium">
+                          {remaining <= 0 ? 'Habis (0 sesi)' : `Sisa ${remaining} sesi (${cl.pkg_used}/${cl.pkg_total})`}
+                        </div>
                       </div>
                     </div>
                     {cl.phone ? (
@@ -467,7 +512,7 @@ function DashboardContent({ currentUser, clients, schedule }: { currentUser: Use
         </section>
       </div>
       {/* ── Mobile Bottom Navigation Bar (App Experience) ── */}
-      <MobileBottomNav />
+      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </main>
   )
 }

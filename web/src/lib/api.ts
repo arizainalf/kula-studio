@@ -4,6 +4,7 @@ export type User = {
   email: string;
   role: 'platform_admin' | 'admin_studio' | 'manager' | 'pt' | 'client';
   name: string;
+  avatar_url?: string | null;
   plan_tier?: string | null;
   expires_at?: string | null;
   is_active?: boolean;
@@ -40,6 +41,62 @@ export type Studio = {
   session_count?: number;
   admin_name?: string | null;
   admin_email?: string | null;
+};
+
+export type FeatureItem = {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string;
+};
+
+export type HowItWorksStep = {
+  id: string;
+  step: string;
+  title: string;
+  description: string;
+};
+
+export type PricingPlan = {
+  id: string;
+  name: string;
+  badge?: string | null;
+  price: string;
+  period?: string | null;
+  description?: string | null;
+  features: string[];
+  button_text?: string | null;
+  button_link?: string | null;
+  is_popular?: boolean;
+};
+
+export type LongTermPlan = {
+  id: string;
+  title: string;
+  price: string;
+  description?: string | null;
+  is_highlight?: boolean;
+};
+
+export type PlatformSettings = {
+  id: string;
+  app_name: string;
+  app_tagline: string;
+  app_initials: string;
+  hero_pill: string;
+  hero_headline: string;
+  hero_gradient: string;
+  hero_subheadline: string;
+  features: FeatureItem[];
+  how_it_works: HowItWorksStep[];
+  pricing_plans: PricingPlan[];
+  long_term_plans: LongTermPlan[];
+  contact_whatsapp: string;
+  contact_email: string;
+  cta_headline: string;
+  cta_subheadline: string;
+  footer_copyright: string;
+  updated_at?: string;
 };
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {

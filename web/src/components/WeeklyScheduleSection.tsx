@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api } from '../lib/api'
+import { api, type User } from '../lib/api'
 import type { Client, ScheduleItem } from '../routes/index'
 import { formatShortDate, formatTime, getLocalTodayString } from '../lib/date'
 import {
@@ -17,10 +17,12 @@ import {
 export function WeeklyScheduleSection({
   schedule: initialSchedule,
   clients,
+  currentUser,
   onScheduleChange,
 }: {
   schedule: ScheduleItem[]
   clients: Client[]
+  currentUser?: User
   onScheduleChange?: () => void
 }) {
   const [scheduleList, setScheduleList] = useState<ScheduleItem[]>(initialSchedule)
@@ -339,13 +341,15 @@ export function WeeklyScheduleSection({
                           </a>
                         )}
 
-                        <a
-                          href={`/clients/${session.client_id}/log`}
-                          className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shadow-[0_2px_8px_rgba(226,232,0,0.2)] hover:shadow-[0_4px_14px_rgba(226,232,0,0.4)] btn-interactive"
-                        >
-                          <Plus className="w-3 h-3 stroke-[2.5]" />
-                          <span>Catat</span>
-                        </a>
+                        {currentUser?.role === 'pt' && (!session.pt_id || session.pt_id === currentUser.id) && (
+                          <a
+                            href={`/clients/${session.client_id}/log`}
+                            className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 shadow-[0_2px_8px_rgba(226,232,0,0.2)] hover:shadow-[0_4px_14px_rgba(226,232,0,0.4)] btn-interactive"
+                          >
+                            <Plus className="w-3 h-3 stroke-[2.5]" />
+                            <span>Catat</span>
+                          </a>
+                        )}
 
                         <button
                           onClick={() => handleDeleteSchedule(session.id)}
@@ -398,13 +402,15 @@ export function WeeklyScheduleSection({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <a
-                          href={`/clients/${session.client_id}/log`}
-                          className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1"
-                        >
-                          <Plus className="w-3 h-3 stroke-[2.5]" />
-                          <span>Catat</span>
-                        </a>
+                        {currentUser?.role === 'pt' && (!session.pt_id || session.pt_id === currentUser.id) && (
+                          <a
+                            href={`/clients/${session.client_id}/log`}
+                            className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3 stroke-[2.5]" />
+                            <span>Catat</span>
+                          </a>
+                        )}
                         <button
                           onClick={() => handleDeleteSchedule(session.id)}
                           className="text-dim hover:text-rose-400 p-1.5 rounded-lg hover:bg-panel transition-colors"

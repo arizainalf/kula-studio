@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
-  UserPlus,
   Dumbbell,
   Printer,
   Globe,
@@ -15,6 +14,7 @@ import {
   LogOut,
   Menu,
   X,
+  Sliders,
 } from 'lucide-react'
 import { api, type User } from '../lib/api'
 import { ThemeToggle } from './ThemeToggle'
@@ -23,6 +23,8 @@ import { PlatformAdminModal } from './PlatformAdminModal'
 import { AdminUsersModal } from './AdminUsersModal'
 import { AdminExerciseModal } from './AdminExerciseModal'
 import { ExportPdfModal } from './ExportPdfModal'
+import { UserAvatar } from './UserAvatar'
+import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 
 export interface AppLayoutContextValue {
   openEditProfile: () => void
@@ -48,7 +50,17 @@ export interface AppLayoutProps {
   currentUser: User
   children: React.ReactNode
   onProfileUpdated?: (updated: Partial<User>) => void
-  activeRoute?: 'dashboard' | 'clients' | 'schedule' | 'new_client' | 'client_detail' | 'other'
+  activeRoute?:
+    | 'dashboard'
+    | 'clients'
+    | 'schedule'
+    | 'new_client'
+    | 'client_detail'
+    | 'studios'
+    | 'users'
+    | 'exercises'
+    | 'settings'
+    | 'other'
 }
 
 export function AppLayout({
@@ -69,6 +81,7 @@ export function AppLayout({
   const [isAdminUsersOpen, setIsAdminUsersOpen] = useState(false)
   const [isAdminExerciseOpen, setIsAdminExerciseOpen] = useState(false)
   const [isExportPdfOpen, setIsExportPdfOpen] = useState(false)
+  const platformSettings = usePlatformSettings()
 
   // Active status determinations
   const isDashboard = activeRoute ? activeRoute === 'dashboard' : pathname === '/'
@@ -76,7 +89,10 @@ export function AppLayout({
     ? activeRoute === 'clients'
     : (pathname === '/clients' || pathname === '/clients/') || (pathname.startsWith('/clients/') && pathname !== '/clients/new')
   const isSchedule = activeRoute ? activeRoute === 'schedule' : pathname === '/schedule'
-  const isNewClient = activeRoute ? activeRoute === 'new_client' : pathname === '/clients/new'
+  const isStudios = activeRoute ? activeRoute === 'studios' : pathname === '/studios' || pathname.startsWith('/studios')
+  const isUsers = activeRoute ? activeRoute === 'users' : pathname === '/users' || pathname.startsWith('/users')
+  const isExercises = activeRoute ? activeRoute === 'exercises' : pathname === '/exercises' || pathname.startsWith('/exercises')
+  const isSettings = activeRoute ? activeRoute === 'settings' : pathname === '/settings' || pathname.startsWith('/settings')
 
   async function handleLogout() {
     if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
@@ -107,14 +123,16 @@ export function AppLayout({
             className="flex items-center gap-2.5 group"
           >
             <div className="w-9 h-9 rounded-xl bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(226,232,0,0.2)] group-hover:border-accent transition-colors">
-              <span className="font-extrabold text-sm tracking-tighter text-accent">TL</span>
+              <span className="font-extrabold text-sm tracking-tighter text-accent">
+                {platformSettings.app_initials || 'TL'}
+              </span>
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-base tracking-tight leading-none text-text">
-                Train<span className="text-accent">Log</span>
+                {formatBrandName(platformSettings.app_name)}
               </span>
               <span className="text-[9px] text-dim tracking-wider uppercase font-mono mt-1">
-                Pro PT Manager
+                {platformSettings.app_tagline || 'Pro PT Manager'}
               </span>
             </div>
           </Link>
@@ -210,19 +228,6 @@ export function AppLayout({
               <Calendar className={`w-4 h-4 ${isSchedule ? 'text-[#141414]' : 'text-dim'}`} />
               <span>Jadwal Sesi</span>
             </Link>
-
-            <Link
-              to="/clients/new"
-              onClick={() => setMobileDrawerOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive ${
-                isNewClient
-                  ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
-                  : 'text-dim hover:text-text hover:bg-panel-elevated/70'
-              }`}
-            >
-              <UserPlus className={`w-4 h-4 ${isNewClient ? 'text-[#141414]' : 'text-dim'}`} />
-              <span>Tambah Klien</span>
-            </Link>
           </div>
 
           {/* Section 2: Manajemen & Alat */}
@@ -232,49 +237,72 @@ export function AppLayout({
             </div>
 
             {user.role === 'platform_admin' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPlatformAdminOpen(true)
-                  setMobileDrawerOpen(false)
-                }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-amber-300 hover:text-amber-200 hover:bg-amber-400/10 border border-amber-400/20 transition-all btn-interactive text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Kelola Studio</span>
-                </div>
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-400">
-                  SAAS
-                </span>
-              </button>
+              <>
+                <Link
+                  to="/studios"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive ${
+                    isStudios
+                      ? 'bg-amber-400/20 text-amber-300 font-bold border border-amber-400/40 shadow-sm'
+                      : 'text-dim hover:text-amber-300 hover:bg-amber-400/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Kelola Studio</span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-400">
+                    SAAS
+                  </span>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive ${
+                    isSettings
+                      ? 'bg-amber-400/20 text-amber-300 font-bold border border-amber-400/40 shadow-sm'
+                      : 'text-dim hover:text-amber-300 hover:bg-amber-400/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Sliders className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Identitas &amp; SaaS</span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-400">
+                    CONFIG
+                  </span>
+                </Link>
+              </>
             )}
 
             {(user.role === 'admin_studio' || user.role === 'manager' || user.role === 'platform_admin') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAdminUsersOpen(true)
-                  setMobileDrawerOpen(false)
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-dim hover:text-text hover:bg-panel-elevated/70 transition-all btn-interactive text-left"
+              <Link
+                to="/users"
+                onClick={() => setMobileDrawerOpen(false)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive ${
+                  isUsers
+                    ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
+                    : 'text-dim hover:text-text hover:bg-panel-elevated/70'
+                }`}
               >
-                <UserCheck className="w-4 h-4 text-accent shrink-0" />
+                <UserCheck className={`w-4 h-4 ${isUsers ? 'text-[#141414]' : 'text-accent'} shrink-0`} />
                 <span>Kelola Akun Staf</span>
-              </button>
+              </Link>
             )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsAdminExerciseOpen(true)
-                setMobileDrawerOpen(false)
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-dim hover:text-text hover:bg-panel-elevated/70 transition-all btn-interactive text-left"
+            <Link
+              to="/exercises"
+              onClick={() => setMobileDrawerOpen(false)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive ${
+                isExercises
+                  ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
+                  : 'text-dim hover:text-text hover:bg-panel-elevated/70'
+              }`}
             >
-              <Dumbbell className="w-4 h-4 text-accent shrink-0" />
+              <Dumbbell className={`w-4 h-4 ${isExercises ? 'text-[#141414]' : 'text-accent'} shrink-0`} />
               <span>Master Gerakan</span>
-            </button>
+            </Link>
 
             <button
               type="button"
@@ -309,9 +337,13 @@ export function AppLayout({
       {/* Bottom Part: User Profile Card & Quick Actions */}
       <div className="p-3 m-3 rounded-2xl bg-bg border border-line/60 shadow-sm">
         <div className="flex items-center gap-2.5 min-w-0 mb-2.5">
-          <div className="w-9 h-9 rounded-xl bg-panel border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shrink-0 shadow-[0_0_10px_rgba(226,232,0,0.15)]">
-            {user.name.slice(0, 2).toUpperCase()}
-          </div>
+          <UserAvatar
+            name={user.name}
+            avatarUrl={user.avatar_url}
+            role={user.role}
+            size="md"
+            showRoleBadge
+          />
           <div className="min-w-0 flex-1">
             <div className="font-bold text-xs text-text truncate">{user.name}</div>
             <div className="text-[10px] text-dim truncate font-mono">{user.email}</div>
@@ -401,10 +433,10 @@ export function AppLayout({
 
             <Link to="/" className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs shadow-sm">
-                TL
+                {platformSettings.app_initials || 'TL'}
               </div>
               <span className="font-bold text-sm tracking-tight text-text">
-                Train<span className="text-accent">Log</span>
+                {formatBrandName(platformSettings.app_name)}
               </span>
             </Link>
           </div>
@@ -414,10 +446,16 @@ export function AppLayout({
             <button
               type="button"
               onClick={() => setIsEditProfileOpen(true)}
-              className="w-8 h-8 rounded-lg bg-bg border border-accent/40 flex items-center justify-center text-accent font-bold text-xs"
+              className="btn-interactive"
               title="Edit Profil"
             >
-              {user.name.slice(0, 2).toUpperCase()}
+              <UserAvatar
+                name={user.name}
+                avatarUrl={user.avatar_url}
+                role={user.role}
+                size="sm"
+                shape="rounded-lg"
+              />
             </button>
           </div>
         </div>

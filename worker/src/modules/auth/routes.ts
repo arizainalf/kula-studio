@@ -17,7 +17,7 @@ auth.post('/login', async (c) => {
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
   const [user] = await db(c)`
-    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.plan_tier, u.expires_at,
+    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.is_active as studio_is_active
     from users u
     left join studios s on s.id = u.studio_id
@@ -46,7 +46,7 @@ auth.post('/login', async (c) => {
     'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${7 * 86400}`,
   );
-  return c.json({ user: payload.sub });
+  return c.json({ user: { ...payload.sub, avatar_url: user.avatar_url ?? null } });
 });
 
 const clientLoginSchema = z.object({
@@ -104,7 +104,7 @@ auth.post('/client-login', async (c) => {
     'Set-Cookie',
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${30 * 86400}`,
   );
-  return c.json({ user: payload.sub });
+  return c.json({ user: { ...payload.sub, avatar_url: client.avatar_url ?? null } });
 });
 
 auth.post('/logout', (c) => {
@@ -112,7 +112,41 @@ auth.post('/logout', (c) => {
   return c.json({ ok: true });
 });
 
-auth.get('/me', requireAuth, (c) => c.json({ user: c.get('user') }));
+auth.get('/me', requireAuth, async (c) => {
+  const u = c.get('user');
+  const sql = db(c);
+
+  if (u.role === 'client') {
+    const [client] = await sql`
+      select c.id, c.name, c.email, c.phone, c.avatar_url, c.pt_id, p.name as pt_name
+      from clients c
+      left join users p on p.id = c.pt_id
+      where c.id = ${u.clientId || u.id}
+    `;
+    if (!client) return c.json({ user: u });
+    return c.json({
+      user: {
+        ...u,
+        name: client.name,
+        email: client.email,
+        phone: client.phone,
+        avatar_url: client.avatar_url ?? null,
+        pt_id: client.pt_id,
+        pt_name: client.pt_name,
+      },
+    });
+  }
+
+  const [user] = await sql`
+    select u.id, u.email, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url,
+           u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier
+    from users u
+    left join studios s on s.id = u.studio_id
+    where u.id = ${u.id}
+  `;
+  if (!user) return c.json({ user: u });
+  return c.json({ user });
+});
 
 // GET /api/auth/profile — Mengambil profil lengkap pengguna (Semua role: Admin, Manager, PT, Client)
 auth.get('/profile', requireAuth, async (c) => {
@@ -136,6 +170,7 @@ auth.get('/profile', requireAuth, async (c) => {
         email: client.email,
         phone: client.phone,
         role: 'client' as const,
+        avatar_url: client.avatar_url ?? null,
         gender: client.gender,
         age_bracket: client.age_bracket,
         problem: client.problem,
@@ -148,7 +183,7 @@ auth.get('/profile', requireAuth, async (c) => {
   }
 
   const [row] = await sql`
-    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url,
            u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier, sp.spec
     from users u
     left join studios s on s.id = u.studio_id
@@ -164,6 +199,7 @@ const updateProfileSchema = z.object({
   email: z.string().email().optional(),
   password: z.string().min(6).max(100).optional(),
   phone: z.string().max(30).optional().nullable(),
+  avatar_url: z.string().max(2000000).optional().nullable(),
   spec: z.string().max(100).optional().nullable(),
   gender: z.enum(['pria', 'wanita']).optional().nullable(),
   age_bracket: z.string().max(20).optional().nullable(),
@@ -190,6 +226,7 @@ auth.patch('/profile', requireAuth, async (c) => {
         name = coalesce(${d.name ?? null}, name),
         email = ${cleanEmail !== undefined ? cleanEmail : sql`email`},
         phone = ${cleanPhone !== undefined ? cleanPhone : sql`phone`},
+        avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`},
         gender = coalesce(${d.gender ?? null}, gender),
         age_bracket = coalesce(${d.age_bracket ?? null}, age_bracket),
         problem = coalesce(${d.problem ?? null}, problem),
@@ -222,6 +259,7 @@ auth.patch('/profile', requireAuth, async (c) => {
     return c.json({
       user: {
         ...payload.sub,
+        avatar_url: updatedClient.avatar_url ?? null,
         gender: updatedClient.gender,
         age_bracket: updatedClient.age_bracket,
         problem: updatedClient.problem,
@@ -245,9 +283,10 @@ auth.patch('/profile', requireAuth, async (c) => {
     update users set
       name = coalesce(${d.name ?? null}, name),
       email = coalesce(${cleanEmail ?? null}, email),
-      password_hash = coalesce(${newHash ?? null}, password_hash)
+      password_hash = coalesce(${newHash ?? null}, password_hash),
+      avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`}
     where id = ${u.id}
-    returning id, email, name, role, plan_tier, expires_at, is_active
+    returning id, email, name, role, plan_tier, expires_at, is_active, avatar_url
   `;
 
   if (!updatedUser) return c.json({ error: 'user_not_found' }, 404);
@@ -270,6 +309,9 @@ auth.patch('/profile', requireAuth, async (c) => {
       name: updatedUser.name,
       plan_tier: updatedUser.plan_tier,
       expires_at: updatedUser.expires_at,
+      studio_id: u.studio_id ?? null,
+      studio_name: u.studio_name ?? null,
+      studio_slug: u.studio_slug ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -282,6 +324,7 @@ auth.patch('/profile', requireAuth, async (c) => {
   return c.json({
     user: {
       ...payload.sub,
+      avatar_url: updatedUser.avatar_url ?? null,
       spec: sp?.spec ?? null,
     },
     message: 'Profil akun berhasil diperbarui',
@@ -299,7 +342,7 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
   const [updated] = await sql`
     update users set role = ${targetRole}
     where id = ${u.id}
-    returning id, email, name, role, plan_tier, expires_at
+    returning id, email, name, role, plan_tier, expires_at, avatar_url
   `;
 
   if (!updated) return c.json({ error: 'user_not_found' }, 404);
@@ -324,7 +367,10 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
     `tl_session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${7 * 86400}`,
   );
 
-  return c.json({ user: payload.sub, message: `Role berhasil diubah menjadi ${targetRole}` });
+  return c.json({
+    user: { ...payload.sub, avatar_url: updated.avatar_url ?? null },
+    message: `Role berhasil diubah menjadi ${targetRole}`,
+  });
 });
 
 export default auth;

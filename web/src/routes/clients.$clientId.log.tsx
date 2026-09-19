@@ -35,6 +35,7 @@ export type Client = {
   age_bracket?: string | null
   gender?: 'pria' | 'wanita' | null
   problem?: 'none' | 'knee' | 'back' | 'shoulder' | string | null
+  pt_id?: string | null
 }
 
 export type Ex = { name: string; detail?: string }
@@ -132,10 +133,13 @@ const RPE_INFO: Record<number, { title: string; desc: string; color: string; bad
 }
 
 export const Route = createFileRoute('/clients/$clientId/log')({
-  beforeLoad: async () => {
+  beforeLoad: async ({ params }) => {
     try {
       const res = await api<{ user: User }>('/auth/me')
       if (res.user.role === 'client') throw redirect({ to: '/portal' })
+      if (res.user.role !== 'pt') {
+        throw redirect({ to: '/clients/$clientId', params: { clientId: params.clientId } })
+      }
     } catch (e) {
       if (e && typeof e === 'object' && 'to' in e) throw e
       throw redirect({ to: '/login' })
@@ -149,6 +153,11 @@ export const Route = createFileRoute('/clients/$clientId/log')({
       api<{ categories: DBCategory[] }>('/exercises/categories').catch(() => ({ categories: [] })),
       api<{ exercises: DBExercise[] }>('/exercises').catch(() => ({ exercises: [] })),
     ])
+
+    // PT can only log sessions for their assigned clients
+    if (meRes.user?.role !== 'pt' || (clientRes.client.pt_id && meRes.user && clientRes.client.pt_id !== meRes.user.id)) {
+      throw redirect({ to: '/clients/$clientId', params: { clientId: params.clientId } })
+    }
 
     return {
       user: meRes.user,
@@ -298,6 +307,11 @@ function LogSession() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErrorMsg('')
+
+    if (user?.role !== 'pt') {
+      setErrorMsg('Akses ditolak: Pencatatan sesi latihan hanya eksklusif untuk Personal Trainer (PT).')
+      return
+    }
 
     if (!date) {
       setErrorMsg('Tanggal latihan harus diisi.')

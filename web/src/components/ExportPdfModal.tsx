@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
 import { formatDateWithDay, formatDate, getLocalTodayString, getLocalFutureDateString } from '../lib/date'
 import { Printer, X, Users, FileText, CheckCircle2 } from 'lucide-react'
+import { usePlatformSettings } from '../lib/platformSettings'
 
 export type ExportSessionItem = {
   id: string
@@ -50,6 +51,7 @@ export function ExportPdfModal({
   const [loading, setLoading] = useState(false)
   const [filteredSessions, setFilteredSessions] = useState<ExportSessionItem[]>([])
   const [clients, setClients] = useState<ClientOption[]>(clientsList)
+  const platformSettings = usePlatformSettings()
 
   // Load clients if not passed
   useEffect(() => {
@@ -200,7 +202,7 @@ export function ExportPdfModal({
     <body>
       <div class="header">
         <div>
-          <div class="brand">Train<span>Log</span> PRO</div>
+          <div class="brand">${esc(platformSettings.app_name || 'TrainLog')} PRO</div>
           <div class="doc-title">Laporan Rekapitulasi Sesi Latihan</div>
         </div>
         <div style="text-align: right; font-size: 11px; color: #475569;">
@@ -236,7 +238,7 @@ export function ExportPdfModal({
 
       <div class="footer">
         <div>
-          <span>Dokumen resmi hasil cetak otomatis dari TrainLog Personal Trainer &amp; Studio Manager.</span>
+          <span>Dokumen resmi hasil cetak otomatis dari ${esc(platformSettings.app_name || 'TrainLog')} ${esc(platformSettings.app_tagline || 'Pro PT Manager')}.</span>
         </div>
         <div class="signature-box">
           <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Pelatih Penanggung Jawab</div>

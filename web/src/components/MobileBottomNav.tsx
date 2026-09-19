@@ -4,8 +4,11 @@ import { useTheme } from './ThemeToggle'
 
 export function MobileBottomNav({
   clientId,
+  canLogSession,
+  onScheduleClick,
 }: {
   clientId?: string
+  canLogSession?: boolean
   onScheduleClick?: () => void
 }) {
   const location = useLocation()
@@ -16,6 +19,7 @@ export function MobileBottomNav({
   const isClients = pathname === '/clients' || pathname === '/clients/'
   const isSchedule = pathname === '/schedule'
   const isClientDetail = pathname.startsWith('/clients/') && !pathname.endsWith('/log') && !pathname.endsWith('/new')
+  const showCatatSesi = isClientDetail && Boolean(clientId) && Boolean(canLogSession)
 
   return (
     <nav
@@ -57,10 +61,10 @@ export function MobileBottomNav({
 
         {/* Tab 3: Prominent Elevated Gold FAB Button (+) */}
         <div className="flex flex-col items-center -mt-6">
-          {isClientDetail && clientId ? (
+          {showCatatSesi ? (
             <Link
               to="/clients/$clientId/log"
-              params={{ clientId }}
+              params={{ clientId: clientId! }}
               className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
               title="Catat Sesi Latihan"
             >
@@ -76,25 +80,36 @@ export function MobileBottomNav({
             </Link>
           )}
           <span className="text-[9px] font-mono font-bold text-accent mt-1 tracking-tight">
-            {isClientDetail ? 'Catat Sesi' : 'Klien Baru'}
+            {showCatatSesi ? 'Catat Sesi' : 'Klien Baru'}
           </span>
         </div>
 
         {/* Tab 4: Jadwal */}
-        <Link
-          to="/schedule"
-          className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
-            isSchedule
-              ? 'text-accent font-bold scale-105'
-              : 'text-dim hover:text-text'
-          }`}
-        >
-          <Calendar className="w-5 h-5 mb-1" />
-          <span className="text-[10px] tracking-tight leading-none">Jadwal</span>
-          {isSchedule && (
-            <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />
-          )}
-        </Link>
+        {onScheduleClick ? (
+          <button
+            type="button"
+            onClick={onScheduleClick}
+            className="flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] text-dim hover:text-text"
+          >
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="text-[10px] tracking-tight leading-none">Jadwal</span>
+          </button>
+        ) : (
+          <Link
+            to="/schedule"
+            className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
+              isSchedule
+                ? 'text-accent font-bold scale-105'
+                : 'text-dim hover:text-text'
+            }`}
+          >
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="text-[10px] tracking-tight leading-none">Jadwal</span>
+            {isSchedule && (
+              <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />
+            )}
+          </Link>
+        )}
 
         {/* Tab 5: Dark/Light Mode Toggle */}
         <button

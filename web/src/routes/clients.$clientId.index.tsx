@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { api, type User } from '../lib/api'
 import { Sparkline, type Point } from '../components/Sparkline'
 import { MobileBottomNav } from '../components/MobileBottomNav'
 import { ExportPdfModal } from '../components/ExportPdfModal'
 import { AppLayout } from '../components/AppLayout'
+import { UserAvatar } from '../components/UserAvatar'
+import { usePlatformSettings } from '../lib/platformSettings'
 import {
   formatDate,
   formatShortDate,
@@ -95,6 +97,7 @@ export type Client = {
   last_session_date?: string | null
   phone?: string | null
   email?: string | null
+  avatar_url?: string | null
   notes?: string | null
   age_bracket?: string | null
   gender?: 'pria' | 'wanita' | null
@@ -104,6 +107,7 @@ export type Client = {
   pt_id?: string | null
   pt_name?: string | null
   pt_email?: string | null
+  pt_avatar_url?: string | null
 }
 
 export type Session = {
@@ -141,6 +145,7 @@ function ClientDetail() {
   const [meUser, setMeUser] = useState<User | undefined>(currentUser)
   const [client, setClient] = useState<Client>(initialClient)
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos)
+  const platformSettings = usePlatformSettings()
   const [scheduleList, setScheduleList] = useState<ClientSchedule[]>(initialSchedule)
   const [activeTab, setActiveTab] = useState<'sessions' | 'charts' | 'schedule' | 'photos' | 'info'>('sessions')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'rpe_high' | 'rpe_low'>('newest')
@@ -162,7 +167,50 @@ function ClientDetail() {
   const [editPhone, setEditPhone] = useState(client.phone ?? '')
   const [editProblem, setEditProblem] = useState(client.problem ?? 'none')
   const [editNotes, setEditNotes] = useState(client.notes ?? '')
+  const [editAvatarUrl, setEditAvatarUrl] = useState(client.avatar_url ?? '')
   const [editSubmitting, setEditSubmitting] = useState(false)
+  const fileInputEditRef = useRef<HTMLInputElement>(null)
+
+  function handleAvatarFileChange(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Hanya file gambar yang diperbolehkan.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_SIZE = 360
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width)
+            width = MAX_SIZE
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height)
+            height = MAX_SIZE
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+          setEditAvatarUrl(compressedDataUrl)
+        }
+      }
+      img.src = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
 
   // New Schedule form state
   const [schedDate, setSchedDate] = useState(getLocalTodayString())
@@ -209,6 +257,7 @@ function ClientDetail() {
         phone: editPhone.trim() || null,
         problem: editProblem,
         notes: editNotes.trim() || null,
+        avatar_url: editAvatarUrl.trim() || null,
       }
       if (currentUser?.role === 'admin_studio' || currentUser?.role === 'manager' || currentUser?.role === 'platform_admin') {
         if (editPtId) payload.pt_id = editPtId
@@ -315,6 +364,9 @@ function ClientDetail() {
       return 0
     })
 
+  const isPT = meUser?.role === 'pt'
+  const canLogSession = isPT && (!client.pt_id || client.pt_id === meUser?.id)
+
   return (
     <AppLayout
       currentUser={meUser || ({} as User)}
@@ -354,6 +406,7 @@ function ClientDetail() {
                 setEditPhone(client.phone ?? '')
                 setEditProblem(client.problem ?? 'none')
                 setEditNotes(client.notes ?? '')
+                setEditAvatarUrl(client.avatar_url ?? '')
                 setIsEditModalOpen(true)
               }}
               className="bg-panel hover:bg-panel-elevated text-text border border-line hover:border-accent/40 text-xs px-3 sm:px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 btn-interactive"
@@ -362,13 +415,15 @@ function ClientDetail() {
               <span>Edit Profil</span>
             </button>
 
-            <a
-              href={`/clients/${client.id}/log`}
-              className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 sm:px-4 py-2 rounded-xl shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Catat Sesi</span>
-            </a>
+            {canLogSession && (
+              <a
+                href={`/clients/${client.id}/log`}
+                className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 sm:px-4 py-2 rounded-xl shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Catat Sesi</span>
+              </a>
+            )}
           </div>
         </div>
 
@@ -379,10 +434,15 @@ function ClientDetail() {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10 mb-6">
             <div className="flex items-start sm:items-center gap-4">
-              {/* Luxury Monogram Avatar */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-bg border-2 border-accent/60 flex items-center justify-center text-accent font-extrabold text-xl sm:text-2xl shadow-[0_0_20px_rgba(226,232,0,0.2)] hover:shadow-[0_0_30px_rgba(226,232,0,0.4)] hover:scale-105 transition-all duration-300 shrink-0 cursor-pointer">
-                {client.name.slice(0, 2).toUpperCase()}
-              </div>
+              {/* Luxury Avatar with Initials Fallback */}
+              <UserAvatar
+                name={client.name}
+                avatarUrl={client.avatar_url}
+                role="client"
+                size="2xl"
+                shape="rounded-2xl"
+                className="shadow-[0_0_20px_rgba(226,232,0,0.2)] hover:shadow-[0_0_30px_rgba(226,232,0,0.4)] hover:scale-105 transition-all duration-300 shrink-0"
+              />
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -398,9 +458,15 @@ function ClientDetail() {
                 {/* Subtitle meta tags */}
                 <div className="flex items-center gap-2 sm:gap-3 text-xs text-dim font-mono flex-wrap">
                   {client.pt_name && (
-                    <span className="text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/25 flex items-center gap-1 font-semibold">
-                      <UserCheck className="w-3 h-3" />
-                      Coach: {client.pt_name}
+                    <span className="text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/25 flex items-center gap-1.5 font-semibold">
+                      <UserAvatar
+                        name={client.pt_name}
+                        avatarUrl={client.pt_avatar_url}
+                        role="pt"
+                        size="xs"
+                        shape="rounded-full"
+                      />
+                      <span>Coach: {client.pt_name}</span>
                     </span>
                   )}
                   {client.gender && <span>{client.gender === 'pria' ? 'Pria' : 'Wanita'}</span>}
@@ -499,7 +565,7 @@ function ClientDetail() {
             {client.phone && (
               <a
                 href={`https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                  `Halo ${client.name}, sesi latihanmu di TrainLog tersisa ${remainingSessions} sesi lagi. Mau kita lanjutkan paket berikutnya untuk mencapai target kebugaranmu?`
+                  `Halo ${client.name}, sesi latihanmu di ${platformSettings.app_name || 'TrainLog'} tersisa ${remainingSessions} sesi lagi. Mau kita lanjutkan paket berikutnya untuk mencapai target kebugaranmu?`
                 )}`}
                 target="_blank"
                 rel="noreferrer"
@@ -617,12 +683,14 @@ function ClientDetail() {
                 <p className="text-dim text-sm mb-4">
                   {sessionSearch ? 'Tidak ada sesi yang cocok dengan kata kunci pencarian.' : 'Belum ada sesi latihan yang tercatat untuk klien ini.'}
                 </p>
-                <a
-                  href={`/clients/${client.id}/log`}
-                  className="inline-block bg-accent hover:bg-accent/90 text-[#141414] text-xs font-semibold px-4 py-2 rounded-xl"
-                >
-                  + Catat Sesi Latihan Pertama
-                </a>
+                {canLogSession && (
+                  <a
+                    href={`/clients/${client.id}/log`}
+                    className="inline-block bg-accent hover:bg-accent/90 text-[#141414] text-xs font-semibold px-4 py-2 rounded-xl"
+                  >
+                    + Catat Sesi Latihan Pertama
+                  </a>
+                )}
               </div>
             ) : (
               <div className="space-y-3.5">
@@ -1061,6 +1129,76 @@ function ClientDetail() {
                   </div>
                 )}
 
+                {/* Avatar / Profile Photo */}
+                <div className="p-3.5 rounded-xl bg-bg border border-line/70 space-y-3">
+                  <label className="text-dim font-semibold block font-mono uppercase text-[11px] flex items-center justify-between">
+                    <span>Foto Profil Klien (Avatar)</span>
+                    <span className="text-[10px] text-accent lowercase">
+                      {editAvatarUrl ? 'Foto Terpasang' : 'Fallback ke Inisial Nama'}
+                    </span>
+                  </label>
+
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative group shrink-0">
+                      <UserAvatar
+                        name={editName || client.name}
+                        avatarUrl={editAvatarUrl}
+                        role="client"
+                        size="lg"
+                        shape="rounded-xl"
+                      />
+                      {editAvatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditAvatarUrl('')}
+                          className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md"
+                          title="Hapus foto"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={fileInputEditRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/jpg"
+                          onChange={(e) => handleAvatarFileChange(e.target.files?.[0])}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputEditRef.current?.click()}
+                          className="btn-interactive px-3 py-1.5 rounded-lg bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Upload className="w-3.5 h-3.5 text-accent" />
+                          <span>Upload Foto</span>
+                        </button>
+
+                        {editAvatarUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setEditAvatarUrl('')}
+                            className="btn-interactive px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-medium"
+                          >
+                            Hapus Foto
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        type="url"
+                        value={editAvatarUrl.startsWith('data:') ? '' : editAvatarUrl}
+                        onChange={(e) => setEditAvatarUrl(e.target.value)}
+                        placeholder="Atau tempel link URL foto..."
+                        className="w-full bg-panel border border-line focus:border-accent rounded-lg px-3 py-1.5 text-text outline-none text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1">Nama Klien</label>
                   <input
@@ -1258,7 +1396,11 @@ function ClientDetail() {
       </div>
 
       {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav clientId={client.id} onScheduleClick={() => setActiveTab('schedule')} />
+      <MobileBottomNav
+        clientId={client.id}
+        canLogSession={canLogSession}
+        onScheduleClick={() => setActiveTab('schedule')}
+      />
 
       {/* ── Export PDF Modal ── */}
       <ExportPdfModal

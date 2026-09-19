@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { ArrowLeft, Dumbbell, UserCheck, Sparkles, Shield } from 'lucide-react'
 import { api, type User } from '../lib/api'
 import { ThemeToggle } from '../components/ThemeToggle'
+import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
@@ -27,8 +28,9 @@ function LoginPage() {
   const [phone, setPhone] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
+  const platformSettings = usePlatformSettings()
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErrorMsg('')
     setLoading(true)
@@ -37,26 +39,26 @@ function LoginPage() {
       if (roleMode === 'pt') {
         await api('/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ email: email.trim(), password }),
+          body: JSON.stringify({ email, password }),
         })
-        location.href = '/'
+        window.location.href = '/'
       } else {
         await api('/auth/client-login', {
           method: 'POST',
-          body: JSON.stringify({ email: email.trim(), phone: phone.trim() }),
+          body: JSON.stringify({ email: email || undefined, phone: phone || undefined }),
         })
-        location.href = '/portal'
+        window.location.href = '/portal'
       }
-    } catch (ex) {
-      if (ex instanceof Error && ex.message === 'invalid_credentials') {
-        setErrorMsg(
-          roleMode === 'pt'
-            ? 'Email atau password salah.'
-            : 'Email atau Nomor HP tidak cocok dengan data klien terdaftar.'
-        )
-      } else {
-        setErrorMsg('Login gagal, silakan periksa data dan coba lagi.')
-      }
+    } catch (err: any) {
+      setErrorMsg(
+        err.status === 401
+          ? 'Email atau password salah.'
+          : err.status === 404
+          ? 'Akun klien tidak ditemukan dengan data tersebut.'
+          : err.status === 403
+          ? 'Akun Anda sedang dinonaktifkan. Hubungi admin studio.'
+          : 'Terjadi kesalahan saat masuk. Coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -105,14 +107,16 @@ function LoginPage() {
         {/* Brand Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-bg border border-accent/40 flex items-center justify-center text-accent font-extrabold text-sm shadow-sm">
-            TL
+            {platformSettings.app_initials || 'TL'}
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-text leading-none">
-              Train<span className="text-accent">Log</span>
+              {formatBrandName(platformSettings.app_name)}
             </h1>
             <p className="text-[11px] text-dim font-mono mt-1">
-              {roleMode === 'pt' ? 'Portal Pelatih & Studio' : 'Portal Klien & Progres Latihan'}
+              {roleMode === 'pt'
+                ? `Portal Pelatih & Studio — ${platformSettings.app_tagline || 'Pro PT Manager'}`
+                : 'Portal Klien & Progres Latihan'}
             </p>
           </div>
         </div>
@@ -152,7 +156,7 @@ function LoginPage() {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-dim mb-1 block text-xs font-medium uppercase tracking-wider">
               {roleMode === 'pt' ? 'Email Akun Pelatih' : 'Email Klien'}

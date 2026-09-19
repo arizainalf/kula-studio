@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api, type User } from '../lib/api'
+import { UserAvatar, getInitials } from './UserAvatar'
 import {
   X,
   User as UserIcon,
@@ -11,6 +12,9 @@ import {
   Save,
   KeyRound,
   HeartPulse,
+  Camera,
+  Upload,
+  Trash2,
 } from 'lucide-react'
 
 interface EditProfileModalProps {
@@ -28,6 +32,7 @@ export function EditProfileModal({
 }: EditProfileModalProps) {
   const [name, setName] = useState(currentUser.name || '')
   const [email, setEmail] = useState(currentUser.email || '')
+  const [avatarUrl, setAvatarUrl] = useState(currentUser.avatar_url || '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState(currentUser.phone || '')
@@ -41,6 +46,7 @@ export function EditProfileModal({
   const [fetching, setFetching] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load fresh profile details when modal opens
   useEffect(() => {
@@ -59,6 +65,7 @@ export function EditProfileModal({
         const u = res.user
         setName(u.name || '')
         setEmail(u.email || '')
+        setAvatarUrl(u.avatar_url || '')
         setPhone(u.phone || '')
         setSpec(u.spec || '')
         setGender((u.gender as any) || '')
@@ -69,6 +76,7 @@ export function EditProfileModal({
         // Fallback to currentUser if fetch failed
         setName(currentUser.name || '')
         setEmail(currentUser.email || '')
+        setAvatarUrl(currentUser.avatar_url || '')
         setPhone(currentUser.phone || '')
         setSpec(currentUser.spec || '')
       } finally {
@@ -81,6 +89,44 @@ export function EditProfileModal({
       isMounted = false
     }
   }, [isOpen, currentUser])
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('File harus berupa gambar (JPG/PNG/WEBP).')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_SIZE = 160
+        let w = img.width
+        let h = img.height
+        if (w > h) {
+          if (w > MAX_SIZE) {
+            h = Math.round((h * MAX_SIZE) / w)
+            w = MAX_SIZE
+          }
+        } else {
+          if (h > MAX_SIZE) {
+            w = Math.round((w * MAX_SIZE) / h)
+            h = MAX_SIZE
+          }
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, w, h)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75)
+        setAvatarUrl(compressedDataUrl)
+      }
+      img.src = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
 
   if (!isOpen) return null
 
@@ -108,6 +154,7 @@ export function EditProfileModal({
       const payload: Record<string, any> = {
         name: name.trim(),
         email: email.trim().toLowerCase(),
+        avatar_url: avatarUrl.trim() || null,
       }
 
       if (password) payload.password = password
@@ -196,6 +243,110 @@ export function EditProfileModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Field: Foto Profil & Avatar */}
+            <div className="p-4 rounded-xl bg-bg border border-line/70 space-y-3">
+              <label className="text-dim block font-mono uppercase text-[11px] font-semibold flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-accent">
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Foto Profil Akun</span>
+                </span>
+                <span className="text-[10px] text-dim font-normal">
+                  Fallback: inisial nama ({getInitials(name)})
+                </span>
+              </label>
+
+              <div className="flex items-center gap-4">
+                {/* Live Preview using UserAvatar */}
+                <div className="relative group">
+                  <UserAvatar
+                    name={name || 'User'}
+                    avatarUrl={avatarUrl}
+                    role={currentUser.role}
+                    size="xl"
+                    showRoleBadge
+                  />
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUrl('')}
+                      className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md transition-transform hover:scale-110"
+                      title="Hapus foto dan gunakan singkatan nama"
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-2 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/jpg"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn-interactive px-3 py-1.5 rounded-lg bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-accent" />
+                      <span>Upload Foto</span>
+                    </button>
+
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAvatarUrl('')}
+                        className="btn-interactive px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-medium transition-all"
+                      >
+                        Hapus Foto
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Direct Image URL input */}
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder={avatarUrl.startsWith('data:') ? 'Foto diupload dari perangkat' : 'Atau tempel tautan URL foto (https://...)'}
+                      className="w-full bg-panel border border-line focus:border-accent rounded-lg px-2.5 py-1.5 text-[11px] text-text placeholder:text-muted outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Preset Avatars */}
+              <div className="pt-2 border-t border-line/40">
+                <div className="text-[10px] text-dim font-mono mb-1.5">Pilih avatar preset cepat:</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80',
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80',
+                    'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=256&h=256&q=80',
+                    'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=256&h=256&q=80',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&h=256&q=80',
+                  ].map((preset, pIdx) => (
+                    <button
+                      key={pIdx}
+                      type="button"
+                      onClick={() => setAvatarUrl(preset)}
+                      className={`w-7 h-7 rounded-lg overflow-hidden border transition-all ${
+                        avatarUrl === preset
+                          ? 'border-accent ring-2 ring-accent/30 scale-110'
+                          : 'border-line hover:border-accent/40 opacity-70 hover:opacity-100'
+                      }`}
+                      title={`Pilih Avatar #${pIdx + 1}`}
+                    >
+                      <img src={preset} alt={`Preset ${pIdx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             {/* Field: Nama Lengkap */}
             <div>
               <label className="text-dim block font-mono uppercase mb-1 font-semibold flex items-center gap-1.5">

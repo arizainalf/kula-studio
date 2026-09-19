@@ -78,6 +78,7 @@ function SchedulePage() {
             <WeeklyScheduleSection
               schedule={schedule}
               clients={clients}
+              currentUser={currentUser}
               onScheduleChange={() => {
                 location.reload()
               }}
@@ -87,7 +88,7 @@ function SchedulePage() {
       </main>
 
       {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav />
+      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </AppLayout>
   )
 }

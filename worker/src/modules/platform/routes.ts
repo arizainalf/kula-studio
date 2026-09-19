@@ -7,8 +7,111 @@ import type { Env } from '../../env';
 
 export const platform = new Hono<{ Bindings: Env }>();
 
-// Semua route di platform khusus role platform_admin
-platform.use('*', requireAuth, requireRole('platform_admin'));
+// 0. GET /platform/settings — Publik untuk Landing Page & Identitas Aplikasi
+platform.get('/settings', async (c) => {
+  const sql = db(c);
+  const [row] = await sql`select * from platform_settings where id = 'default'`;
+  if (!row) {
+    return c.json({ error: 'settings_not_found' }, 404);
+  }
+  return c.json({ settings: row });
+});
+
+// Route platform_admin
+platform.use('/overview', requireAuth, requireRole('platform_admin'));
+platform.use('/studios', requireAuth, requireRole('platform_admin'));
+platform.use('/studios/*', requireAuth, requireRole('platform_admin'));
+
+// Schema validasi update settings
+const updateSettingsSchema = z.object({
+  app_name: z.string().min(1).max(100).optional(),
+  app_tagline: z.string().max(150).optional(),
+  app_initials: z.string().max(10).optional(),
+  hero_pill: z.string().max(200).optional(),
+  hero_headline: z.string().max(300).optional(),
+  hero_gradient: z.string().max(300).optional(),
+  hero_subheadline: z.string().max(1000).optional(),
+  features: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    icon: z.string().optional(),
+  })).optional(),
+  how_it_works: z.array(z.object({
+    id: z.string(),
+    step: z.string(),
+    title: z.string(),
+    description: z.string(),
+  })).optional(),
+  pricing_plans: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    badge: z.string().optional().nullable(),
+    price: z.string(),
+    period: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    features: z.array(z.string()),
+    button_text: z.string().optional().nullable(),
+    button_link: z.string().optional().nullable(),
+    is_popular: z.boolean().optional(),
+  })).optional(),
+  long_term_plans: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    price: z.string(),
+    description: z.string().optional().nullable(),
+    is_highlight: z.boolean().optional(),
+  })).optional(),
+  contact_whatsapp: z.string().max(50).optional(),
+  contact_email: z.string().max(100).optional(),
+  cta_headline: z.string().max(300).optional(),
+  cta_subheadline: z.string().max(1000).optional(),
+  footer_copyright: z.string().max(300).optional(),
+});
+
+// PATCH /platform/settings — Khusus platform_admin
+platform.patch('/settings', requireAuth, requireRole('platform_admin'), async (c) => {
+  const parsed = updateSettingsSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
+  }
+
+  const sql = db(c);
+  const d = parsed.data;
+
+  const [updated] = await sql`
+    update platform_settings set
+      app_name = coalesce(${d.app_name ?? null}, app_name),
+      app_tagline = coalesce(${d.app_tagline ?? null}, app_tagline),
+      app_initials = coalesce(${d.app_initials ?? null}, app_initials),
+      hero_pill = coalesce(${d.hero_pill ?? null}, hero_pill),
+      hero_headline = coalesce(${d.hero_headline ?? null}, hero_headline),
+      hero_gradient = coalesce(${d.hero_gradient ?? null}, hero_gradient),
+      hero_subheadline = coalesce(${d.hero_subheadline ?? null}, hero_subheadline),
+      features = ${d.features !== undefined ? sql`${JSON.stringify(d.features)}::jsonb` : sql`features`},
+      how_it_works = ${d.how_it_works !== undefined ? sql`${JSON.stringify(d.how_it_works)}::jsonb` : sql`how_it_works`},
+      pricing_plans = ${d.pricing_plans !== undefined ? sql`${JSON.stringify(d.pricing_plans)}::jsonb` : sql`pricing_plans`},
+      long_term_plans = ${d.long_term_plans !== undefined ? sql`${JSON.stringify(d.long_term_plans)}::jsonb` : sql`long_term_plans`},
+      contact_whatsapp = coalesce(${d.contact_whatsapp ?? null}, contact_whatsapp),
+      contact_email = coalesce(${d.contact_email ?? null}, contact_email),
+      cta_headline = coalesce(${d.cta_headline ?? null}, cta_headline),
+      cta_subheadline = coalesce(${d.cta_subheadline ?? null}, cta_subheadline),
+      footer_copyright = coalesce(${d.footer_copyright ?? null}, footer_copyright),
+      updated_at = now()
+    where id = 'default'
+    returning *
+  `;
+
+  if (!updated) {
+    return c.json({ error: 'settings_not_found' }, 404);
+  }
+
+  return c.json({
+    settings: updated,
+    message: 'Pengaturan identitas platform berhasil disimpan.',
+  });
+});
+
 
 // 1. GET /platform/overview — Metrik keseluruhan SaaS Platform
 platform.get('/overview', async (c) => {

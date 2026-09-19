@@ -245,7 +245,7 @@ function NewClient() {
       </main>
 
       {/* ── Mobile Bottom Navigation Bar ── */}
-      <MobileBottomNav />
+      <MobileBottomNav canLogSession={currentUser.role === 'pt'} />
     </AppLayout>
   )
 }

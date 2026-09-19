@@ -15,6 +15,7 @@ const inviteSchema = z.object({
   password: z.string().min(6).max(100),
   role: z.enum(['admin_studio', 'manager', 'pt']).default('pt'),
   spec: z.string().max(100).optional(),
+  avatar_url: z.string().max(2000000).optional().nullable(),
   plan_tier: z.enum(['standard', 'pro']).default('standard'),
   expires_at: z.string().date().nullable().default(null),
   studio_id: z.string().uuid().optional().nullable(),
@@ -41,10 +42,10 @@ staff.post('/invite', requireRole('manager', 'admin_studio', 'platform_admin'), 
   if (exists.length) return c.json({ error: 'email_taken' }, 409);
 
   const [newUser] = await sql`
-    insert into users (email, password_hash, name, role, is_active, plan_tier, expires_at, studio_id)
+    insert into users (email, password_hash, name, role, is_active, plan_tier, expires_at, studio_id, avatar_url)
     values (${parsed.data.email}, ${hashPassword(parsed.data.password)}, ${parsed.data.name},
-            ${assignedRole}, true, ${parsed.data.plan_tier}, ${parsed.data.expires_at}, ${assignedStudioId ?? null})
-    returning id, email, name, role, plan_tier, expires_at, is_active, studio_id, created_at`;
+            ${assignedRole}, true, ${parsed.data.plan_tier}, ${parsed.data.expires_at}, ${assignedStudioId ?? null}, ${parsed.data.avatar_url ?? null})
+    returning id, email, name, role, plan_tier, expires_at, is_active, studio_id, avatar_url, created_at`;
 
   if (assignedRole === 'pt') {
     await sql`
@@ -64,7 +65,7 @@ staff.get('/', requireRole('manager', 'admin_studio', 'platform_admin'), async (
 
   if (u.role === 'platform_admin') {
     const rows = await sql`
-      select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+      select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url,
              u.studio_id, s.name as studio_name,
              sp.manager_id, sp.spec,
              coalesce(count(distinct cl.id), 0)::int as client_count
@@ -83,7 +84,7 @@ staff.get('/', requireRole('manager', 'admin_studio', 'platform_admin'), async (
   if (u.role === 'admin_studio') {
     const rows = roleQuery === 'pt'
       ? await sql`
-          select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+          select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url,
                  u.studio_id,
                  sp.manager_id, sp.spec,
                  coalesce(count(distinct cl.id), 0)::int as client_count
@@ -94,7 +95,7 @@ staff.get('/', requireRole('manager', 'admin_studio', 'platform_admin'), async (
           group by u.id, sp.manager_id, sp.spec
           order by u.created_at desc`
       : await sql`
-          select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+          select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url,
                  u.studio_id,
                  sp.manager_id, sp.spec,
                  coalesce(count(distinct cl.id), 0)::int as client_count
@@ -109,7 +110,7 @@ staff.get('/', requireRole('manager', 'admin_studio', 'platform_admin'), async (
 
   // Role: manager
   const rows = await sql`
-    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at,
+    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url,
            u.studio_id,
            sp.manager_id, sp.spec,
            coalesce(count(distinct cl.id), 0)::int as client_count
@@ -129,6 +130,7 @@ const patchSchema = z.object({
   password: z.string().min(6).max(100).optional(),
   role: z.enum(['admin_studio', 'manager', 'pt']).optional(),
   spec: z.string().max(100).nullable().optional(),
+  avatar_url: z.string().max(2000000).nullable().optional(),
   plan_tier: z.enum(['standard', 'pro']).optional(),
   expires_at: z.string().date().nullable().optional(),
   is_active: z.boolean().optional(),
@@ -175,9 +177,10 @@ staff.patch('/:id', requireRole('manager', 'admin_studio', 'platform_admin'), as
       role = coalesce(${newRole ?? null}, role),
       plan_tier = coalesce(${d.plan_tier ?? null}, plan_tier),
       expires_at = coalesce(${d.expires_at ?? null}, expires_at),
-      is_active = coalesce(${d.is_active ?? null}, is_active)
+      is_active = coalesce(${d.is_active ?? null}, is_active),
+      avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`}
     where id = ${id}
-    returning id, email, name, role, plan_tier, expires_at, is_active, studio_id, created_at`;
+    returning id, email, name, role, plan_tier, expires_at, is_active, studio_id, avatar_url, created_at`;
 
   if (!row) return c.json({ error: 'not_found' }, 404);
 

@@ -14,6 +14,7 @@ const createClientSchema = z.object({
   pkg_total: z.number().int().min(0).max(1000).default(0),
   email: z.string().email().optional().nullable().or(z.literal('')),
   phone: z.string().max(30).optional().nullable(),
+  avatar_url: z.string().max(2000000).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   age_bracket: z.string().max(20).optional().nullable(),
   gender: z.enum(['pria', 'wanita']).optional().nullable(),
@@ -29,6 +30,7 @@ const updateClientSchema = z.object({
   pkg_total: z.number().int().min(0).max(1000).optional(),
   email: z.string().email().optional().nullable().or(z.literal('')),
   phone: z.string().max(30).optional().nullable(),
+  avatar_url: z.string().max(2000000).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   age_bracket: z.string().max(20).optional().nullable(),
   gender: z.enum(['pria', 'wanita']).optional().nullable(),
@@ -49,6 +51,7 @@ clients.get('/', async (c) => {
         select c.*,
                p.name as pt_name,
                p.email as pt_email,
+               p.avatar_url as pt_avatar_url,
                coalesce(count(s.id), 0)::int as pkg_used,
                coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
                max(s.date) as last_session_date
@@ -56,13 +59,14 @@ clients.get('/', async (c) => {
         join users p on p.id = c.pt_id
         left join sessions s on s.client_id = c.id
         where c.pt_id = ${u.id}
-        group by c.id, p.name, p.email
+        group by c.id, p.name, p.email, p.avatar_url
         order by c.created_at desc`
     : u.role === 'manager'
       ? await sql`
         select c.*,
                p.name as pt_name,
                p.email as pt_email,
+               p.avatar_url as pt_avatar_url,
                coalesce(count(s.id), 0)::int as pkg_used,
                coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
                max(s.date) as last_session_date
@@ -71,13 +75,14 @@ clients.get('/', async (c) => {
         left join staff_profile sp on sp.user_id = p.id
         left join sessions s on s.client_id = c.id
         where c.studio_id = ${u.studio_id ?? null} and (c.pt_id = ${u.id} or sp.manager_id = ${u.id})
-        group by c.id, p.name, p.email
+        group by c.id, p.name, p.email, p.avatar_url
         order by c.created_at desc`
     : u.role === 'admin_studio'
       ? await sql`
         select c.*,
                p.name as pt_name,
                p.email as pt_email,
+               p.avatar_url as pt_avatar_url,
                coalesce(count(s.id), 0)::int as pkg_used,
                coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
                max(s.date) as last_session_date
@@ -85,12 +90,13 @@ clients.get('/', async (c) => {
         join users p on p.id = c.pt_id
         left join sessions s on s.client_id = c.id
         where c.studio_id = ${u.studio_id ?? null}
-        group by c.id, p.name, p.email
+        group by c.id, p.name, p.email, p.avatar_url
         order by c.created_at desc`
       : await sql`
         select c.*,
                p.name as pt_name,
                p.email as pt_email,
+               p.avatar_url as pt_avatar_url,
                st.name as studio_name,
                coalesce(count(s.id), 0)::int as pkg_used,
                coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
@@ -100,7 +106,7 @@ clients.get('/', async (c) => {
         left join studios st on st.id = c.studio_id
         left join sessions s on s.client_id = c.id
         ${studioFilter ? sql`where c.studio_id = ${studioFilter}` : sql``}
-        group by c.id, p.name, p.email, st.name
+        group by c.id, p.name, p.email, p.avatar_url, st.name
         order by c.created_at desc`;
 
   return c.json({ clients: rows });
@@ -144,9 +150,9 @@ clients.post('/', async (c) => {
 
   const cleanEmail = parsed.data.email && parsed.data.email.trim() ? parsed.data.email.toLowerCase().trim() : null;
   const [row] = await sql`
-    insert into clients (pt_id, studio_id, name, goal, pkg_total, email, phone, notes, age_bracket, gender, pregnant, problem)
+    insert into clients (pt_id, studio_id, name, goal, pkg_total, email, phone, avatar_url, notes, age_bracket, gender, pregnant, problem)
     values (${assignedPtId}, ${targetStudioId}, ${parsed.data.name}, ${parsed.data.goal}, ${parsed.data.pkg_total},
-            ${cleanEmail}, ${parsed.data.phone ?? null}, ${parsed.data.notes ?? null}, ${parsed.data.age_bracket ?? null},
+            ${cleanEmail}, ${parsed.data.phone ?? null}, ${parsed.data.avatar_url ?? null}, ${parsed.data.notes ?? null}, ${parsed.data.age_bracket ?? null},
             ${parsed.data.gender ?? null}, ${parsed.data.pregnant}, ${parsed.data.problem})
     returning *`;
   return c.json({ client: row }, 201);
@@ -178,6 +184,7 @@ clients.get('/:id', async (c) => {
     select c.*,
            p.name as pt_name,
            p.email as pt_email,
+           p.avatar_url as pt_avatar_url,
            coalesce(count(s.id), 0)::int as pkg_used,
            coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
            max(s.date) as last_session_date
@@ -185,7 +192,7 @@ clients.get('/:id', async (c) => {
         join users p on p.id = c.pt_id
         left join sessions s on s.client_id = c.id
         where c.id = ${id}
-        group by c.id, p.name, p.email`;
+        group by c.id, p.name, p.email, p.avatar_url`;
   return row ? c.json({ client: row }) : c.json({ error: 'not_found' }, 404);
 });
 
@@ -214,6 +221,7 @@ clients.patch('/:id', async (c) => {
       pkg_total = coalesce(${d.pkg_total ?? null}, pkg_total),
       email = ${cleanEmail !== undefined ? cleanEmail : sql`email`},
       phone = coalesce(${d.phone ?? null}, phone),
+      avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`},
       notes = coalesce(${d.notes ?? null}, notes),
       age_bracket = coalesce(${d.age_bracket ?? null}, age_bracket),
       gender = coalesce(${d.gender ?? null}, gender),

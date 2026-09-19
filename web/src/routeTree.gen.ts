@@ -10,10 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ExercisesRouteImport } from './routes/exercises'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StudiosRouteImport } from './routes/studios'
+import { Route as UsersRouteImport } from './routes/users'
 import { Route as ClientsIndexRouteImport } from './routes/clients.index'
 import { Route as ClientsClientIdRouteImport } from './routes/clients.$clientId'
 import { Route as ClientsNewRouteImport } from './routes/clients.new'
@@ -23,6 +27,11 @@ import { Route as ClientsClientIdLogRouteImport } from './routes/clients.$client
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExercisesRoute = ExercisesRouteImport.update({
+  id: '/exercises',
+  path: '/exercises',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingRoute = LandingRouteImport.update({
@@ -43,6 +52,21 @@ const PortalRoute = PortalRouteImport.update({
 const ScheduleRoute = ScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudiosRoute = StudiosRouteImport.update({
+  id: '/studios',
+  path: '/studios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsIndexRoute = ClientsIndexRouteImport.update({
@@ -73,10 +97,14 @@ const ClientsClientIdLogRoute = ClientsClientIdLogRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/exercises': typeof ExercisesRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
   '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
+  '/studios': typeof StudiosRoute
+  '/users': typeof UsersRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
   '/clients/': typeof ClientsIndexRoute
@@ -85,10 +113,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/exercises': typeof ExercisesRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
   '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
+  '/studios': typeof StudiosRoute
+  '/users': typeof UsersRoute
   '/clients/new': typeof ClientsNewRoute
   '/clients': typeof ClientsIndexRoute
   '/clients/$clientId/log': typeof ClientsClientIdLogRoute
@@ -97,10 +129,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/exercises': typeof ExercisesRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
   '/schedule': typeof ScheduleRoute
+  '/settings': typeof SettingsRoute
+  '/studios': typeof StudiosRoute
+  '/users': typeof UsersRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
   '/clients/': typeof ClientsIndexRoute
@@ -111,10 +147,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/exercises'
     | '/landing'
     | '/login'
     | '/portal'
     | '/schedule'
+    | '/settings'
+    | '/studios'
+    | '/users'
     | '/clients/$clientId'
     | '/clients/new'
     | '/clients/'
@@ -123,10 +163,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/exercises'
     | '/landing'
     | '/login'
     | '/portal'
     | '/schedule'
+    | '/settings'
+    | '/studios'
+    | '/users'
     | '/clients/new'
     | '/clients'
     | '/clients/$clientId/log'
@@ -134,10 +178,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/exercises'
     | '/landing'
     | '/login'
     | '/portal'
     | '/schedule'
+    | '/settings'
+    | '/studios'
+    | '/users'
     | '/clients/$clientId'
     | '/clients/new'
     | '/clients/'
@@ -147,10 +195,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ExercisesRoute: typeof ExercisesRoute
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   PortalRoute: typeof PortalRoute
   ScheduleRoute: typeof ScheduleRoute
+  SettingsRoute: typeof SettingsRoute
+  StudiosRoute: typeof StudiosRoute
+  UsersRoute: typeof UsersRoute
   ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   ClientsNewRoute: typeof ClientsNewRoute
   ClientsIndexRoute: typeof ClientsIndexRoute
@@ -163,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exercises': {
+      id: '/exercises'
+      path: '/exercises'
+      fullPath: '/exercises'
+      preLoaderRoute: typeof ExercisesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing': {
@@ -191,6 +250,27 @@ declare module '@tanstack/react-router' {
       path: '/schedule'
       fullPath: '/schedule'
       preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studios': {
+      id: '/studios'
+      path: '/studios'
+      fullPath: '/studios'
+      preLoaderRoute: typeof StudiosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clients/': {
@@ -247,10 +327,14 @@ const ClientsClientIdRouteWithChildren = ClientsClientIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ExercisesRoute: ExercisesRoute,
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   PortalRoute: PortalRoute,
   ScheduleRoute: ScheduleRoute,
+  SettingsRoute: SettingsRoute,
+  StudiosRoute: StudiosRoute,
+  UsersRoute: UsersRoute,
   ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   ClientsNewRoute: ClientsNewRoute,
   ClientsIndexRoute: ClientsIndexRoute,

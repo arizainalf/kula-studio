@@ -7,6 +7,7 @@ export type ClientSummary = {
   avg_rpe?: number
   last_session_date?: string | null
   phone?: string | null
+  avatar_url?: string | null
   email?: string | null
   pt_id?: string | null
   pt_name?: string | null

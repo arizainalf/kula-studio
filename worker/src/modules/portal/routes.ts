@@ -23,6 +23,7 @@ portal.get('/leaderboard', async (c) => {
     select 
       c.id,
       c.name,
+      c.avatar_url,
       c.goal,
       count(s.id)::int as total_sessions,
       coalesce(round(avg(s.rpe), 1), 0)::numeric as avg_rpe,
@@ -49,6 +50,7 @@ portal.get('/leaderboard', async (c) => {
       rank: idx + 1,
       id: r.id,
       name: r.name,
+      avatar_url: r.avatar_url,
       is_me: isMe,
       goal: r.goal,
       total_sessions: r.total_sessions,
@@ -82,7 +84,7 @@ portal.get('/dashboard', async (c) => {
 
   // 1. Data profil klien & PT
   const [clientRow] = await sql`
-    select c.*, p.name as pt_name, p.email as pt_email
+    select c.*, p.name as pt_name, p.email as pt_email, p.avatar_url as pt_avatar_url
     from clients c
     join users p on p.id = c.pt_id
     where c.id = ${clientId}

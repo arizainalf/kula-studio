@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api, type User } from '../lib/api'
+import { UserAvatar, getInitials } from './UserAvatar'
 import {
   X,
   Users,
@@ -12,6 +13,8 @@ import {
   KeyRound,
   Save,
   RefreshCw,
+  Camera,
+  Upload,
 } from 'lucide-react'
 
 interface AdminUsersModalProps {
@@ -39,7 +42,9 @@ export function AdminUsersModal({
   const [editPlanTier, setEditPlanTier] = useState<'standard' | 'pro'>('standard')
   const [editIsActive, setEditIsActive] = useState(true)
   const [editPassword, setEditPassword] = useState('')
+  const [editAvatarUrl, setEditAvatarUrl] = useState('')
   const [editSubmitting, setEditSubmitting] = useState(false)
+  const fileInputEditRef = useRef<HTMLInputElement>(null)
 
   // Add User State
   const [isAddingUser, setIsAddingUser] = useState(false)
@@ -49,12 +54,51 @@ export function AdminUsersModal({
   const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
   const [addSpec, setAddSpec] = useState('')
   const [addPlanTier, setAddPlanTier] = useState<'standard' | 'pro'>('standard')
+  const [addAvatarUrl, setAddAvatarUrl] = useState('')
   const [addSubmitting, setAddSubmitting] = useState(false)
+  const fileInputAddRef = useRef<HTMLInputElement>(null)
 
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
   const isAdmin = currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
+
+  function handleFileChange(file: File | undefined, setter: (url: string) => void) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('File harus berupa gambar (JPG/PNG/WEBP).')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_SIZE = 360
+        let w = img.width
+        let h = img.height
+        if (w > h) {
+          if (w > MAX_SIZE) {
+            h = Math.round((h * MAX_SIZE) / w)
+            w = MAX_SIZE
+          }
+        } else {
+          if (h > MAX_SIZE) {
+            w = Math.round((w * MAX_SIZE) / h)
+            h = MAX_SIZE
+          }
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, w, h)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+        setter(compressedDataUrl)
+      }
+      img.src = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
 
   async function loadUsers() {
     setLoading(true)
@@ -88,6 +132,7 @@ export function AdminUsersModal({
     setEditPlanTier((u.plan_tier as any) || 'standard')
     setEditIsActive(u.is_active ?? true)
     setEditPassword('')
+    setEditAvatarUrl(u.avatar_url || '')
     setErrorMsg('')
     setSuccessMsg('')
   }
@@ -106,6 +151,7 @@ export function AdminUsersModal({
         spec: editSpec.trim() || null,
         plan_tier: editPlanTier,
         is_active: editIsActive,
+        avatar_url: editAvatarUrl.trim() || null,
       }
 
       if (isAdmin) {
@@ -155,6 +201,7 @@ export function AdminUsersModal({
         role: isAdmin ? addRole : 'pt',
         spec: addSpec.trim() || undefined,
         plan_tier: addPlanTier,
+        avatar_url: addAvatarUrl.trim() || null,
       }
 
       const res = await api<{ pt: User }>('/staff/invite', {
@@ -169,6 +216,7 @@ export function AdminUsersModal({
       setAddEmail('')
       setAddPassword('')
       setAddSpec('')
+      setAddAvatarUrl('')
       setTimeout(() => setSuccessMsg(''), 3500)
     } catch (err: any) {
       setErrorMsg(err.message === 'email_taken' ? 'Email ini sudah terdaftar.' : err.message || 'Gagal menambahkan akun baru.')
@@ -270,6 +318,79 @@ export function AdminUsersModal({
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              {/* Avatar Photo Section */}
+              <div className="p-3.5 rounded-xl bg-bg border border-line/70 space-y-2.5">
+                <label className="text-dim block font-mono uppercase text-[11px] font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-accent">
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Foto Profil Akun</span>
+                  </span>
+                  <span className="text-[10px] text-dim font-normal">
+                    Fallback: inisial ({getInitials(editName)})
+                  </span>
+                </label>
+
+                <div className="flex items-center gap-3.5">
+                  <div className="relative group">
+                    <UserAvatar
+                      name={editName || 'User'}
+                      avatarUrl={editAvatarUrl}
+                      role={editRole}
+                      size="lg"
+                      showRoleBadge
+                    />
+                    {editAvatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditAvatarUrl('')}
+                        className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md"
+                        title="Hapus foto"
+                      >
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputEditRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/jpg"
+                        onChange={(e) => handleFileChange(e.target.files?.[0], setEditAvatarUrl)}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputEditRef.current?.click()}
+                        className="btn-interactive px-3 py-1.5 rounded-lg bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-accent" />
+                        <span>Upload Foto</span>
+                      </button>
+
+                      {editAvatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditAvatarUrl('')}
+                          className="btn-interactive px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-medium"
+                        >
+                          Hapus Foto
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="url"
+                      value={editAvatarUrl.startsWith('data:') ? '' : editAvatarUrl}
+                      onChange={(e) => setEditAvatarUrl(e.target.value)}
+                      placeholder={editAvatarUrl.startsWith('data:') ? 'Foto diupload dari perangkat' : 'Atau tempel URL foto (https://...)'}
+                      className="w-full bg-panel border border-line focus:border-accent rounded-lg px-2.5 py-1.5 text-[11px] text-text placeholder:text-muted outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1 font-semibold">Nama Pengguna</label>
@@ -416,6 +537,79 @@ export function AdminUsersModal({
             </div>
 
             <form onSubmit={handleAddUser} className="space-y-4 text-xs">
+              {/* Avatar Photo Section */}
+              <div className="p-3.5 rounded-xl bg-bg border border-line/70 space-y-2.5">
+                <label className="text-dim block font-mono uppercase text-[11px] font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-accent">
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Foto Profil Akun</span>
+                  </span>
+                  <span className="text-[10px] text-dim font-normal">
+                    Fallback: inisial ({getInitials(addName)})
+                  </span>
+                </label>
+
+                <div className="flex items-center gap-3.5">
+                  <div className="relative group">
+                    <UserAvatar
+                      name={addName || 'User'}
+                      avatarUrl={addAvatarUrl}
+                      role={addRole}
+                      size="lg"
+                      showRoleBadge
+                    />
+                    {addAvatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAddAvatarUrl('')}
+                        className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md"
+                        title="Hapus foto"
+                      >
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputAddRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/jpg"
+                        onChange={(e) => handleFileChange(e.target.files?.[0], setAddAvatarUrl)}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputAddRef.current?.click()}
+                        className="btn-interactive px-3 py-1.5 rounded-lg bg-panel hover:bg-panel-elevated border border-line hover:border-accent/40 text-text text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-accent" />
+                        <span>Upload Foto</span>
+                      </button>
+
+                      {addAvatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setAddAvatarUrl('')}
+                          className="btn-interactive px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-medium"
+                        >
+                          Hapus Foto
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="url"
+                      value={addAvatarUrl.startsWith('data:') ? '' : addAvatarUrl}
+                      onChange={(e) => setAddAvatarUrl(e.target.value)}
+                      placeholder={addAvatarUrl.startsWith('data:') ? 'Foto diupload dari perangkat' : 'Atau tempel URL foto (https://...)'}
+                      className="w-full bg-panel border border-line focus:border-accent rounded-lg px-2.5 py-1.5 text-[11px] text-text placeholder:text-muted outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="text-dim block font-mono uppercase mb-1 font-semibold">Nama Lengkap</label>
@@ -635,9 +829,13 @@ export function AdminUsersModal({
                         className="p-3.5 sm:p-4 hover:bg-panel/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-panel border border-line flex items-center justify-center font-bold text-accent text-sm shrink-0">
-                            {u.name.slice(0, 2).toUpperCase()}
-                          </div>
+                          <UserAvatar
+                            name={u.name}
+                            avatarUrl={u.avatar_url}
+                            role={u.role}
+                            size="md"
+                            showRoleBadge
+                          />
 
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">

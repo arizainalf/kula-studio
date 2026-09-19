@@ -22,6 +22,8 @@ import {
   Moon,
   UserCog,
 } from 'lucide-react'
+import { UserAvatar } from '../components/UserAvatar'
+import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 
 export type ClientProfile = {
   id: string
@@ -32,12 +34,14 @@ export type ClientProfile = {
   pkg_remaining: number
   email?: string | null
   phone?: string | null
+  avatar_url?: string | null
   notes?: string | null
   age_bracket?: string | null
   gender?: string | null
   problem?: string | null
   pt_name: string
   pt_email: string
+  pt_avatar_url?: string | null
 }
 
 export type ClientStats = {
@@ -93,6 +97,7 @@ export type LeaderboardEntry = {
   rank: number
   id: string
   name: string
+  avatar_url?: string | null
   is_me: boolean
   goal: string
   total_sessions: number
@@ -134,6 +139,7 @@ function ClientPortalPage() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'progress' | 'leaderboard'>('progress')
   const { theme, toggleTheme } = useTheme()
+  const platformSettings = usePlatformSettings()
 
   async function logout() {
     await api('/auth/logout', { method: 'POST' })
@@ -146,6 +152,7 @@ function ClientPortalPage() {
     name: client.name,
     email: client.email || '',
     phone: client.phone || '',
+    avatar_url: client.avatar_url,
     role: 'client',
     gender: (client.gender as any) || null,
     age_bracket: client.age_bracket || null,
@@ -166,15 +173,28 @@ function ClientPortalPage() {
           {/* Brand Identity */}
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-panel border border-accent/40 flex items-center justify-center shadow-[0_0_12px_rgba(212,175,55,0.2)]">
-              <span className="font-extrabold text-xs tracking-tighter text-accent">TL</span>
+              <span className="font-extrabold text-xs tracking-tighter text-accent">
+                {platformSettings.app_initials || 'TL'}
+              </span>
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-sm sm:text-base tracking-tight leading-none text-text">
-                Train<span className="text-accent">Log</span>{' '}
+                {formatBrandName(platformSettings.app_name)}{' '}
                 <span className="text-xs font-normal text-dim font-mono">Member</span>
               </span>
-              <span className="text-[10px] text-accent font-mono mt-0.5">
-                Coach: {client.pt_name}
+              <span className="text-[10px] text-accent font-mono mt-0.5 flex items-center gap-1.5">
+                {client.pt_name && (
+                  <>
+                    <UserAvatar
+                      name={client.pt_name}
+                      avatarUrl={client.pt_avatar_url}
+                      role="pt"
+                      size="xs"
+                      shape="rounded-full"
+                    />
+                    <span>Coach: {client.pt_name}</span>
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -212,31 +232,43 @@ function ClientPortalPage() {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
             {/* Left: Greeting & Rank Badge */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-xs font-semibold">
                 <Sparkles className="w-3.5 h-3.5 animate-pulse" />
                 <span>Portal Progres Klien</span>
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text">
-                  Halo, <span className="text-accent">{client.name}</span>!
-                </h1>
-                <button
-                  onClick={() => setIsEditProfileOpen(true)}
-                  className="text-xs text-accent hover:underline font-mono inline-flex items-center gap-1 btn-interactive"
-                  title="Edit Data Profil Saya"
-                >
-                  <UserCog className="w-3.5 h-3.5" />
-                  <span>Edit Profil</span>
-                </button>
-              </div>
+              <div className="flex items-center gap-3.5">
+                <UserAvatar
+                  name={client.name}
+                  avatarUrl={client.avatar_url}
+                  role="client"
+                  size="xl"
+                  shape="rounded-2xl"
+                  className="shrink-0 shadow-md"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-text truncate">
+                      Halo, <span className="text-accent">{client.name}</span>!
+                    </h1>
+                    <button
+                      onClick={() => setIsEditProfileOpen(true)}
+                      className="text-xs text-accent hover:underline font-mono inline-flex items-center gap-1 btn-interactive shrink-0"
+                      title="Edit Data Profil Saya"
+                    >
+                      <UserCog className="w-3.5 h-3.5" />
+                      <span>Edit Profil</span>
+                    </button>
+                  </div>
 
-              <p className="text-xs sm:text-sm text-dim max-w-xl leading-relaxed">
-                {my_ranking.is_top_3
-                  ? 'Performa luar biasa! Anda menduduki 3 besar klasemen keaktifan latihan di gym kami.'
-                  : 'Pantau kemajuan latihan, jadwal sesi, dan terus tingkatkan konsistensi mingguan Anda!'}
-              </p>
+                  <p className="text-xs sm:text-sm text-dim max-w-xl leading-relaxed mt-1">
+                    {my_ranking.is_top_3
+                      ? 'Performa luar biasa! Anda menduduki 3 besar klasemen keaktifan latihan di gym kami.'
+                      : 'Pantau kemajuan latihan, jadwal sesi, dan terus tingkatkan konsistensi mingguan Anda!'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Right: Personal Rank Highlight Box */}
@@ -779,19 +811,30 @@ function ClientPortalPage() {
                             </span>
                           </td>
 
-                          {/* Client Name & You Badge */}
+                          {/* Client Name & Avatar & You Badge */}
                           <td className="py-3 px-3">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-text">{item.name}</span>
-                              {item.is_me && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent text-[#141414] uppercase">
-                                  Kamu
+                            <div className="flex items-center gap-2.5">
+                              <UserAvatar
+                                name={item.name}
+                                avatarUrl={item.avatar_url}
+                                role="client"
+                                size="xs"
+                                shape="rounded-lg"
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-text font-medium truncate">{item.name}</span>
+                                  {item.is_me && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent text-[#141414] uppercase shrink-0">
+                                      Kamu
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-dim capitalize font-mono block truncate">
+                                  {item.goal.replace('_', ' ')}
                                 </span>
-                              )}
+                              </div>
                             </div>
-                            <span className="text-[10px] text-dim capitalize font-mono">
-                              {item.goal.replace('_', ' ')}
-                            </span>
                           </td>
 
                           {/* Total Sessions */}
@@ -903,6 +946,7 @@ function ClientPortalPage() {
             name: updated.name,
             email: updated.email,
             phone: updated.phone,
+            avatar_url: updated.avatar_url ?? prev.avatar_url,
             gender: (updated.gender as any) || prev.gender,
             age_bracket: updated.age_bracket || prev.age_bracket,
             problem: updated.problem || prev.problem,
