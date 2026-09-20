@@ -7,35 +7,32 @@ import type { Env } from '../../env';
 const sessions = new Hono<{ Bindings: Env }>();
 sessions.use('*', requireAuth, rejectGraceWrite);
 
-const exerciseSchema = z.object({
+const exerciseItemSchema = z.object({
   name: z.string().min(1).max(100),
   detail: z.string().max(200).optional(),
 });
 
+const exerciseSchema = z.union([
+  z.string().min(1).max(100),
+  exerciseItemSchema,
+]);
+
 const sessionSchema = z.object({
-  date: z.string().date(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD'),
   rpe: z.number().int().min(1).max(10),
-  weight: z.number().min(0).max(500).nullable().optional(),
-  fat_pct: z.number().min(0).max(100).nullable().optional(),
+  weight: z.number().min(20).max(300).optional(),
+  fat_pct: z.number().min(1).max(70).optional(),
   exercises: z.array(z.record(z.string(), z.array(exerciseSchema))).default([]),
   notes: z.string().max(2000).optional(),
 });
 
-// PT harus punya client-nya (manager/admin_studio read-only list; client read own)
-async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string; studio_id?: string | null }) {
-  if (u.role === 'client') return u.id === clientId ? { pt_id: null } : null;
-  const [row] = await sql`select pt_id, studio_id from clients where id = ${clientId}`;
+// PT harus punya client-nya; Admin memiliki akses penuh; Client hanya baca miliknya
+async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string; clientId?: string }) {
+  if (u.role === 'client') return (u.clientId === clientId || u.id === clientId) ? { pt_id: null } : null;
+  const [row] = await sql`select pt_id from clients where id = ${clientId}`;
   if (!row) return null;
-  if (u.role === 'platform_admin') return row;
-  if (u.role === 'admin_studio') {
-    if (!u.studio_id || row.studio_id === u.studio_id) return row;
-    return null;
-  }
+  if (u.role === 'admin') return row;
   if (row.pt_id === u.id) return row;
-  if (u.role === 'manager') {
-    const [m] = await sql`select 1 from staff_profile where user_id = ${row.pt_id} and manager_id = ${u.id}`;
-    if (m) return row;
-  }
   return null;
 }
 
@@ -65,11 +62,8 @@ sessions.get('/', async (c) => {
     join clients c on c.id = s.client_id
     join users p on p.id = s.pt_id
     where (
-      ${u.role} = 'platform_admin'
-      or (${u.role} = 'admin_studio' and (${u.studio_id ? sql`c.studio_id = ${u.studio_id}` : sql`true`}))
+      ${u.role} = 'admin'
       or s.pt_id = ${u.id}
-      or (${u.role} = 'manager' and exists(
-           select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id}))
     )
       ${from ? sql`and s.date >= ${from}` : sql``}
       ${to ? sql`and s.date <= ${to}` : sql``}
@@ -101,7 +95,7 @@ sessions.get('/:clientId/sessions', async (c) => {
 
 sessions.post('/:clientId/sessions', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   const clientId = c.req.param('clientId');
   const sql = db(c);
   const owned = await ownsClient(sql, clientId, u);
@@ -110,9 +104,10 @@ sessions.post('/:clientId/sessions', async (c) => {
   const parsed = sessionSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
   const d = parsed.data;
+  const ptId = u.role === 'admin' ? (owned.pt_id || u.id) : u.id;
   const [row] = await sql`
     insert into sessions (client_id, pt_id, date, rpe, weight, fat_pct, exercises, notes)
-    values (${clientId}, ${u.id}, ${d.date}, ${d.rpe}, ${d.weight ?? null}, ${d.fat_pct ?? null},
+    values (${clientId}, ${ptId}, ${d.date}, ${d.rpe}, ${d.weight ?? null}, ${d.fat_pct ?? null},
             ${sql.json(d.exercises)}, ${d.notes ?? null})
     returning *`;
   return c.json({ session: row }, 201);
@@ -120,7 +115,7 @@ sessions.post('/:clientId/sessions', async (c) => {
 
 sessions.patch('/:clientId/sessions/:id', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   const sql = db(c);
   const owned = await ownsClient(sql, c.req.param('clientId'), u);
   if (!owned) return c.json({ error: 'forbidden' }, 403);
@@ -135,15 +130,17 @@ sessions.patch('/:clientId/sessions/:id', async (c) => {
       fat_pct = coalesce(${d.fat_pct ?? null}, fat_pct),
       exercises = coalesce(${d.exercises ? sql.json(d.exercises) : null}, exercises),
       notes = coalesce(${d.notes ?? null}, notes)
-    where id = ${c.req.param('id')} and pt_id = ${u.id} returning *`;
+    where id = ${c.req.param('id')} and (${u.role} = 'admin' or pt_id = ${u.id}) returning *`;
   return row ? c.json({ session: row }) : c.json({ error: 'not_found' }, 404);
 });
 
 sessions.delete('/:clientId/sessions/:id', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   const sql = db(c);
-  const res = await sql`delete from sessions where id = ${c.req.param('id')} and pt_id = ${u.id}`;
+  const res = u.role === 'admin'
+    ? await sql`delete from sessions where id = ${c.req.param('id')}`
+    : await sql`delete from sessions where id = ${c.req.param('id')} and pt_id = ${u.id}`;
   return res.count ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);
 });
 

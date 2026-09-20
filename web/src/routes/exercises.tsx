@@ -127,10 +127,7 @@ function ExercisesPage() {
   const [newCatIcon, setNewCatIcon] = useState('dumbbell')
   const [submittingCat, setSubmittingCat] = useState(false)
 
-  const isAdmin =
-    currentUser.role === 'admin_studio' ||
-    (currentUser.role as string) === 'admin' ||
-    currentUser.role === 'platform_admin'
+  const isAdmin = currentUser.role === 'admin'
 
   async function reloadData() {
     try {

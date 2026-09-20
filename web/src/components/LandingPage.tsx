@@ -8,6 +8,7 @@ import {
   getYouTubeThumbnailUrl,
   getYouTubeEmbedUrl,
 } from "../lib/api";
+import { usePlatformSettings } from "../lib/platformSettings";
 import {
   Check,
   ArrowRight,
@@ -119,7 +120,7 @@ export function LandingPage({
     }
   }, [initialTrainers]);
 
-  const s = initialSettings;
+  const s = usePlatformSettings(initialSettings);
 
   const appName = s?.app_name || "Kula Studio";
   const appInitials = s?.app_initials || "KS";
@@ -206,6 +207,9 @@ export function LandingPage({
               "Kirimkan ringkasan latihan ke WhatsApp klien dan evaluasi grafik kemajuan beban dari waktu ke waktu.",
           },
         ];
+
+  const showPricing = s?.show_pricing !== false && (s?.show_pricing as any) !== 'false';
+  console.log(showPricing,"checkPricing")
 
   const pricingPlans =
     s?.pricing_plans && s.pricing_plans.length > 0
@@ -331,9 +335,11 @@ export function LandingPage({
             <a href="#peran" className="hover:text-accent transition-colors">
               Untuk Siapa
             </a>
-            <a href="#paket" className="hover:text-accent transition-colors">
-              Harga
-            </a>
+            {showPricing && (
+              <a href="#paket" className="hover:text-accent transition-colors">
+                Harga
+              </a>
+            )}
           </nav>
 
           {/* Right Action CTA */}
@@ -1007,7 +1013,8 @@ export function LandingPage({
       </section>
 
       {/* ── 6. Pricing Section (`#paket`) ── */}
-      <section id="paket" className="py-10 md:py-20 border-t border-line">
+      {showPricing && (
+        <section id="paket" className="py-10 md:py-20 border-t border-line">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="text-center max-w-xl mx-auto mb-8 md:mb-14">
             <h2 className="text-xs font-mono tracking-widest text-accent uppercase mb-2">
@@ -1167,6 +1174,7 @@ export function LandingPage({
           )}
         </div>
       </section>
+      )}
 
       {/* ── 7. Bottom Call to Action ── */}
       <section className="py-10 md:py-20 border-t border-line relative overflow-hidden">
@@ -1241,9 +1249,11 @@ export function LandingPage({
             <a href="#pelatih" className="hover:text-accent transition-colors">
               Pelatih
             </a>
-            <a href="#paket" className="hover:text-accent transition-colors">
-              Harga
-            </a>
+            {showPricing && (
+              <a href="#paket" className="hover:text-accent transition-colors">
+                Harga
+              </a>
+            )}
             {contactWa && (
               <a
                 href={`https://wa.me/${contactWa.replace(/[^0-9]/g, "")}`}

@@ -3,7 +3,7 @@ import { useState } from 'react'
 export interface UserAvatarProps {
   name: string
   avatarUrl?: string | null
-  role?: 'platform_admin' | 'admin_studio' | 'admin' | 'manager' | 'pt' | 'client' | string | null
+  role?: 'admin' | 'pt' | 'client' | string | null
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   shape?: 'rounded-xl' | 'rounded-2xl' | 'rounded-full' | 'rounded-lg'
   className?: string
@@ -46,13 +46,8 @@ export function UserAvatar({
   // Role-based styling accents
   const getRoleBorderColor = () => {
     switch (role) {
-      case 'platform_admin':
-        return 'border-accent/50 text-accent bg-accent/10'
-      case 'admin_studio':
       case 'admin':
         return 'border-accent/50 text-accent bg-panel'
-      case 'manager':
-        return 'border-sky-400/50 text-sky-400 bg-sky-400/10'
       case 'pt':
         return 'border-accent/40 text-accent bg-panel'
       case 'client':
@@ -88,15 +83,11 @@ export function UserAvatar({
       {showRoleBadge && (
         <span
           className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-panel ${
-            role === 'platform_admin'
+            role === 'admin'
               ? 'bg-accent'
-              : role === 'admin_studio' || role === 'admin'
-                ? 'bg-accent'
-                : role === 'manager'
-                  ? 'bg-sky-400'
-                  : role === 'client'
-                    ? 'bg-emerald-400'
-                    : 'bg-accent'
+              : role === 'client'
+                ? 'bg-emerald-400'
+                : 'bg-accent'
           }`}
           title={role ? `Role: ${role}` : 'Aktif'}
         />

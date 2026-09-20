@@ -12,7 +12,6 @@ import {
   Edit2,
   Trash2,
   ShieldCheck,
-  Shield,
   KeyRound,
   Upload,
   CheckCircle2,
@@ -31,11 +30,7 @@ export const Route = createFileRoute('/users')({
   beforeLoad: async () => {
     try {
       const res = await api<{ user: User }>('/auth/me')
-      if (
-        res.user.role !== 'admin_studio' &&
-        res.user.role !== 'manager' &&
-        res.user.role !== 'platform_admin'
-      ) {
+      if (res.user.role !== 'admin') {
         throw redirect({ to: '/' })
       }
     } catch (e) {
@@ -49,31 +44,22 @@ export const Route = createFileRoute('/users')({
       api<{ staff: User[] }>('/staff').catch(() => ({ staff: [] })),
     ])
 
-    let studios: Array<{ id: string; name: string; slug: string }> = []
-    if (meRes.user.role === 'platform_admin') {
-      try {
-        const res = await api<{ studios: Array<{ id: string; name: string; slug: string }> }>('/platform/studios')
-        studios = res.studios || []
-      } catch {}
-    }
-
     return {
       currentUser: meRes.user,
       initialStaff: staffRes.staff || [],
-      studios,
     }
   },
   component: UsersPage,
 })
 
 function UsersPage() {
-  const { currentUser: initialUser, initialStaff, studios = [] } = Route.useLoaderData()
+  const { currentUser: initialUser, initialStaff } = Route.useLoaderData()
   const [currentUser, setCurrentUser] = useState<User>(initialUser)
   const [usersList, setUsersList] = useState<User[]>(initialStaff)
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('')
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin_studio' | 'manager' | 'pt'>('all')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'pt'>('all')
 
   // Modals state
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
@@ -88,11 +74,9 @@ function UsersPage() {
   const [addEmail, setAddEmail] = useState('')
   const [addPhone, setAddPhone] = useState('')
   const [addPassword, setAddPassword] = useState('')
-  const [addRole, setAddRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
-  const [addStudioId, setAddStudioId] = useState('')
+  const [addRole, setAddRole] = useState<'admin' | 'pt'>('pt')
   const [addSpec, setAddSpec] = useState('')
   const [addYoutubeUrl, setAddYoutubeUrl] = useState('')
-  const [addPlanTier, setAddPlanTier] = useState<'standard' | 'pro'>('standard')
   const [addAvatarUrl, setAddAvatarUrl] = useState('')
   const [addSubmitting, setAddSubmitting] = useState(false)
   const fileInputAddRef = useRef<HTMLInputElement>(null)
@@ -101,17 +85,16 @@ function UsersPage() {
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
   const [editPhone, setEditPhone] = useState('')
-  const [editRole, setEditRole] = useState<'admin_studio' | 'manager' | 'pt'>('pt')
+  const [editRole, setEditRole] = useState<'admin' | 'pt'>('pt')
   const [editSpec, setEditSpec] = useState('')
   const [editYoutubeUrl, setEditYoutubeUrl] = useState('')
-  const [editPlanTier, setEditPlanTier] = useState<'standard' | 'pro'>('standard')
   const [editIsActive, setEditIsActive] = useState(true)
   const [editPassword, setEditPassword] = useState('')
   const [editAvatarUrl, setEditAvatarUrl] = useState('')
   const [editSubmitting, setEditSubmitting] = useState(false)
   const fileInputEditRef = useRef<HTMLInputElement>(null)
 
-  const isAdmin = currentUser.role === 'admin_studio' || currentUser.role === 'platform_admin'
+  const isAdmin = currentUser.role === 'admin'
   const [cropModalOpen, setCropModalOpen] = useState(false)
   const [rawCropImage, setRawCropImage] = useState<string | null>(null)
   const [cropSetter, setCropSetter] = useState<((url: string) => void) | null>(null)
@@ -138,14 +121,9 @@ function UsersPage() {
     setEditName(u.name)
     setEditEmail(u.email)
     setEditPhone(u.phone || '')
-    setEditRole(
-      u.role === 'admin_studio' || (u.role as string) === 'admin' || (u.role as string) === 'platform_admin'
-        ? 'admin_studio'
-        : (u.role as any)
-    )
+    setEditRole(u.role === 'admin' ? 'admin' : 'pt')
     setEditSpec(u.spec || '')
     setEditYoutubeUrl(u.youtube_url || '')
-    setEditPlanTier((u.plan_tier as any) || 'standard')
     setEditIsActive(u.is_active ?? true)
     setEditPassword('')
     setEditAvatarUrl(u.avatar_url || '')
@@ -165,7 +143,6 @@ function UsersPage() {
         phone: editPhone.trim() || null,
         spec: editSpec.trim() || null,
         youtube_url: editRole === 'pt' ? (editYoutubeUrl.trim() || null) : null,
-        plan_tier: editPlanTier,
         is_active: editIsActive,
         avatar_url: editAvatarUrl.trim() || null,
       }
@@ -204,27 +181,15 @@ function UsersPage() {
     setErrorMsg('')
 
     try {
-      if (currentUser.role === 'platform_admin' && !addStudioId) {
-        throw new Error('Pilih Studio Gym rekanan tujuan penugasan akun ini.')
-      }
-
-      const targetRole = currentUser.role === 'platform_admin'
-        ? addRole
-        : currentUser.role === 'admin_studio'
-          ? addRole
-          : 'pt'
-
       const payload: Record<string, any> = {
         name: addName.trim(),
         email: addEmail.trim().toLowerCase(),
         phone: addPhone.trim() || null,
         password: addPassword,
-        role: targetRole,
+        role: addRole,
         spec: addSpec.trim() || undefined,
-        youtube_url: targetRole === 'pt' ? (addYoutubeUrl.trim() || null) : null,
-        plan_tier: addPlanTier,
+        youtube_url: addRole === 'pt' ? (addYoutubeUrl.trim() || null) : null,
         avatar_url: addAvatarUrl.trim() || null,
-        studio_id: currentUser.role === 'platform_admin' ? addStudioId : undefined,
       }
 
       const res = await api<{ pt: User }>('/staff/invite', {
@@ -239,7 +204,6 @@ function UsersPage() {
       setAddEmail('')
       setAddPhone('')
       setAddPassword('')
-      setAddStudioId('')
       setAddYoutubeUrl('')
       setAddSpec('')
       setAddAvatarUrl('')
@@ -284,13 +248,7 @@ function UsersPage() {
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (u.spec && u.spec.toLowerCase().includes(searchTerm.toLowerCase()))
 
-    if (roleFilter === 'admin_studio') {
-      return (
-        matchesSearch &&
-        (u.role === 'admin_studio' || (u.role as string) === 'admin' || (u.role as string) === 'platform_admin')
-      )
-    }
-    if (roleFilter === 'manager') return matchesSearch && u.role === 'manager'
+    if (roleFilter === 'admin') return matchesSearch && u.role === 'admin'
     if (roleFilter === 'pt') return matchesSearch && u.role === 'pt'
     return matchesSearch
   })
@@ -380,33 +338,14 @@ function UsersPage() {
                 Semua ({usersList.length})
               </button>
               <button
-                onClick={() => setRoleFilter('admin_studio')}
+                onClick={() => setRoleFilter('admin')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                  roleFilter === 'admin_studio'
+                  roleFilter === 'admin'
                     ? 'bg-accent text-[#141414] shadow-sm'
                     : 'bg-bg text-dim hover:text-text border border-line'
                 }`}
               >
-                Admin (
-                {
-                  usersList.filter(
-                    (u) =>
-                      u.role === 'admin_studio' ||
-                      (u.role as string) === 'admin' ||
-                      (u.role as string) === 'platform_admin'
-                  ).length
-                }
-                )
-              </button>
-              <button
-                onClick={() => setRoleFilter('manager')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                  roleFilter === 'manager'
-                    ? 'bg-sky-400 text-black shadow-sm'
-                    : 'bg-bg text-dim hover:text-text border border-line'
-                }`}
-              >
-                Manager ({usersList.filter((u) => u.role === 'manager').length})
+                Admin ({usersList.filter((u) => u.role === 'admin').length})
               </button>
               <button
                 onClick={() => setRoleFilter('pt')}
@@ -436,16 +375,14 @@ function UsersPage() {
                     <tr className="border-b border-line bg-bg/60 text-[11px] font-mono text-dim uppercase tracking-wider">
                       <th className="py-3 px-4">Pengguna</th>
                       <th className="py-3 px-4">Role &amp; Akses</th>
-                      <th className="py-3 px-4">Spesialisasi / Tier</th>
+                      <th className="py-3 px-4">Spesialisasi</th>
                       <th className="py-3 px-4 text-center">Status</th>
                       <th className="py-3 px-4 text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line/40 text-xs">
                     {filteredUsers.map((u) => {
-                      const isSuper = u.role === 'platform_admin'
-                      const isStudioAdmin = u.role === 'admin_studio' || (u.role as string) === 'admin'
-                      const isManager = u.role === 'manager'
+                      const isUserAdmin = u.role === 'admin'
 
                       return (
                         <tr key={u.id} className="hover:bg-bg/40 transition-colors">
@@ -474,29 +411,21 @@ function UsersPage() {
                           <td className="py-3.5 px-4">
                             <span
                               className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 uppercase ${
-                                isSuper
+                                isUserAdmin
                                   ? 'bg-accent/15 text-accent border border-accent/30'
-                                  : isStudioAdmin
-                                    ? 'bg-accent/15 text-accent border border-accent/30'
-                                    : isManager
-                                      ? 'bg-sky-400/15 text-sky-400 border border-sky-400/30'
-                                      : 'bg-panel-elevated text-dim border border-line'
+                                  : 'bg-panel-elevated text-dim border border-line'
                               }`}
                             >
-                              {isSuper ? (
+                              {isUserAdmin ? (
                                 <ShieldCheck className="w-3 h-3 text-accent" />
-                              ) : isStudioAdmin ? (
-                                <Shield className="w-3 h-3 text-accent" />
-                              ) : isManager ? (
-                                <Shield className="w-3 h-3 text-sky-400" />
                               ) : (
                                 <UserCheck className="w-3 h-3 text-dim" />
                               )}
-                              <span>{u.role.replace('_', ' ')}</span>
+                              <span>{isUserAdmin ? 'Admin' : 'Personal Trainer'}</span>
                             </span>
                           </td>
 
-                          {/* Spec / Tier */}
+                          {/* Spec */}
                           <td className="py-3.5 px-4">
                             <div className="space-y-0.5">
                               {u.spec ? (
@@ -504,9 +433,6 @@ function UsersPage() {
                               ) : (
                                 <div className="text-dim text-[11px]">—</div>
                               )}
-                              <div className="text-[10px] font-mono text-dim uppercase">
-                                Tier: {u.plan_tier || 'standard'}
-                              </div>
                               {u.youtube_url && (
                                 <a
                                   href={u.youtube_url}
@@ -702,79 +628,18 @@ function UsersPage() {
                 />
               </div>
 
-              {/* Studio Selection for Platform Admin */}
-              {currentUser.role === 'platform_admin' && (
-                <div className="p-3.5 rounded-xl bg-accent/10 border border-accent/30 space-y-1.5">
-                  <label className="text-accent font-semibold font-mono uppercase text-[11px] flex items-center justify-between">
-                    <span>Studio Gym Tujuan Penugasan *</span>
-                    <span className="text-[10px] text-dim lowercase">Wajib dipilih</span>
-                  </label>
-                  <select
-                    required
-                    value={addStudioId}
-                    onChange={(e) => setAddStudioId(e.target.value)}
-                    className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm font-semibold"
-                  >
-                    <option value="">-- Pilih Studio Gym Rekanan --</option>
-                    {studios.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.slug})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {currentUser.role === 'platform_admin' ? (
-                  <div>
-                    <label className="text-dim block font-mono uppercase mb-1 font-semibold">
-                      Peran / Role Pengguna
-                    </label>
-                    <select
-                      value={addRole}
-                      onChange={(e) => setAddRole(e.target.value as any)}
-                      className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
-                    >
-                      <option value="admin_studio">Admin Studio Gym</option>
-                      <option value="manager">Manager Studio</option>
-                      <option value="pt">Personal Trainer (PT)</option>
-                    </select>
-                  </div>
-                ) : currentUser.role === 'admin_studio' ? (
-                  <div>
-                    <label className="text-dim block font-mono uppercase mb-1 font-semibold">
-                      Peran / Role Pengguna
-                    </label>
-                    <select
-                      value={addRole}
-                      onChange={(e) => setAddRole(e.target.value as any)}
-                      className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
-                    >
-                      <option value="manager">Manager Studio</option>
-                      <option value="pt">Personal Trainer (PT)</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-dim block font-mono uppercase mb-1 font-semibold">Peran</label>
-                    <div className="p-2.5 bg-bg rounded-xl border border-line text-xs font-mono text-dim">
-                      Personal Trainer (PT)
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-dim block font-mono uppercase mb-1 font-semibold">Paket Langganan</label>
-                  <select
-                    value={addPlanTier}
-                    onChange={(e) => setAddPlanTier(e.target.value as any)}
-                    className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
-                  >
-                    <option value="standard">STANDARD</option>
-                    <option value="pro">PRO TIER</option>
-                  </select>
-                </div>
+              <div>
+                <label className="text-dim block font-mono uppercase mb-1 font-semibold">
+                  Peran / Role Pengguna
+                </label>
+                <select
+                  value={addRole}
+                  onChange={(e) => setAddRole(e.target.value as any)}
+                  className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
+                >
+                  <option value="pt">Personal Trainer (PT)</option>
+                  <option value="admin">Administrator (Admin)</option>
+                </select>
               </div>
 
               <div>
@@ -955,43 +820,21 @@ function UsersPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {isAdmin ? (
-                  <div>
-                    <label className="text-dim block font-mono uppercase mb-1 font-semibold">
-                      Peran / Role Pengguna
-                    </label>
-                    <select
-                      value={editRole}
-                      onChange={(e) => setEditRole(e.target.value as any)}
-                      className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
-                    >
-                      <option value="pt">Personal Trainer (PT)</option>
-                      <option value="manager">Manager Operasional</option>
-                      <option value="admin_studio">Admin Studio Gym</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-dim block font-mono uppercase mb-1 font-semibold">Peran</label>
-                    <div className="p-2.5 bg-bg rounded-xl border border-line text-xs font-mono text-dim uppercase">
-                      {editRole}
-                    </div>
-                  </div>
-                )}
-
+              {isAdmin && (
                 <div>
-                  <label className="text-dim block font-mono uppercase mb-1 font-semibold">Paket Langganan</label>
+                  <label className="text-dim block font-mono uppercase mb-1 font-semibold">
+                    Peran / Role Pengguna
+                  </label>
                   <select
-                    value={editPlanTier}
-                    onChange={(e) => setEditPlanTier(e.target.value as any)}
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as any)}
                     className="w-full bg-bg border border-line focus:border-accent rounded-xl px-3 py-2 text-text outline-none text-sm"
                   >
-                    <option value="standard">STANDARD</option>
-                    <option value="pro">PRO TIER</option>
+                    <option value="pt">Personal Trainer (PT)</option>
+                    <option value="admin">Administrator (Admin)</option>
                   </select>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="text-dim block font-mono uppercase mb-1 font-semibold">

@@ -14,7 +14,7 @@ const schedSchema = z.object({
   note: z.string().max(200).optional(),
 });
 
-// GET /api/schedule?from=&to= — jadwal milik PT (manager: staff+sendiri via join)
+// GET /api/schedule?from=&to= — Jadwal sesi
 schedule.get('/', async (c) => {
   const u = c.get('user');
   const from = c.req.query('from');
@@ -26,12 +26,9 @@ schedule.get('/', async (c) => {
     from schedule s join clients c on c.id = s.client_id
     where s.date between ${from} and ${to}
       and (
-        ${u.role} = 'platform_admin'
-        or (${u.role} = 'admin_studio' and (${u.studio_id ? sql`c.studio_id = ${u.studio_id}` : sql`true`}))
+        ${u.role} = 'admin'
         or s.pt_id = ${u.id}
-        or (${u.role} = 'client' and s.client_id = ${u.id})
-        or (${u.role} = 'manager' and exists(
-             select 1 from staff_profile sp where sp.user_id = s.pt_id and sp.manager_id = ${u.id}))
+        or (${u.role} = 'client' and (s.client_id = ${u.clientId || u.id}))
       )
     order by s.date, s.time`;
   return c.json({ schedule: rows });
@@ -39,23 +36,32 @@ schedule.get('/', async (c) => {
 
 schedule.post('/', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   const parsed = schedSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
   const sql = db(c);
-  const [client] = await sql`select 1 from clients where id = ${parsed.data.client_id} and pt_id = ${u.id}`;
+
+  const [client] = u.role === 'admin'
+    ? await sql`select pt_id from clients where id = ${parsed.data.client_id}`
+    : await sql`select pt_id from clients where id = ${parsed.data.client_id} and pt_id = ${u.id}`;
+
   if (!client) return c.json({ error: 'forbidden' }, 403);
+
+  const assignedPtId = u.role === 'admin' ? (client.pt_id || u.id) : u.id;
   const [row] = await sql`
     insert into schedule (client_id, pt_id, date, time, note)
-    values (${parsed.data.client_id}, ${u.id}, ${parsed.data.date}, ${parsed.data.time}, ${parsed.data.note ?? null})
+    values (${parsed.data.client_id}, ${assignedPtId}, ${parsed.data.date}, ${parsed.data.time}, ${parsed.data.note ?? null})
     returning *`;
   return c.json({ schedule: row }, 201);
 });
 
 schedule.delete('/:id', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
-  const res = await db(c)`delete from schedule where id = ${c.req.param('id')} and pt_id = ${u.id}`;
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
+  const sql = db(c);
+  const res = u.role === 'admin'
+    ? await sql`delete from schedule where id = ${c.req.param('id')}`
+    : await sql`delete from schedule where id = ${c.req.param('id')} and pt_id = ${u.id}`;
   return res.count ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);
 });
 

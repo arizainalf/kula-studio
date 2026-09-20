@@ -7,7 +7,6 @@ import {
   Dumbbell,
   Printer,
   Globe,
-  Building2,
   ShieldCheck,
   UserCheck,
   UserCog,
@@ -16,13 +15,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
-import { api, type User } from '../lib/api'
+import { api, setStoredToken, type User } from '../lib/api'
 import { ThemeToggle } from './ThemeToggle'
 import { EditProfileModal } from './EditProfileModal'
-import { PlatformAdminModal } from './PlatformAdminModal'
-import { AdminUsersModal } from './AdminUsersModal'
 import { AdminExerciseModal } from './AdminExerciseModal'
 import { ExportPdfModal } from './ExportPdfModal'
+import { LogoutModal } from './LogoutModal'
 import { UserAvatar } from './UserAvatar'
 import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 import { MobileBottomNav } from './MobileBottomNav'
@@ -102,10 +100,9 @@ export function AppLayout({
 
   // Modals state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
-  const [isPlatformAdminOpen, setIsPlatformAdminOpen] = useState(false)
-  const [isAdminUsersOpen, setIsAdminUsersOpen] = useState(false)
   const [isAdminExerciseOpen, setIsAdminExerciseOpen] = useState(false)
   const [isExportPdfOpen, setIsExportPdfOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const platformSettings = usePlatformSettings()
 
   // Active status determinations
@@ -114,18 +111,31 @@ export function AppLayout({
     ? activeRoute === 'clients'
     : (pathname === '/clients' || pathname === '/clients/') || (pathname.startsWith('/clients/') && pathname !== '/clients/new')
   const isSchedule = activeRoute ? activeRoute === 'schedule' : pathname === '/schedule'
-  const isStudios = activeRoute ? activeRoute === 'studios' : pathname === '/studios' || pathname.startsWith('/studios')
   const isUsers = activeRoute ? activeRoute === 'users' : pathname === '/users' || pathname.startsWith('/users')
   const isExercises = activeRoute ? activeRoute === 'exercises' : pathname === '/exercises' || pathname.startsWith('/exercises')
   const isSettings = activeRoute ? activeRoute === 'settings' : pathname === '/settings' || pathname.startsWith('/settings')
 
-  async function handleLogout() {
-    if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
-      try {
-        await api('/auth/logout', { method: 'POST' })
-      } catch {}
-      window.location.href = '/login'
-    }
+  function handleLogout() {
+    setIsLogoutModalOpen(true)
+  }
+
+  async function executeLogout() {
+    try {
+      setStoredToken(null)
+      // Expire cookies immediately on client side
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure'
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure'
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+
+      if ('caches' in window) {
+        const keys = await caches.keys().catch(() => [])
+        for (const k of keys) await caches.delete(k).catch(() => {})
+      }
+
+      await api('/auth/logout', { method: 'POST' }).catch(() => {})
+    } catch {}
+    window.location.replace('/login')
   }
 
   function handleProfileUpdated(updated: Partial<User>) {
@@ -216,55 +226,41 @@ export function AppLayout({
           </div>
         )}
 
-        {/* Studio / Tenant Context Card */}
+        {/* Role Context Card */}
         {isCollapsedDesktop ? (
           <div className="px-2 flex justify-center">
             <div
               className="w-10 h-10 rounded-xl bg-bg/50 backdrop-blur-md border border-line/50 flex items-center justify-center cursor-default shrink-0"
-              title={
-                user.role === 'platform_admin'
-                  ? 'Platform SaaS Superadmin'
-                  : `${user.studio_name || 'Studio Gym'} (${user.studio_plan_tier ? user.studio_plan_tier.toUpperCase() : 'PRO'} STUDIO)`
-              }
+              title={user.role === 'admin' ? 'Administrator' : 'Personal Trainer'}
             >
-              {user.role === 'platform_admin' ? (
+              {user.role === 'admin' ? (
                 <ShieldCheck className="w-4 h-4 text-accent" />
               ) : (
-                <Building2 className="w-4 h-4 text-accent" />
+                <UserCheck className="w-4 h-4 text-accent" />
               )}
             </div>
           </div>
         ) : (
           <div className="px-3">
             <div className="p-2.5 rounded-xl bg-bg/50 backdrop-blur-md border border-line/50">
-              {user.role === 'platform_admin' ? (
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+                  {user.role === 'admin' ? (
                     <ShieldCheck className="w-4 h-4" />
+                  ) : (
+                    <UserCheck className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-bold text-text truncate">
+                    {user.role === 'admin' ? 'Administrator' : 'Personal Trainer'}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-bold text-text truncate">Platform SaaS</div>
-                    <div className="text-[9px] font-mono text-accent font-bold uppercase tracking-wider">
-                      Superadmin
-                    </div>
+                  <div className="text-[9px] font-mono text-dim uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>Aktif</span>
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
-                    <Building2 className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-bold text-text truncate" title={user.studio_name || 'Studio Gym'}>
-                      {user.studio_name || 'Studio Gym'}
-                    </div>
-                    <div className="text-[9px] font-mono text-dim uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>{user.studio_plan_tier ? user.studio_plan_tier.toUpperCase() : 'PRO'} STUDIO</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}
@@ -339,75 +335,42 @@ export function AppLayout({
               </div>
             )}
 
-            {user.role === 'platform_admin' && (
+            {user.role === 'admin' && (
               <>
                 <Link
-                  to="/studios"
-                  title="Kelola Studio (SaaS)"
+                  to="/users"
+                  title="Kelola Akun Staf"
                   className={`${
                     isCollapsedDesktop
                       ? 'w-10 h-10 mx-auto flex items-center justify-center rounded-xl transition-all btn-interactive'
-                      : 'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
+                      : 'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
                   } ${
-                    isStudios
+                    isUsers
                       ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
                       : 'text-dim hover:text-text hover:bg-panel-elevated/70'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className={`w-4 h-4 shrink-0 ${isStudios ? 'text-[#141414]' : 'text-accent'}`} />
-                    {!isCollapsedDesktop && <span>Kelola Studio</span>}
-                  </div>
-                  {!isCollapsedDesktop && (
-                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${isStudios ? 'bg-[#141414]/20 text-[#141414]' : 'bg-accent/15 text-accent border border-accent/25'}`}>
-                      SAAS
-                    </span>
-                  )}
+                  <UserCheck className={`w-4 h-4 ${isUsers ? 'text-[#141414]' : 'text-accent'} shrink-0`} />
+                  {!isCollapsedDesktop && <span>Kelola Akun Staf</span>}
                 </Link>
 
                 <Link
                   to="/settings"
-                  title="Identitas & SaaS (Config)"
+                  title="Identitas &amp; Pengaturan"
                   className={`${
                     isCollapsedDesktop
                       ? 'w-10 h-10 mx-auto flex items-center justify-center rounded-xl transition-all btn-interactive'
-                      : 'w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
+                      : 'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
                   } ${
                     isSettings
                       ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
                       : 'text-dim hover:text-text hover:bg-panel-elevated/70'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Sliders className={`w-4 h-4 shrink-0 ${isSettings ? 'text-[#141414]' : 'text-accent'}`} />
-                    {!isCollapsedDesktop && <span>Identitas &amp; SaaS</span>}
-                  </div>
-                  {!isCollapsedDesktop && (
-                    <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${isSettings ? 'bg-[#141414]/20 text-[#141414]' : 'bg-accent/15 text-accent border border-accent/25'}`}>
-                      CONFIG
-                    </span>
-                  )}
+                  <Sliders className={`w-4 h-4 ${isSettings ? 'text-[#141414]' : 'text-accent'} shrink-0`} />
+                  {!isCollapsedDesktop && <span>Pengaturan Platform</span>}
                 </Link>
               </>
-            )}
-
-            {(user.role === 'admin_studio' || user.role === 'manager' || user.role === 'platform_admin') && (
-              <Link
-                to="/users"
-                title="Kelola Akun Staf"
-                className={`${
-                  isCollapsedDesktop
-                    ? 'w-10 h-10 mx-auto flex items-center justify-center rounded-xl transition-all btn-interactive'
-                    : 'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all btn-interactive'
-                } ${
-                  isUsers
-                    ? 'bg-accent text-[#141414] font-bold shadow-[0_2px_12px_rgba(226,232,0,0.25)]'
-                    : 'text-dim hover:text-text hover:bg-panel-elevated/70'
-                }`}
-              >
-                <UserCheck className={`w-4 h-4 ${isUsers ? 'text-[#141414]' : 'text-accent'} shrink-0`} />
-                {!isCollapsedDesktop && <span>Kelola Akun Staf</span>}
-              </Link>
             )}
 
             <Link
@@ -527,20 +490,12 @@ export function AppLayout({
           <div className="mb-2.5">
             <span
               className={`inline-block w-full text-center text-[9px] font-mono font-bold px-2 py-0.5 rounded-md uppercase border ${
-                user.role === 'platform_admin'
+                user.role === 'admin'
                   ? 'bg-accent/20 text-accent border-accent/30'
-                  : user.role === 'admin_studio'
-                    ? 'bg-accent/20 text-accent border-accent/30'
-                    : user.role === 'manager'
-                      ? 'bg-sky-400/20 text-sky-400 border-sky-400/30'
-                      : 'bg-panel text-dim border-line'
+                  : 'bg-panel text-dim border-line'
               }`}
             >
-              {user.role === 'admin_studio'
-                ? 'Admin Studio'
-                : user.role === 'platform_admin'
-                  ? 'Platform Admin'
-                  : user.role.toUpperCase()}
+              {user.role === 'admin' ? 'Admin' : user.role.toUpperCase()}
             </span>
           </div>
 
@@ -574,8 +529,8 @@ export function AppLayout({
   const contextValue = React.useMemo(
     () => ({
       openEditProfile: () => setIsEditProfileOpen(true),
-      openPlatformAdmin: () => setIsPlatformAdminOpen(true),
-      openAdminUsers: () => setIsAdminUsersOpen(true),
+      openPlatformAdmin: () => {},
+      openAdminUsers: () => {},
       openAdminExercise: () => setIsAdminExerciseOpen(true),
       openExportPdf: () => setIsExportPdfOpen(true),
     }),
@@ -659,18 +614,6 @@ export function AppLayout({
         />
 
         {/* ── Global Modals (Accessible from anywhere in AppLayout) ── */}
-        <PlatformAdminModal
-          isOpen={isPlatformAdminOpen}
-          onClose={() => setIsPlatformAdminOpen(false)}
-          currentUser={user}
-        />
-
-        <AdminUsersModal
-          isOpen={isAdminUsersOpen}
-          onClose={() => setIsAdminUsersOpen(false)}
-          currentUser={user}
-        />
-
         <AdminExerciseModal
           isOpen={isAdminExerciseOpen}
           onClose={() => setIsAdminExerciseOpen(false)}
@@ -688,6 +631,14 @@ export function AppLayout({
           onClose={() => setIsEditProfileOpen(false)}
           currentUser={user}
           onProfileUpdated={handleProfileUpdated}
+        />
+
+        <LogoutModal
+          isOpen={isLogoutModalOpen}
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={executeLogout}
+          userName={user.name}
+          userRole={user.role}
         />
       </div>
     </AppLayoutContext.Provider>

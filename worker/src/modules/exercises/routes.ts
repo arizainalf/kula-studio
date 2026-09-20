@@ -6,31 +6,32 @@ import type { Env } from '../../env';
 
 const exercises = new Hono<{ Bindings: Env }>();
 
+// ── SCHEMAS ──
 const categorySchema = z.object({
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9_-]+$/),
-  name: z.string().min(1).max(100),
-  description: z.string().max(200).optional().nullable(),
-  icon: z.string().max(50).default('dumbbell'),
+  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'Slug kategori hanya boleh huruf kecil dan strip (-)'),
+  name: z.string().min(2).max(100),
+  description: z.string().max(255).optional().nullable(),
+  icon: z.string().min(1).max(50).default('dumbbell'),
   sort_order: z.number().int().default(0),
 });
 
 const newExerciseSchema = z.object({
-  category_slug: z.string().min(1),
+  category_slug: z.string().min(2).max(50),
   name: z.string().min(1).max(100),
   default_detail: z.string().max(200).optional().nullable(),
-  muscle_group: z.string().max(50).optional().nullable(),
+  muscle_group: z.string().max(100).optional().nullable(),
   is_favorite: z.boolean().default(false),
-  is_global: z.boolean().optional(),
+  is_global: z.boolean().default(false),
 });
 
 // ── 1. CATEGORIES ENDPOINTS ──
 
-// GET /api/exercises/categories — Daftar kategori latihan (publik/semua user)
+// GET /api/exercises/categories — Daftar kategori gerakan
 exercises.get('/categories', async (c) => {
   const sql = db(c);
   const rows = await sql`
     select 
-      c.slug, c.name, c.description, c.icon, c.sort_order, c.created_at,
+      c.*,
       count(l.id)::int as exercise_count
     from exercise_categories c
     left join exercise_library l on l.category_slug = c.slug
@@ -40,8 +41,8 @@ exercises.get('/categories', async (c) => {
   return c.json({ categories: rows });
 });
 
-// POST /api/exercises/categories — Tambah kategori baru (Khusus Admin Studio / Platform Admin)
-exercises.post('/categories', requireAuth, requireRole('admin_studio', 'platform_admin'), rejectGraceWrite, async (c) => {
+// POST /api/exercises/categories — Tambah kategori baru (Khusus Admin)
+exercises.post('/categories', requireAuth, requireRole('admin'), rejectGraceWrite, async (c) => {
   const parsed = categorySchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: 'invalid_input', detail: parsed.error.flatten() }, 400);
 
@@ -60,8 +61,8 @@ exercises.post('/categories', requireAuth, requireRole('admin_studio', 'platform
   return c.json({ category: row }, 201);
 });
 
-// PATCH /api/exercises/categories/:slug — Edit kategori (Khusus Admin Studio / Platform Admin)
-exercises.patch('/categories/:slug', requireAuth, requireRole('admin_studio', 'platform_admin'), rejectGraceWrite, async (c) => {
+// PATCH /api/exercises/categories/:slug — Edit kategori (Khusus Admin)
+exercises.patch('/categories/:slug', requireAuth, requireRole('admin'), rejectGraceWrite, async (c) => {
   const slug = c.req.param('slug') as string;
   const patchCatSchema = categorySchema.partial().omit({ slug: true });
   const parsed = patchCatSchema.safeParse(await c.req.json().catch(() => null));
@@ -84,8 +85,8 @@ exercises.patch('/categories/:slug', requireAuth, requireRole('admin_studio', 'p
   return c.json({ category: row });
 });
 
-// DELETE /api/exercises/categories/:slug — Hapus kategori (Khusus Admin Studio / Platform Admin)
-exercises.delete('/categories/:slug', requireAuth, requireRole('admin_studio', 'platform_admin'), rejectGraceWrite, async (c) => {
+// DELETE /api/exercises/categories/:slug — Hapus kategori (Khusus Admin)
+exercises.delete('/categories/:slug', requireAuth, requireRole('admin'), rejectGraceWrite, async (c) => {
   const slug = c.req.param('slug') as string;
   const sql = db(c);
 
@@ -97,19 +98,19 @@ exercises.delete('/categories/:slug', requireAuth, requireRole('admin_studio', '
 
 // ── 2. EXERCISES LIBRARY ENDPOINTS ──
 
-// GET /api/exercises — Daftar gerakan di library (bawaan sistem global + custom PT)
+// GET /api/exercises — Daftar gerakan di library
 exercises.get('/', async (c) => {
   const sql = db(c);
   const category = c.req.query('category');
   const q = c.req.query('q');
 
   let userId: string | null = null;
-  let studioId: string | null = null;
+  let isAdmin = false;
   try {
     const u = c.get('user');
     if (u) {
       userId = u.id;
-      studioId = u.studio_id ?? null;
+      isAdmin = u.role === 'admin';
     }
   } catch {
     // optional
@@ -124,8 +125,9 @@ exercises.get('/', async (c) => {
     from exercise_library l
     join exercise_categories c on c.slug = l.category_slug
     where (
-      (l.pt_id is null and (l.studio_id is null or l.studio_id = ${studioId}))
+      l.pt_id is null
       or l.pt_id = ${userId}
+      or ${isAdmin ? sql`true` : sql`false`}
     )
       ${category ? sql`and l.category_slug = ${category}` : sql``}
       ${q ? sql`and (l.name ilike ${'%' + q + '%'} or l.muscle_group ilike ${'%' + q + '%'} or l.default_detail ilike ${'%' + q + '%'})` : sql``}
@@ -135,7 +137,7 @@ exercises.get('/', async (c) => {
   return c.json({ exercises: rows });
 });
 
-// POST /api/exercises — Tambah gerakan ke library (PT: custom, Admin: bisa global atau custom)
+// POST /api/exercises — Tambah gerakan ke library
 exercises.post('/', requireAuth, rejectGraceWrite, async (c) => {
   const u = c.get('user');
   if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
@@ -150,20 +152,19 @@ exercises.post('/', requireAuth, rejectGraceWrite, async (c) => {
   const [cat] = await sql`select 1 from exercise_categories where slug = ${d.category_slug}`;
   if (!cat) return c.json({ error: 'invalid_category' }, 400);
 
-  // Jika admin studio atau platform admin mencentang is_global, set pt_id = null
-  const isStudioAdmin = u.role === 'admin_studio' || u.role === 'platform_admin';
-  const ptId = (isStudioAdmin && d.is_global) ? null : u.id;
+  // Jika admin mencentang is_global, set pt_id = null
+  const ptId = (u.role === 'admin' && d.is_global) ? null : u.id;
 
   const [row] = await sql`
-    insert into exercise_library (pt_id, category_slug, name, default_detail, muscle_group, is_favorite, studio_id)
-    values (${ptId}, ${d.category_slug}, ${d.name.trim()}, ${d.default_detail?.trim() ?? null}, ${d.muscle_group?.trim() ?? null}, ${d.is_favorite}, ${u.studio_id ?? null})
+    insert into exercise_library (pt_id, category_slug, name, default_detail, muscle_group, is_favorite)
+    values (${ptId}, ${d.category_slug}, ${d.name.trim()}, ${d.default_detail?.trim() ?? null}, ${d.muscle_group?.trim() ?? null}, ${d.is_favorite})
     returning *
   `;
 
   return c.json({ exercise: row }, 201);
 });
 
-// PATCH /api/exercises/:id — Edit gerakan di library (Admin bisa edit semua di studionya, PT edit miliknya)
+// PATCH /api/exercises/:id — Edit gerakan di library (Admin bisa edit semua, PT edit miliknya)
 exercises.patch('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const u = c.get('user');
   if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
@@ -176,15 +177,10 @@ exercises.patch('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const sql = db(c);
   const d = parsed.data;
 
-  // Cek otorisasi
-  const [existing] = await sql`select pt_id, studio_id from exercise_library where id = ${id}`;
+  const [existing] = await sql`select pt_id from exercise_library where id = ${id}`;
   if (!existing) return c.json({ error: 'not_found' }, 404);
 
-  const canEdit =
-    u.role === 'platform_admin' ||
-    (u.role === 'admin_studio' && (!u.studio_id || existing.studio_id === u.studio_id || existing.pt_id === null)) ||
-    existing.pt_id === u.id;
-
+  const canEdit = u.role === 'admin' || existing.pt_id === u.id;
   if (!canEdit) {
     return c.json({ error: 'forbidden' }, 403);
   }
@@ -203,7 +199,7 @@ exercises.patch('/:id', requireAuth, rejectGraceWrite, async (c) => {
   return c.json({ exercise: row });
 });
 
-// DELETE /api/exercises/:id — Hapus gerakan di library (Admin bisa hapus di studionya, PT hapus miliknya)
+// DELETE /api/exercises/:id — Hapus gerakan di library (Admin bisa hapus semua, PT hapus miliknya)
 exercises.delete('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const u = c.get('user');
   if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
@@ -211,11 +207,8 @@ exercises.delete('/:id', requireAuth, rejectGraceWrite, async (c) => {
   const id = c.req.param('id') as string;
   const sql = db(c);
 
-  const canDeleteAll = u.role === 'platform_admin' || u.role === 'admin_studio';
-  const res = canDeleteAll
-    ? (u.role === 'platform_admin'
-        ? await sql`delete from exercise_library where id = ${id}`
-        : await sql`delete from exercise_library where id = ${id} and (studio_id = ${u.studio_id ?? null} or pt_id = ${u.id})`)
+  const res = u.role === 'admin'
+    ? await sql`delete from exercise_library where id = ${id}`
     : await sql`delete from exercise_library where id = ${id} and pt_id = ${u.id}`;
 
   if (res.count === 0) {

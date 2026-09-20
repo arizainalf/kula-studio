@@ -8,7 +8,7 @@ import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
     try {
-      const res = await api<{ user: User }>('/auth/me')
+      const res = await api<{ user: User }>('/auth/me', { cache: 'no-store' as any })
       if (res.user.role === 'client') {
         throw redirect({ to: '/portal' })
       }

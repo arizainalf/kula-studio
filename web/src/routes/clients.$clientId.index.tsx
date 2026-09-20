@@ -64,7 +64,7 @@ export const Route = createFileRoute('/clients/$clientId/')({
     ])
 
     let trainers: Array<{ id: string; name: string; email: string; role: string }> = []
-    if (meRes.user.role === 'admin_studio' || meRes.user.role === 'manager' || meRes.user.role === 'platform_admin') {
+    if (meRes.user.role === 'admin') {
       try {
         const staffRes = await api<{ staff: Array<{ id: string; name: string; email: string; role: string }> }>('/staff')
         trainers = (staffRes.staff || []).filter((s) => s.role === 'pt')
@@ -257,7 +257,7 @@ function ClientDetail() {
         notes: editNotes.trim() || null,
         avatar_url: editAvatarUrl.trim() || null,
       }
-      if (currentUser?.role === 'admin_studio' || currentUser?.role === 'manager' || currentUser?.role === 'platform_admin') {
+      if (currentUser?.role === 'admin') {
         if (editPtId) payload.pt_id = editPtId
       }
       const res = await api<{ client: Client }>(`/clients/${client.id}`, {
@@ -1106,11 +1106,11 @@ function ClientDetail() {
               </div>
 
               <form onSubmit={handleEditClient} className="space-y-4 text-xs">
-                {(currentUser?.role === 'admin_studio' || currentUser?.role === 'manager' || currentUser?.role === 'platform_admin') && trainers.length > 0 && (
+                {currentUser?.role === 'admin' && trainers.length > 0 && (
                   <div className="p-3 bg-accent/5 rounded-xl border border-accent/25 space-y-1.5">
                     <label className="text-accent font-semibold block font-mono uppercase text-[11px] flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>PT Penanggung Jawab (Akses Admin / Manager)</span>
+                      <span>PT Penanggung Jawab (Akses Admin)</span>
                     </label>
                     <select
                       value={editPtId}

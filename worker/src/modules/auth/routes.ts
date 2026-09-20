@@ -17,31 +17,26 @@ auth.post('/login', async (c) => {
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
   const [user] = await db(c)`
-    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url, u.youtube_url,
-           u.studio_id, s.name as studio_name, s.slug as studio_slug, s.is_active as studio_is_active
+    select u.id, u.email, u.password_hash, u.name, u.role, u.is_active, u.avatar_url, u.youtube_url
     from users u
-    left join studios s on s.id = u.studio_id
     where u.email = ${parsed.data.email}`;
 
   // Pesan generik — jangan bocorkan email terdaftar
   if (!user || !verifyPassword(parsed.data.password, user.password_hash))
     return c.json({ error: 'invalid_credentials' }, 401);
   if (!user.is_active) return c.json({ error: 'pending_activation' }, 403);
-  if (user.role !== 'platform_admin' && user.studio_id && user.studio_is_active === false) {
-    return c.json({ error: 'studio_suspended' }, 403);
-  }
+
+  // Normalisasi role legacy jika masih ada di DB
+  const normalizedRole = (user.role === 'platform_admin' || user.role === 'admin_studio') ? 'admin'
+    : user.role === 'manager' ? 'pt'
+    : user.role;
 
   const payload = {
     sub: {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: normalizedRole as 'admin' | 'pt' | 'client',
       name: user.name,
-      plan_tier: user.plan_tier,
-      expires_at: user.expires_at,
-      studio_id: user.studio_id ?? null,
-      studio_name: user.studio_name ?? null,
-      studio_slug: user.studio_slug ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -129,8 +124,10 @@ auth.post('/client-login', async (c) => {
 });
 
 auth.post('/logout', (c) => {
-  c.header('Set-Cookie', 'ks_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0');
-  c.header('Set-Cookie', 'tl_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0', { append: true });
+  c.header('Set-Cookie', 'ks_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+  c.header('Set-Cookie', 'tl_session=; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT', { append: true });
+  c.header('Set-Cookie', 'ks_session=; HttpOnly; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT', { append: true });
+  c.header('Set-Cookie', 'tl_session=; HttpOnly; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT', { append: true });
   return c.json({ ok: true });
 });
 
@@ -160,17 +157,16 @@ auth.get('/me', requireAuth, async (c) => {
   }
 
   const [user] = await sql`
-    select u.id, u.email, u.name, u.role, u.is_active, u.plan_tier, u.expires_at, u.avatar_url, u.youtube_url, u.phone,
-           u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier
+    select u.id, u.email, u.name, u.role, u.is_active, u.avatar_url, u.youtube_url, u.phone
     from users u
-    left join studios s on s.id = u.studio_id
     where u.id = ${u.id}
   `;
   if (!user) return c.json({ user: u });
   return c.json({ user });
 });
 
-// GET /api/auth/profile — Mengambil profil lengkap pengguna (Semua role: Admin, Manager, PT, Client)
+
+// GET /api/auth/profile — Mengambil profil lengkap pengguna (Admin, PT, Client)
 auth.get('/profile', requireAuth, async (c) => {
   const u = c.get('user');
   const sql = db(c);
@@ -205,16 +201,15 @@ auth.get('/profile', requireAuth, async (c) => {
   }
 
   const [row] = await sql`
-    select u.id, u.email, u.name, u.role, u.plan_tier, u.expires_at, u.is_active, u.created_at, u.avatar_url, u.youtube_url, u.phone,
-           u.studio_id, s.name as studio_name, s.slug as studio_slug, s.plan_tier as studio_plan_tier, sp.spec
+    select u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.avatar_url, u.youtube_url, u.phone, sp.spec
     from users u
-    left join studios s on s.id = u.studio_id
     left join staff_profile sp on sp.user_id = u.id
     where u.id = ${u.id}
   `;
   if (!row) return c.json({ error: 'user_not_found' }, 404);
   return c.json({ user: row });
 });
+
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -299,7 +294,7 @@ auth.patch('/profile', requireAuth, async (c) => {
     });
   }
 
-  // Admin, Manager, PT
+  // Admin, PT
   const cleanEmail = d.email ? d.email.toLowerCase().trim() : undefined;
   if (cleanEmail && cleanEmail !== u.email.toLowerCase()) {
     const [exists] = await sql`select 1 from users where email = ${cleanEmail} and id <> ${u.id}`;
@@ -317,7 +312,7 @@ auth.patch('/profile', requireAuth, async (c) => {
       avatar_url = ${d.avatar_url !== undefined ? d.avatar_url : sql`avatar_url`},
       youtube_url = ${d.youtube_url !== undefined ? d.youtube_url : sql`youtube_url`}
     where id = ${u.id}
-    returning id, email, name, role, phone, plan_tier, expires_at, is_active, avatar_url, youtube_url
+    returning id, email, name, role, phone, is_active, avatar_url, youtube_url
   `;
 
   if (!updatedUser) return c.json({ error: 'user_not_found' }, 404);
@@ -336,13 +331,8 @@ auth.patch('/profile', requireAuth, async (c) => {
     sub: {
       id: updatedUser.id,
       email: updatedUser.email,
-      role: updatedUser.role as any,
+      role: updatedUser.role as 'admin' | 'pt',
       name: updatedUser.name,
-      plan_tier: updatedUser.plan_tier,
-      expires_at: updatedUser.expires_at,
-      studio_id: u.studio_id ?? null,
-      studio_name: u.studio_name ?? null,
-      studio_slug: u.studio_slug ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -370,18 +360,18 @@ auth.patch('/profile', requireAuth, async (c) => {
   });
 });
 
-// POST /api/auth/toggle-admin — Memungkinkan akun PT menjadi akun Admin Studio (dan sebaliknya)
+// POST /api/auth/toggle-admin — Toggle role antara admin dan pt
 auth.post('/toggle-admin', requireAuth, async (c) => {
   const u = c.get('user');
-  if (u.role === 'client' || u.role === 'platform_admin') return c.json({ error: 'forbidden' }, 403);
+  if (u.role === 'client') return c.json({ error: 'forbidden' }, 403);
 
   const sql = db(c);
-  const targetRole = u.role === 'admin_studio' ? 'pt' : 'admin_studio';
+  const targetRole = u.role === 'admin' ? 'pt' : 'admin';
 
   const [updated] = await sql`
     update users set role = ${targetRole}
     where id = ${u.id}
-    returning id, email, name, role, plan_tier, expires_at, avatar_url, youtube_url
+    returning id, email, name, role, avatar_url, youtube_url
   `;
 
   if (!updated) return c.json({ error: 'user_not_found' }, 404);
@@ -390,13 +380,8 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
     sub: {
       id: updated.id,
       email: updated.email,
-      role: updated.role,
+      role: updated.role as 'admin' | 'pt',
       name: updated.name,
-      plan_tier: updated.plan_tier,
-      expires_at: updated.expires_at,
-      studio_id: u.studio_id ?? null,
-      studio_name: u.studio_name ?? null,
-      studio_slug: u.studio_slug ?? null,
     },
     exp: Date.now() + 7 * 86400_000,
   };
@@ -419,3 +404,4 @@ auth.post('/toggle-admin', requireAuth, async (c) => {
 });
 
 export default auth;
+

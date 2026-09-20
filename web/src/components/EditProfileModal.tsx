@@ -584,9 +584,7 @@ export function EditProfileModal({
             {/* Modal Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-line mt-6">
               <div className="text-[11px] text-dim font-mono">
-                {currentUser.plan_tier && (
-                  <span>Tier: <strong className="text-accent">{currentUser.plan_tier.toUpperCase()}</strong></span>
-                )}
+                Role: <strong className="text-accent uppercase">{currentUser.role === 'admin' ? 'Admin' : 'Personal Trainer'}</strong>
               </div>
 
               <div className="flex items-center gap-2.5">

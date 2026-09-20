@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
 import {
   api,
   type User,
@@ -53,6 +53,8 @@ import {
   Award,
   Crown,
   Gauge,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 export const AVAILABLE_FEATURE_ICONS = [
@@ -93,7 +95,7 @@ export const Route = createFileRoute('/settings')({
   beforeLoad: async () => {
     try {
       const res = await api<{ user: User }>('/auth/me')
-      if (res.user.role !== 'platform_admin') {
+      if (res.user.role !== 'admin') {
         throw redirect({ to: '/' })
       }
     } catch (e) {
@@ -138,6 +140,7 @@ export const Route = createFileRoute('/settings')({
 })
 
 function PlatformSettingsPage() {
+  const router = useRouter()
   const { currentUser: initialUser, initialSettings } = Route.useLoaderData()
   const [currentUser, setCurrentUser] = useState<User>(initialUser)
   const [settings, setSettings] = useState<PlatformSettings>(initialSettings)
@@ -223,6 +226,7 @@ function PlatformSettingsPage() {
   function applySettings(updated: PlatformSettings) {
     setSettings(updated)
     dispatchPlatformSettingsChange(updated)
+    router.invalidate().catch(() => {})
   }
 
   // Save Identity Section
@@ -370,6 +374,24 @@ function PlatformSettingsPage() {
     if (confirm('Hapus paket langganan ini?')) {
       const updated = (settings.pricing_plans || []).filter((p) => p.id !== id)
       savePricingList(updated)
+    }
+  }
+
+  async function handleToggleShowPricing() {
+    const current = settings.show_pricing ?? true
+    const nextVal = !current
+    try {
+      const res = await api<{ settings: PlatformSettings; message: string }>(
+        '/platform/settings',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ show_pricing: nextVal }),
+        }
+      )
+      applySettings(res.settings)
+      showSuccess(nextVal ? 'Bagian harga di landing page kini AKTIF ditampilkan.' : 'Bagian harga di landing page kini DINONAKTIFKAN (disembunyikan).')
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengubah status bagian harga.')
     }
   }
 
@@ -529,6 +551,11 @@ function PlatformSettingsPage() {
             >
               {settings.pricing_plans?.length || 0}
             </span>
+            {settings.show_pricing === false && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                OFF
+              </span>
+            )}
           </button>
 
           <button
@@ -968,14 +995,73 @@ function PlatformSettingsPage() {
 
         {/* ─── TAB 4: PAKET & HARGA ─── */}
         {activeTab === 'pricing' && (
-          <div className="space-y-8 w-full min-w-0">
-            {/* Section 1: Paket Langganan Utama */}
+          <div className="space-y-6 w-full min-w-0">
+            {/* Toggle Saklar: Tampilkan / Sembunyikan Section Harga di Landing Page */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-panel border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                    (settings.show_pricing ?? true)
+                      ? 'bg-accent/15 border-accent/30 text-accent'
+                      : 'bg-bg border-line text-dim'
+                  }`}
+                >
+                  {(settings.show_pricing ?? true) ? (
+                    <Eye className="w-5 h-5" />
+                  ) : (
+                    <EyeOff className="w-5 h-5 text-rose-400" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-text">
+                      Visibilitas Bagian Harga di Landing Page
+                    </h4>
+                    <span
+                      className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase ${
+                        (settings.show_pricing ?? true)
+                          ? 'bg-accent/15 text-accent border border-accent/30'
+                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/25'
+                      }`}
+                    >
+                      {(settings.show_pricing ?? true) ? 'Tampil di Publik' : 'Disembunyikan'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-dim mt-0.5">
+                    {(settings.show_pricing ?? true)
+                      ? 'Bagian tabel harga (#paket) dan tautan menu "Harga" aktif ditampilkan di landing page.'
+                      : 'Bagian harga dan menu disembunyikan. Pengunjung diarahkan langsung menghubungi coach via WhatsApp.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleShowPricing}
+                className={`btn-interactive px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
+                  (settings.show_pricing ?? true)
+                    ? 'bg-accent text-[#141414] border-accent shadow-sm hover:bg-accent/90'
+                    : 'bg-bg text-text border-line hover:border-accent/40'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    (settings.show_pricing ?? true) ? 'bg-[#141414]' : 'bg-rose-500'
+                  }`}
+                />
+                <span>
+                  {(settings.show_pricing ?? true) ? 'Matikan (Sembunyikan)' : 'Aktifkan (Tampilkan)'}
+                </span>
+              </button>
+            </div>
+
+            {/* Section 1: Daftar Paket Sesi Latihan */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-xl bg-panel border border-line">
                 <div>
-                  <h3 className="font-bold text-sm text-text">Paket Langganan SaaS</h3>
+                  <h3 className="font-bold text-sm text-text">Daftar Paket Sesi Latihan</h3>
                   <p className="text-xs text-dim mt-0.5">
-                    Atur nama paket (Standard, Pro, dsb), harga bulanan, serta daftar fitur di dalamnya.
+                    Atur nama paket (contoh: 10 Sesi, 20 Sesi, Paket Bulanan), harga, serta daftar benefit di dalamnya.
                   </p>
                 </div>
                 <button

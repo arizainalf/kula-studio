@@ -22,6 +22,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   cta_subheadline:
     'Daftarkan akun Anda, verifikasi melalui admin studio, dan rasakan kemudahan pengelolaan latihan berstandar internasional.',
   footer_copyright: 'Kula Studio. Hak Cipta Dilindungi.',
+  show_pricing: true,
 }
 
 const SETTINGS_EVENT = 'kulastudio-settings-change'
@@ -149,6 +150,15 @@ export function usePlatformSettings(initialSettings?: PlatformSettings | null): 
     return getCachedPlatformSettings()
   })
 
+  // Sinkronkan jika parent component meneruskan initialSettings baru
+  useEffect(() => {
+    if (initialSettings) {
+      memoryCachedSettings = initialSettings
+      setSettings(initialSettings)
+      updateDocumentFavicon(initialSettings.logo_url)
+    }
+  }, [initialSettings])
+
   useEffect(() => {
     let active = true
 
@@ -163,10 +173,25 @@ export function usePlatformSettings(initialSettings?: PlatformSettings | null): 
       }
     }
 
+    // Cross-tab synchronization via localStorage storage event
+    function handleStorageUpdate(e: StorageEvent) {
+      if (e.key === STORAGE_KEY && e.newValue && active) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          if (parsed && typeof parsed === 'object') {
+            memoryCachedSettings = parsed
+            setSettings(parsed)
+            updateDocumentFavicon(parsed.logo_url)
+          }
+        } catch {}
+      }
+    }
+
     window.addEventListener(SETTINGS_EVENT, handleSettingsUpdate)
+    window.addEventListener('storage', handleStorageUpdate)
 
     // Background fetch fresh settings from database API
-    api<{ settings: PlatformSettings }>('/platform/settings')
+    api<{ settings: PlatformSettings }>('/platform/settings', { cache: 'no-store' as any })
       .then((res) => {
         if (!active || !res.settings) return
         memoryCachedSettings = res.settings
@@ -186,6 +211,7 @@ export function usePlatformSettings(initialSettings?: PlatformSettings | null): 
     return () => {
       active = false
       window.removeEventListener(SETTINGS_EVENT, handleSettingsUpdate)
+      window.removeEventListener('storage', handleStorageUpdate)
     }
   }, [])
 

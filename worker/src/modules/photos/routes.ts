@@ -1,5 +1,3 @@
-// Foto sesi: upload multipart → R2 (local sim di wrangler dev), metadata di tabel photos.
-// Validasi: image/jpeg|png|webp, max 5MB. Akses: ownership client + cookie (bukan public URL).
 import { Hono } from 'hono';
 import { db } from '../../lib/db';
 import { requireAuth, rejectGraceWrite } from '../../middleware/auth';
@@ -12,23 +10,16 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const OK_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
-async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string; studio_id?: string | null }) {
-  const [row] = await sql`
-    select 1 from clients c
-    where c.id = ${clientId}
-      and (
-        ${u.role} = 'platform_admin'
-        or (${u.role} = 'admin_studio' and (${u.studio_id ? sql`c.studio_id = ${u.studio_id}` : sql`true`}))
-        or c.pt_id = ${u.id}
-        or (${u.role} = 'manager' and exists(
-             select 1 from staff_profile sp where sp.user_id = c.pt_id and sp.manager_id = ${u.id}))
-      )`;
+async function ownsClient(sql: ReturnType<typeof db>, clientId: string, u: { id: string; role: string; clientId?: string }) {
+  if (u.role === 'client') return u.clientId === clientId || u.id === clientId;
+  if (u.role === 'admin') return true;
+  const [row] = await sql`select 1 from clients where id = ${clientId} and pt_id = ${u.id}`;
   return !!row;
 }
 
 photos.post('/:clientId', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   if (!c.env.PHOTOS_BUCKET) return c.json({ error: 'storage_not_configured' }, 501);
   const clientId = c.req.param('clientId');
   const sql = db(c);
@@ -59,20 +50,18 @@ photos.get('/:clientId', async (c) => {
   return c.json({ photos: rows });
 });
 
-// Serve bytes — tetap butuh cookie; cek via <img src> otomatis kirim same-origin cookie
+// Serve bytes — tetap butuh cookie
 photos.get('/raw/:id', async (c) => {
   const u = c.get('user');
   if (!c.env.PHOTOS_BUCKET) return c.json({ error: 'storage_not_configured' }, 501);
   const sql = db(c);
   const [row] = await sql`
-    select p.r2_key, c.pt_id, c.studio_id from photos p join clients c on c.id = p.client_id where p.id = ${c.req.param('id')}`;
+    select p.r2_key, c.id as client_id, c.pt_id from photos p join clients c on c.id = p.client_id where p.id = ${c.req.param('id')}`;
   if (!row) return c.json({ error: 'not_found' }, 404);
-  const isPlatform = u.role === 'platform_admin';
-  const isStudioAdmin = u.role === 'admin_studio' && (!u.studio_id || row.studio_id === u.studio_id);
-  const isOwnerPt = row.pt_id === u.id;
-  const isManager = u.role === 'manager';
-  if (!isPlatform && !isStudioAdmin && !isOwnerPt && !isManager) 
-    return c.json({ error: 'forbidden' }, 403);
+
+  const canAccess = u.role === 'admin' || row.pt_id === u.id || (u.role === 'client' && (u.clientId === row.client_id || u.id === row.client_id));
+  if (!canAccess) return c.json({ error: 'forbidden' }, 403);
+
   const obj = await c.env.PHOTOS_BUCKET.get(row.r2_key);
   if (!obj) return c.json({ error: 'not_found' }, 404);
   return new Response(obj.body, {
@@ -85,11 +74,12 @@ photos.get('/raw/:id', async (c) => {
 
 photos.delete('/:id', async (c) => {
   const u = c.get('user');
-  if (u.role !== 'pt') return c.json({ error: 'forbidden' }, 403);
+  if (u.role !== 'pt' && u.role !== 'admin') return c.json({ error: 'forbidden' }, 403);
   if (!c.env.PHOTOS_BUCKET) return c.json({ error: 'storage_not_configured' }, 501);
   const sql = db(c);
-  const [row] = await sql`
-    delete from photos where id = ${c.req.param('id')} and pt_id = ${u.id} returning r2_key`;
+  const [row] = u.role === 'admin'
+    ? await sql`delete from photos where id = ${c.req.param('id')} returning r2_key`
+    : await sql`delete from photos where id = ${c.req.param('id')} and pt_id = ${u.id} returning r2_key`;
   if (!row) return c.json({ error: 'not_found' }, 404);
   await c.env.PHOTOS_BUCKET.delete(row.r2_key);
   return c.json({ ok: true });

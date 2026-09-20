@@ -1,28 +1,27 @@
 import { useState } from 'react'
-import { useLocation, Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import {
   LayoutDashboard,
   Users,
   Calendar,
-  Plus,
-  UserPlus,
   Dumbbell,
-  Menu,
-  X,
-  Building2,
-  Sliders,
-  UserCheck,
+  Plus,
   Printer,
   Globe,
+  Sliders,
+  LogOut,
+  X,
+  Menu,
+  ChevronRight,
   Sun,
   Moon,
+  UserPlus,
+  UserCheck,
   UserCog,
-  LogOut,
-  ChevronRight,
 } from 'lucide-react'
+import { type User } from '../lib/api'
 import { useTheme } from './ThemeToggle'
 import { UserAvatar } from './UserAvatar'
-import type { User } from '../lib/api'
 
 export interface MobileBottomNavProps {
   currentUser?: User
@@ -40,7 +39,6 @@ export function MobileBottomNav({
   clientId,
   canLogSession,
   onScheduleClick,
-  onAddStudioClick,
   openExportPdf,
   openEditProfile,
   handleLogout,
@@ -51,13 +49,11 @@ export function MobileBottomNav({
   const [isMoreOpen, setIsMoreOpen] = useState(false)
 
   const role = currentUser?.role || 'pt'
-  const isPlatformAdmin = role === 'platform_admin'
-  const isAdminStudioOrManager = role === 'admin_studio' || role === 'manager'
+  const isAdmin = role === 'admin'
   const isPT = role === 'pt'
 
   // Route active states
   const isDashboard = pathname === '/'
-  const isStudios = pathname.startsWith('/studios')
   const isSettings = pathname.startsWith('/settings')
   const isUsers = pathname.startsWith('/users')
   const isExercises = pathname.startsWith('/exercises')
@@ -71,10 +67,8 @@ export function MobileBottomNav({
   const isClientDetail = pathname.startsWith('/clients/') && !pathname.endsWith('/log') && !pathname.endsWith('/new')
   const showCatatSesi = isPT && isClientDetail && Boolean(clientId) && Boolean(canLogSession)
 
-  // Determine if any secondary sheet item is currently active
   const isSecondaryRouteActive =
-    (isPlatformAdmin && (isUsers || isExercises || isClients || isSchedule)) ||
-    (isAdminStudioOrManager && (isSchedule || isExercises)) ||
+    (isAdmin && (isSchedule || isExercises || isSettings)) ||
     (isPT && isExercises)
 
   return (
@@ -85,98 +79,8 @@ export function MobileBottomNav({
         className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-panel/85 backdrop-blur-2xl border-t border-line shadow-[0_-4px_25px_rgba(0,0,0,0.35)] px-2 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] transition-all duration-300"
       >
         <div className="flex items-center justify-around max-w-md mx-auto relative">
-          {/* ══════════ ROLE: PLATFORM ADMIN ══════════ */}
-          {isPlatformAdmin ? (
-            <>
-              {/* Tab 1: Dashboard */}
-              <Link
-                to="/"
-                onClick={() => setIsMoreOpen(false)}
-                className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
-                  isDashboard ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
-                }`}
-              >
-                <LayoutDashboard className="w-5 h-5 mb-1" />
-                <span className="text-[10px] tracking-tight leading-none">Dashboard</span>
-                {isDashboard && <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />}
-              </Link>
-
-              {/* Tab 2: Kelola Studio */}
-              <Link
-                to="/studios"
-                onClick={() => setIsMoreOpen(false)}
-                className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
-                  isStudios ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
-                }`}
-              >
-                <Building2 className="w-5 h-5 mb-1" />
-                <span className="text-[10px] tracking-tight leading-none">Studio</span>
-                {isStudios && <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />}
-              </Link>
-
-              {/* Tab 3: FAB Center Action (+ Studio Baru) */}
-              <div className="flex flex-col items-center -mt-6">
-                {onAddStudioClick ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMoreOpen(false)
-                      onAddStudioClick()
-                    }}
-                    className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
-                    title="Tambah Studio Baru"
-                  >
-                    <Plus className="w-6 h-6 stroke-[2.5]" />
-                  </button>
-                ) : (
-                  <a
-                    href="/studios?action=new"
-                    onClick={() => setIsMoreOpen(false)}
-                    className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
-                    title="Tambah Studio Baru"
-                  >
-                    <Plus className="w-6 h-6 stroke-[2.5]" />
-                  </a>
-                )}
-                <span className="text-[9px] font-mono font-bold text-accent mt-1 tracking-tight">
-                  + Studio
-                </span>
-              </div>
-
-              {/* Tab 4: Identitas & SaaS Config */}
-              <Link
-                to="/settings"
-                onClick={() => setIsMoreOpen(false)}
-                className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
-                  isSettings ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
-                }`}
-              >
-                <Sliders className="w-5 h-5 mb-1" />
-                <span className="text-[10px] tracking-tight leading-none">SaaS</span>
-                {isSettings && <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />}
-              </Link>
-
-              {/* Tab 5: Menu / Lainnya */}
-              <button
-                type="button"
-                onClick={() => setIsMoreOpen((prev) => !prev)}
-                className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
-                  isMoreOpen || isSecondaryRouteActive
-                    ? 'text-accent font-bold scale-105'
-                    : 'text-dim hover:text-text'
-                }`}
-                title="Menu Lengkap"
-                aria-label="Menu Lengkap"
-              >
-                <Menu className="w-5 h-5 mb-1" />
-                <span className="text-[10px] tracking-tight leading-none">Menu</span>
-                {(isMoreOpen || isSecondaryRouteActive) && (
-                  <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />
-                )}
-              </button>
-            </>
-          ) : isAdminStudioOrManager ? (
-            /* ══════════ ROLE: ADMIN STUDIO / MANAGER ══════════ */
+          {/* ══════════ ROLE: ADMIN ══════════ */}
+          {isAdmin ? (
             <>
               {/* Tab 1: Dashboard */}
               <Link
@@ -252,7 +156,7 @@ export function MobileBottomNav({
               </button>
             </>
           ) : (
-            /* ══════════ ROLE: PERSONAL TRAINER (PT) & DEFAULT ══════════ */
+            /* ══════════ ROLE: PERSONAL TRAINER (PT) ══════════ */
             <>
               {/* Tab 1: Dashboard */}
               <Link
@@ -318,6 +222,7 @@ export function MobileBottomNav({
                   className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                     isSchedule ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                   }`}
+                  title="Jadwal Sesi"
                 >
                   <Calendar className="w-5 h-5 mb-1" />
                   <span className="text-[10px] tracking-tight leading-none">Jadwal</span>
@@ -360,24 +265,22 @@ export function MobileBottomNav({
         </div>
       </nav>
 
-      {/* ── Slide-up Mobile Bottom Sheet Modal ── */}
+      {/* ── Slide-up More Sheet Modal (Clean Full Menu) ── */}
       {isMoreOpen && (
-        <div className="fixed inset-0 z-50 md:hidden animate-fade-in flex flex-col justify-end">
-          {/* Backdrop Overlay */}
+        <div
+          className="fixed inset-0 z-50 md:hidden flex flex-col justify-end bg-black/75 backdrop-blur-sm animate-fade-in"
+          onClick={() => setIsMoreOpen(false)}
+        >
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
-            onClick={() => setIsMoreOpen(false)}
-          />
+            className="w-full bg-panel border-t border-line rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.8)] max-h-[85vh] flex flex-col overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sheet Handle & Header */}
+            <div className="pt-3 pb-2 px-5 border-b border-line/60 flex items-center justify-between">
+              <div className="w-12 h-1.5 rounded-full bg-line/80 mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
 
-          {/* Bottom Sheet Container */}
-          <div className="relative z-10 bg-panel/95 backdrop-blur-2xl border-t border-line rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.6)] max-h-[85vh] flex flex-col animate-slide-up">
-            {/* Top Drag Handle Indicator */}
-            <div className="w-12 h-1.5 rounded-full bg-line/60 mx-auto mt-3 mb-1 shrink-0" />
-
-            {/* Header: User & Studio Context */}
-            <div className="p-4 pb-3 border-b border-line/40 flex items-center justify-between gap-3">
               {currentUser ? (
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-3 min-w-0 flex-1 pt-2">
                   <UserAvatar
                     name={currentUser.name}
                     avatarUrl={currentUser.avatar_url}
@@ -390,39 +293,24 @@ export function MobileBottomNav({
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                       <span
                         className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded uppercase ${
-                          currentUser.role === 'platform_admin'
+                          currentUser.role === 'admin'
                             ? 'bg-accent/20 text-accent border border-accent/30'
-                            : currentUser.role === 'admin_studio'
-                              ? 'bg-accent/20 text-accent border border-accent/30'
-                              : currentUser.role === 'manager'
-                                ? 'bg-sky-400/20 text-sky-400 border border-sky-400/30'
-                                : 'bg-panel-elevated text-dim border border-line'
+                            : 'bg-panel-elevated text-dim border border-line'
                         }`}
                       >
-                        {currentUser.role === 'admin_studio'
-                          ? 'Admin Studio'
-                          : currentUser.role === 'platform_admin'
-                            ? 'Platform Admin'
-                            : currentUser.role === 'manager'
-                              ? 'Manager'
-                              : 'Personal Trainer'}
+                        {currentUser.role === 'admin' ? 'Admin' : 'Personal Trainer'}
                       </span>
-                      {currentUser.studio_name && (
-                        <span className="text-[10px] text-dim font-mono truncate">
-                          &bull; {currentUser.studio_name}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm font-bold text-text">Menu &amp; Fitur Lengkap</div>
+                <div className="text-sm font-bold text-text pt-2">Menu &amp; Fitur Lengkap</div>
               )}
 
               <button
                 type="button"
                 onClick={() => setIsMoreOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-panel-elevated text-dim hover:text-text transition-colors shrink-0"
+                className="p-1.5 rounded-xl text-dim hover:text-text hover:bg-panel-elevated transition-colors btn-interactive shrink-0 mt-2"
                 title="Tutup Menu"
               >
                 <X className="w-5 h-5" />
@@ -434,35 +322,28 @@ export function MobileBottomNav({
               {/* ══════════ SECTION 1: ROLE-SPECIFIC FEATURES ══════════ */}
               <div className="space-y-1.5">
                 <div className="text-[10px] font-mono font-bold tracking-wider text-dim uppercase px-1 pb-0.5">
-                  {isPlatformAdmin
-                    ? 'Manajemen SaaS & Sistem'
-                    : isAdminStudioOrManager
-                      ? 'Operasional Studio'
-                      : 'Alat & Fitur Pelatih'}
+                  {isAdmin ? 'Manajemen & Operasional' : 'Alat & Fitur Pelatih'}
                 </div>
 
-                {/* ── PLATFORM ADMIN MENUS ── */}
-                {isPlatformAdmin && (
+                {isAdmin && (
                   <>
                     <Link
-                      to="/users"
+                      to="/schedule"
                       onClick={() => setIsMoreOpen(false)}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
-                        isUsers ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
+                        isSchedule ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
-                          <UserCheck className="w-4 h-4" />
+                          <Calendar className="w-4 h-4" />
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-xs text-text">Kelola Akun Staf &amp; PT</div>
-                          <div className="text-[10px] text-dim">Semua pelatih &amp; pengelola studio</div>
+                          <div className="font-bold text-xs text-text">Jadwal Sesi</div>
+                          <div className="text-[10px] text-dim">Kalender &amp; agenda jadwal latihan</div>
                         </div>
                       </div>
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30">
-                        USER
-                      </span>
+                      <ChevronRight className="w-4 h-4 text-dim" />
                     </Link>
 
                     <Link
@@ -478,100 +359,35 @@ export function MobileBottomNav({
                         </div>
                         <div className="text-left">
                           <div className="font-bold text-xs text-text">Master Gerakan</div>
-                          <div className="text-[10px] text-dim">Katalog latihan global &amp; kategori gerak</div>
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-panel border border-line text-dim">
-                        DATA
-                      </span>
-                    </Link>
-
-                    <Link
-                      to="/clients"
-                      onClick={() => setIsMoreOpen(false)}
-                      className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
-                        isClients ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-panel border border-line flex items-center justify-center text-dim shrink-0">
-                          <Users className="w-4 h-4" />
-                        </div>
-                        <div className="text-left">
-                          <div className="font-bold text-xs text-text">Direktori Klien</div>
-                          <div className="text-[10px] text-dim">Daftar klien terdaftar di sistem</div>
+                          <div className="text-[10px] text-dim">Katalog latihan &amp; kategori gerak</div>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-dim" />
                     </Link>
 
                     <Link
-                      to="/schedule"
+                      to="/settings"
                       onClick={() => setIsMoreOpen(false)}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
-                        isSchedule ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-panel border border-line flex items-center justify-center text-dim shrink-0">
-                          <Calendar className="w-4 h-4" />
-                        </div>
-                        <div className="text-left">
-                          <div className="font-bold text-xs text-text">Jadwal Sesi Terpadu</div>
-                          <div className="text-[10px] text-dim">Kalender agenda latihan gym</div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-dim" />
-                    </Link>
-                  </>
-                )}
-
-                {/* ── ADMIN STUDIO / MANAGER MENUS ── */}
-                {isAdminStudioOrManager && (
-                  <>
-                    <Link
-                      to="/schedule"
-                      onClick={() => setIsMoreOpen(false)}
-                      className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
-                        isSchedule ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
+                        isSettings ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
-                          <Calendar className="w-4 h-4" />
+                          <Sliders className="w-4 h-4" />
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-xs text-text">Jadwal Sesi Studio</div>
-                          <div className="text-[10px] text-dim">Kalender &amp; agenda jadwal latihan tim</div>
+                          <div className="font-bold text-xs text-text">Identitas &amp; Pengaturan</div>
+                          <div className="text-[10px] text-dim">Konfigurasi landing page dan profil aplikasi</div>
                         </div>
                       </div>
                       <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30">
-                        JADWAL
+                        CONFIG
                       </span>
-                    </Link>
-
-                    <Link
-                      to="/exercises"
-                      onClick={() => setIsMoreOpen(false)}
-                      className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
-                        isExercises ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
-                          <Dumbbell className="w-4 h-4" />
-                        </div>
-                        <div className="text-left">
-                          <div className="font-bold text-xs text-text">Master Gerakan</div>
-                          <div className="text-[10px] text-dim">Katalog latihan studio &amp; kategori gerak</div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-dim" />
                     </Link>
                   </>
                 )}
 
-                {/* ── PERSONAL TRAINER (PT) MENUS ── */}
                 {isPT && (
                   <Link
                     to="/exercises"

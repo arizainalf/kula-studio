@@ -12,9 +12,22 @@ createRoot(document.getElementById('root')!).render(
   <RouterProvider router={router} />
 )
 
-// Register service worker untuk PWA installability
+// Service worker registration: unregister di mode development agar tidak mengganggu HMR/API
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        reg.unregister().catch(() => {})
+      }
+    }).catch(() => {})
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const k of keys) caches.delete(k).catch(() => {})
+      }).catch(() => {})
+    }
+  } else {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    })
+  }
 }

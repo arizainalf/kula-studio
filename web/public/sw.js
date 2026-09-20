@@ -1,7 +1,7 @@
-// Service Worker minimal untuk Kula Studio PWA
-// Hanya cache shell statis — data API tetap fresh dari network
+// Service Worker untuk Kula Studio PWA
+// Hanya cache shell statis — request API dan non-GET SELALU bypass langsung ke network
 
-const CACHE_NAME = 'kulastudio-v1';
+const CACHE_NAME = 'kulastudio-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -27,15 +27,27 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Jangan cache request API — selalu dari network
-  if (url.hostname.includes('kula-studio.my.id') && url.pathname.startsWith('/api')) {
+  // 1. JANGAN PERNAH intercept request non-GET (POST, PATCH, PUT, DELETE)
+  if (request.method !== 'GET') {
     return;
   }
+
+  // 2. JANGAN PERNAH intercept atau cache request API di hostname mana pun
+  if (url.pathname.startsWith('/api') || url.pathname.includes('/api/')) {
+    return;
+  }
+
+  // 3. JANGAN intercept koneksi websocket atau internal dev tools
+  if (url.protocol.startsWith('ws') || url.pathname.includes('@vite') || url.pathname.includes('?token=')) {
+    return;
+  }
+
+  // 4. JANGAN intercept host eksternal
   if (url.hostname !== self.location.hostname) {
     return;
   }
 
-  // Network first untuk navigasi (SPA routing)
+  // 5. Network first untuk navigasi halaman (SPA routing)
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() =>
@@ -45,7 +57,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache first untuk aset statis (CSS, JS, gambar)
+  // 6. Cache first untuk aset statis lokal (CSS, JS build, favicon, images)
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
@@ -54,7 +66,11 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         const cloned = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+        caches.open(CACHE_NAME).then((cache) => {
+          if (request.method === 'GET') {
+            cache.put(request, cloned);
+          }
+        }).catch(() => {});
         return response;
       });
     })

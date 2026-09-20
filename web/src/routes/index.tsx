@@ -24,7 +24,6 @@ import {
   Calendar,
   MessageSquare,
   ArrowRight,
-  Building2,
   ShieldCheck,
   Dumbbell,
 } from 'lucide-react'
@@ -73,22 +72,18 @@ export const Route = createFileRoute('/')({
       const today = getLocalTodayString()
       const nextWeekDate = getLocalFutureDateString(7)
 
-      const isPlatformAdmin = meRes.user.role === 'platform_admin'
-      const canViewStaff = isPlatformAdmin || meRes.user.role === 'admin_studio' || meRes.user.role === 'manager'
+      const isAdmin = meRes.user.role === 'admin'
+      const canViewStaff = isAdmin
 
-      const [clientsRes, schedRes, settingsRes, studiosRes, staffRes] = await Promise.all([
+      const [clientsRes, schedRes, settingsRes, staffRes] = await Promise.all([
         api<{ clients: Client[] }>('/clients').catch(() => ({ clients: [] })),
         api<{ schedule: ScheduleItem[] }>(`/schedule?from=${today}&to=${nextWeekDate}`).catch(() => ({ schedule: [] })),
-        api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null as any })),
-        isPlatformAdmin
-          ? api<{ studios: any[] }>('/platform/studios').catch(() => ({ studios: [] }))
-          : Promise.resolve({ studios: [] }),
+        api<{ settings: PlatformSettings }>('/platform/settings', { cache: 'no-store' as any }).catch(() => ({ settings: null as any })),
         canViewStaff
           ? api<{ staff: any[] }>('/staff?role=pt').catch(() => ({ staff: [] }))
           : Promise.resolve({ staff: [] }),
       ])
 
-      const studios = studiosRes?.studios || []
       const staffList = staffRes?.staff || []
 
       return {
@@ -96,15 +91,15 @@ export const Route = createFileRoute('/')({
         clients: clientsRes.clients,
         schedule: schedRes.schedule,
         settings: settingsRes.settings,
-        studioCount: studios.length,
-        activeStudioCount: studios.filter((s: any) => s.is_active !== false).length,
+        studioCount: 0,
+        activeStudioCount: 0,
         ptCount: staffList.length,
         activePtCount: staffList.filter((s: any) => s.is_active !== false).length,
       }
     } catch (e) {
       if (e && typeof e === 'object' && 'to' in e) throw e
       const [settingsRes, trainersRes] = await Promise.all([
-        api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null as any })),
+        api<{ settings: PlatformSettings }>('/platform/settings', { cache: 'no-store' as any }).catch(() => ({ settings: null as any })),
         api<{ trainers: TrainerShowcase[] }>('/platform/trainers').catch(() => ({ trainers: [] })),
       ])
       return {
@@ -124,7 +119,7 @@ export const Route = createFileRoute('/')({
 })
 
 function RootIndex() {
-  const { me, clients, schedule, settings, trainers, studioCount, activeStudioCount, ptCount, activePtCount } = Route.useLoaderData()
+  const { me, clients, schedule, settings, trainers, ptCount, activePtCount } = Route.useLoaderData()
 
   if (!me) {
     return <LandingPage currentUser={null} initialSettings={settings} initialTrainers={trainers} />
@@ -136,8 +131,6 @@ function RootIndex() {
       clients={clients}
       schedule={schedule}
       settings={settings}
-      studioCount={studioCount}
-      activeStudioCount={activeStudioCount}
       ptCount={ptCount}
       activePtCount={activePtCount}
     />
@@ -149,8 +142,6 @@ function Dashboard({
   clients,
   schedule,
   settings,
-  studioCount,
-  activeStudioCount,
   ptCount,
   activePtCount,
 }: {
@@ -158,8 +149,6 @@ function Dashboard({
   clients: Client[]
   schedule: ScheduleItem[]
   settings: PlatformSettings | null
-  studioCount: number
-  activeStudioCount: number
   ptCount: number
   activePtCount: number
 }) {
@@ -177,8 +166,6 @@ function Dashboard({
         clients={clients}
         schedule={schedule}
         platformSettings={platformSettings}
-        studioCount={studioCount}
-        activeStudioCount={activeStudioCount}
         ptCount={ptCount}
         activePtCount={activePtCount}
       />
@@ -191,8 +178,6 @@ function DashboardContent({
   clients,
   schedule,
   platformSettings,
-  studioCount = 0,
-  activeStudioCount = 0,
   ptCount = 0,
   activePtCount = 0,
 }: {
@@ -200,13 +185,10 @@ function DashboardContent({
   clients: Client[]
   schedule: ScheduleItem[]
   platformSettings: PlatformSettings
-  studioCount?: number
-  activeStudioCount?: number
   ptCount?: number
   activePtCount?: number
 }) {
-  const isPlatformAdmin = currentUser.role === 'platform_admin'
-  const isAdminStudio = currentUser.role === 'admin_studio'
+  const isAdmin = currentUser.role === 'admin'
 
   // Analytics Computations
   const totalClients = clients.length
@@ -220,11 +202,9 @@ function DashboardContent({
     return c.pkg_total > 0 && remaining <= 3
   })
 
-  const gridColsClass = isPlatformAdmin
-    ? 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-6'
-    : isAdminStudio
-      ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
-      : 'grid-cols-2 lg:grid-cols-4'
+  const gridColsClass = isAdmin
+    ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+    : 'grid-cols-2 lg:grid-cols-4'
 
   return (
     <main className="flex-1 w-full p-3.5 sm:p-6 lg:p-8 pb-24 sm:pb-12">
@@ -252,13 +232,9 @@ function DashboardContent({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] sm:text-xs font-mono text-dim uppercase tracking-wider">
-                    {currentUser.role === 'platform_admin'
-                      ? 'Portal Platform Admin'
-                      : currentUser.role === 'admin_studio'
-                        ? 'Portal Admin Studio'
-                        : currentUser.role === 'manager'
-                          ? 'Portal Manager Studio'
-                          : 'Portal Pelatih'}
+                    {currentUser.role === 'admin'
+                      ? 'Portal Admin'
+                      : 'Portal Pelatih'}
                   </span>
                   <span className="text-muted text-[10px] font-mono hidden sm:inline">&bull;</span>
                   <span className="text-[10px] font-mono text-emerald-400 hidden sm:inline-flex items-center gap-1">
@@ -270,33 +246,10 @@ function DashboardContent({
                   Selamat Datang, {currentUser.name}
                 </h1>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  {currentUser.role === 'platform_admin' ? (
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      PLATFORM ADMIN (SAAS)
-                    </span>
-                  ) : (
-                    <>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase">
-                        {currentUser.role === 'admin_studio' ? 'Admin Studio' : currentUser.role}
-                      </span>
-                      {currentUser.studio_name && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-bg text-text border border-line flex items-center gap-1">
-                          <Building2 className="w-3 h-3 text-accent" />
-                          <span>{currentUser.studio_name}</span>
-                        </span>
-                      )}
-                    </>
-                  )}
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-bg text-text border border-line">
-                    {currentUser.plan_tier ? `${currentUser.plan_tier.toUpperCase()} TIER` : 'STANDARD'}
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-accent/15 text-accent border border-accent/30 uppercase flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    {currentUser.role === 'admin' ? 'Admin' : 'Personal Trainer'}
                   </span>
-                  {currentUser.expires_at && (
-                    <span className="text-[10px] font-mono text-muted flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-dim" />
-                      <span>Aktif s/d {formatDate(currentUser.expires_at)}</span>
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -315,29 +268,13 @@ function DashboardContent({
 
         {/* ── Executive KPI Stat Cards ── */}
         <section className={`grid ${gridColsClass} gap-2.5 sm:gap-4 animate-fade-in-up`}>
-          {/* Platform Admin: Total Studio */}
-          {isPlatformAdmin && (
-            <StatCard
-              title="Total Studio"
-              value={studioCount}
-              subtitle={studioCount > 0 ? `${activeStudioCount} studio aktif di platform` : 'Belum ada studio'}
-              badge={{ text: 'SAAS', type: 'gold' }}
-              icon={<Building2 className="w-5 h-5 text-accent opacity-80" />}
-              href="/studios"
-            />
-          )}
-
-          {/* Platform Admin & Admin Studio: Total PT */}
-          {(isPlatformAdmin || isAdminStudio) && (
+          {/* Admin: Total PT */}
+          {isAdmin && (
             <StatCard
               title="Total PT"
               value={ptCount}
-              subtitle={
-                isPlatformAdmin
-                  ? (ptCount > 0 ? `${activePtCount} pelatih di seluruh studio` : 'Belum ada pelatih')
-                  : (ptCount > 0 ? `${activePtCount} pelatih di studio ini` : 'Belum ada pelatih')
-              }
-              badge={{ text: isPlatformAdmin ? 'PLATFORM' : 'STUDIO', type: 'gold' }}
+              subtitle={ptCount > 0 ? `${activePtCount} pelatih aktif` : 'Belum ada pelatih'}
+              badge={{ text: 'STAF', type: 'gold' }}
               icon={<Dumbbell className="w-5 h-5 text-accent opacity-80" />}
               href="/users"
             />
@@ -518,7 +455,7 @@ function DashboardContent({
                   <div>
                     <h3 className="font-bold text-sm text-text">Status Direktori Klien</h3>
                     <p className="text-[11px] text-dim">
-                      Total {clients.length} klien terdaftar {isPlatformAdmin ? 'di platform' : 'di studio'}
+                      Total {clients.length} klien aktif terdaftar
                     </p>
                   </div>
                 </div>

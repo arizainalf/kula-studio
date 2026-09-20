@@ -24,7 +24,7 @@ export const Route = createFileRoute('/clients/new')({
   loader: async () => {
     const meRes = await api<{ user: User }>('/auth/me')
     let trainers: TrainerOption[] = []
-    if (meRes.user.role === 'admin_studio' || meRes.user.role === 'manager' || meRes.user.role === 'platform_admin') {
+    if (meRes.user.role === 'admin') {
       const staffRes = await api<{ staff: Array<{ id: string; name: string; email: string }> }>('/staff').catch(() => ({ staff: [] }))
       trainers = (staffRes.staff || []).map((s) => ({
         id: s.id,
@@ -53,7 +53,7 @@ function NewClient() {
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const isAdminOrManager = currentUser.role === 'admin_studio' || currentUser.role === 'manager' || currentUser.role === 'platform_admin'
+  const isAdminOrManager = currentUser.role === 'admin'
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

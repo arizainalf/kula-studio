@@ -6,7 +6,7 @@ export const Route = createFileRoute('/landing')({
   loader: async () => {
     const [userRes, settingsRes, trainersRes] = await Promise.all([
       api<{ user: User }>('/auth/me').catch(() => ({ user: null })),
-      api<{ settings: PlatformSettings }>('/platform/settings').catch(() => ({ settings: null })),
+      api<{ settings: PlatformSettings }>('/platform/settings', { cache: 'no-store' as any }).catch(() => ({ settings: null })),
       api<{ trainers: TrainerShowcase[] }>('/platform/trainers').catch(() => ({ trainers: [] })),
     ])
 

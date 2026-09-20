@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { api, type User } from '../lib/api'
+import { api, setStoredToken, type User } from '../lib/api'
 import { ThemeToggle, useTheme } from '../components/ThemeToggle'
 import { formatDateWithDay, formatTime } from '../lib/date'
 import { EditProfileModal } from '../components/EditProfileModal'
+import { LogoutModal } from '../components/LogoutModal'
 import {
   Trophy,
   Dumbbell,
@@ -137,13 +138,31 @@ function ClientPortalPage() {
   const { client: initialClient, stats, recent_sessions, upcoming_schedule, my_ranking, leaderboard } = data
   const [client, setClient] = useState<ClientProfile>(initialClient)
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'progress' | 'leaderboard'>('progress')
   const { theme, toggleTheme } = useTheme()
   const platformSettings = usePlatformSettings()
 
-  async function logout() {
-    await api('/auth/logout', { method: 'POST' })
-    location.href = '/login'
+  function logout() {
+    setIsLogoutModalOpen(true)
+  }
+
+  async function executeLogout() {
+    try {
+      setStoredToken(null)
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure'
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure'
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+
+      if ('caches' in window) {
+        const keys = await caches.keys().catch(() => [])
+        for (const k of keys) await caches.delete(k).catch(() => {})
+      }
+
+      await api('/auth/logout', { method: 'POST' }).catch(() => {})
+    } catch {}
+    window.location.replace('/login')
   }
 
   const clientUser: User = {
@@ -961,6 +980,15 @@ function ClientPortalPage() {
             notes: updated.notes || prev.notes,
           }))
         }}
+      />
+
+      {/* ── Logout Modal for Client ── */}
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={executeLogout}
+        userName={client.name}
+        userRole="client"
       />
     </div>
   )

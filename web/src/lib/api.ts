@@ -2,17 +2,11 @@
 export type User = {
   id: string;
   email: string;
-  role: 'platform_admin' | 'admin_studio' | 'manager' | 'pt' | 'client';
+  role: 'admin' | 'pt' | 'client';
   name: string;
   avatar_url?: string | null;
   youtube_url?: string | null;
-  plan_tier?: string | null;
-  expires_at?: string | null;
   is_active?: boolean;
-  studio_id?: string | null;
-  studio_name?: string | null;
-  studio_slug?: string | null;
-  studio_plan_tier?: string | null;
   clientId?: string;
   phone?: string | null;
   pt_id?: string;
@@ -26,6 +20,7 @@ export type User = {
   client_count?: number;
   created_at?: string;
 };
+
 
 export type Studio = {
   id: string;
@@ -99,6 +94,7 @@ export type PlatformSettings = {
   cta_headline: string;
   cta_subheadline: string;
   footer_copyright: string;
+  show_pricing?: boolean;
   updated_at?: string;
 };
 
@@ -182,11 +178,19 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
     if (path === '/auth/logout') {
       setStoredToken(null);
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+      document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
 
     if (!res.ok) {
       if (res.status === 401 && path === '/auth/me') {
         setStoredToken(null);
+        document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+        document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=None; Secure';
+        document.cookie = 'ks_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'tl_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       }
       if (res.status === 431) {
         // Request Header Fields Too Large -> clear invalid tokens

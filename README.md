@@ -24,24 +24,20 @@ trainlog-replica/
 ├─ worker/               # Hono API → CF Workers (kula-studio-api)
 │  └─ wrangler.jsonc
 └─ docs/
-   ├─ plan.md            # roadmap eksekusi
-   ├─ design-system.md   # spesifikasi warna luxury noir, charcoal & gold
-   ├─ erd.md             # skema Postgres relasional (redisain)
-   └─ deploy.md          # panduan deploy ke Cloudflare
-```
+   ├─ plan.md                       # roadmap eksekusi
+   ├─ fitur-dan-estimasi-biaya.md  # fitur lengkap, arsitektur serverless & estimasi biaya
+   ├─ domain_management_cloudflared.md # panduan setup DNS Cloudflare & domain
+   ├─ design-system.md              # spesifikasi warna luxury noir, charcoal & gold
+   ├─ erd.md                        # skema Postgres relasional
+   └─ deploy.md                     # panduan deploy ke Cloudflare
 
-## Fitur (MVP)
+## Fitur & Peran (Single-Tenant: Admin, PT, Client)
 
-1. **Auth** — login email/password, role `admin|manager|pt`, whitelist + aktivasi admin
-2. **Multi-tenant Studio** — setiap studio punya branding, logo, dan URL Google Maps sendiri
-3. **Client CRUD** — profil client (goal, paket sesi, telepon, catatan) milik PT
-4. **Sesi latihan** — catat per tanggal: latihan (warmup/resistance/cardio/cooldown), RPE, berat badan, catatan
-5. **Jadwal** — entri per tanggal+jam per client
-6. **Progress** — chart berat/RPE/volume per client
-7. **Foto progress** — upload ke R2, tampil per client
-8. **Export** — riwayat sesi → PDF (print native)
-9. **Landing page** — halaman marketing dengan daftar coach + WhatsApp deep-link
-10. **Tier & grace** — paket standard/pro, expired → read-only 14 hari
+1. **Role Administrator** — Dashboard analitik & KPI real-time, manajemen staf PT, direktori klien, jadwal terpadu, master library latihan, dan konfigurasi landing page.
+2. **Role Personal Trainer (PT)** — Log sesi real-time (RPE, beban, repetisi), 1-click WhatsApp recap, kelola klien pribadi, jadwal latihan, foto progres, dan library gerakan favorit.
+3. **Role Client (Portal Member)** — Login instan nomor WA/email, dashboard sisa kuota sesi paket, grafik perkembangan berat/fat %, gamifikasi leaderboard poin latihan, dan saran coach.
+4. **Landing Page & Coach Showcase** — Halaman depan modern, video embed showcase pelatih, tombol langsung "Latihan Bareng" via WhatsApp, dan switch Dark/Light theme.
+5. **PDF Export & Reporting** — Ekspor riwayat sesi latihan & rekap perkembangan ke format PDF dokumen profesional.
 
 ## Prinsip
 

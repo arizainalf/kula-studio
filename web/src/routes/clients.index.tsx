@@ -72,10 +72,7 @@ function ClientsDirectoryPage() {
   const [rawCropImage, setRawCropImage] = useState<string | null>(null)
   const fileInputAddRef = useRef<HTMLInputElement>(null)
 
-  const isAdminOrManager =
-    currentUser.role === 'admin_studio' ||
-    currentUser.role === 'manager' ||
-    currentUser.role === 'platform_admin'
+  const isAdminOrManager = currentUser.role === 'admin'
 
   function handleFileChange(file: File | undefined) {
     if (!file) return

@@ -631,7 +631,7 @@ export function AdminExerciseModal({
             <div>
               <h3 className="text-sm font-bold text-text">Pengaturan Peran Akun (Role Switcher)</h3>
               <p className="text-xs text-dim mt-0.5">
-                Ubah peran akun Anda antara <strong>Pelatih (PT)</strong> dan <strong>Admin Studio</strong> secara instan.
+                Ubah peran akun Anda antara <strong>Pelatih (PT)</strong> dan <strong>Administrator (Admin)</strong> secara instan.
               </p>
             </div>
 
@@ -644,8 +644,8 @@ export function AdminExerciseModal({
                   </span>
                 </div>
                 <p className="text-xs text-dim mt-1.5">
-                  {userRole === 'admin_studio' || (userRole as string) === 'admin'
-                    ? 'Akun Admin Studio memiliki wewenang mengelola kategori latihan, mengedit seluruh preset studio, dan manajemen staf.'
+                  {userRole === 'admin'
+                    ? 'Akun Admin memiliki wewenang mengelola kategori latihan, direktori staf, dan pengaturan platform.'
                     : 'Akun PT fokus pada manajemen klien, jadwal, dan pencatatan sesi latihan.'}
                 </p>
               </div>
@@ -658,7 +658,7 @@ export function AdminExerciseModal({
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${roleLoading ? 'animate-spin' : ''}`} />
                 <span>
-                  {userRole === 'admin_studio' || (userRole as string) === 'admin' ? 'Ubah Menjadi Akun PT' : 'Jadikan Akun Admin Studio'}
+                  {userRole === 'admin' ? 'Ubah Menjadi Akun PT' : 'Jadikan Akun Admin'}
                 </span>
               </button>
             </div>
