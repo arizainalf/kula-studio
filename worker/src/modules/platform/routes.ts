@@ -40,8 +40,7 @@ platform.get('/trainers', async (c) => {
 
     await sql`
       update users
-      set youtube_url = 'https://www.youtube.com/watch?v=aclHkVaku9U',
-          phone = coalesce(phone, '6287884241516'),
+      set phone = coalesce(phone, '6287884241516'),
           studio_id = coalesce(studio_id, '00000000-0000-0000-0000-000000000001')
       where role = 'pt' and (email = 'hadi@dev.local' or name ilike '%hadi%')
     `.catch(() => {});

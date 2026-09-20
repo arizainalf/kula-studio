@@ -11,3 +11,10 @@ declare module '@tanstack/react-router' {
 createRoot(document.getElementById('root')!).render(
   <RouterProvider router={router} />
 )
+
+// Register service worker untuk PWA installability
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
