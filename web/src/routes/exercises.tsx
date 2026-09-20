@@ -32,6 +32,7 @@ export type ExerciseCategory = {
 export type LibraryExercise = {
   id: string
   pt_id?: string | null
+  pt_name?: string | null
   category_slug: string
   category_name?: string
   name: string
@@ -452,8 +453,9 @@ function ExercisesPage() {
                               ? 'bg-panel text-dim border-line'
                               : 'bg-accent/15 text-accent border-accent/30'
                           }`}
+                          title={ex.is_global ? 'Gerakan Global Studio' : `Gerakan Custom oleh ${ex.pt_name || 'PT'}`}
                         >
-                          {ex.is_global ? 'Global' : 'Custom'}
+                          {ex.is_global ? 'Global' : ex.pt_name ? `Custom (${ex.pt_name.split(' ')[0]})` : 'Custom'}
                         </span>
                       </div>
 

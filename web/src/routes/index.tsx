@@ -258,7 +258,7 @@ function DashboardContent({
             <div className="w-full sm:w-auto shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60 flex items-center sm:flex-col sm:items-end justify-between gap-1 text-right">
               <div className="text-xs font-mono text-dim flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Ringkasan Real-Time</span>
+                <span>Ringkasan</span>
               </div>
               <div className="text-xs sm:text-sm font-medium text-text">
                 {formatDate(getLocalTodayString())}
@@ -283,7 +283,7 @@ function DashboardContent({
           <StatCard
             title="Total Klien"
             value={totalClients}
-            subtitle={`${clients.filter((c) => c.is_active !== false).length} klien berstatus aktif`}
+            subtitle={`${clients.filter((c) => c.is_active !== false).length} klien aktif`}
             badge={{ text: 'TERDAFTAR', type: 'gold' }}
             icon={<Users className="w-5 h-5 text-accent opacity-80" />}
             href="/clients"

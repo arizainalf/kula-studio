@@ -419,7 +419,7 @@ function ClientDetail() {
             {canLogSession && (
               <a
                 href={`/clients/${client.id}/log`}
-                className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 sm:px-4 py-2 rounded-xl shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all flex items-center gap-1.5 btn-interactive"
+                className="bg-accent hover:bg-accent/90 text-[#141414] font-semibold text-xs px-3.5 sm:px-4 py-2 rounded-xl shadow-[0_2px_12px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_18px_rgba(226,232,0,0.4)] transition-all hidden md:flex items-center gap-1.5 btn-interactive"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Catat Sesi</span>
@@ -687,7 +687,7 @@ function ClientDetail() {
                 {canLogSession && (
                   <a
                     href={`/clients/${client.id}/log`}
-                    className="inline-block bg-accent hover:bg-accent/90 text-[#141414] text-xs font-semibold px-4 py-2 rounded-xl"
+                    className="hidden md:inline-block bg-accent hover:bg-accent/90 text-[#141414] text-xs font-semibold px-4 py-2 rounded-xl"
                   >
                     + Catat Sesi Latihan Pertama
                   </a>

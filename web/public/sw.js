@@ -1,7 +1,7 @@
 // Service Worker untuk Kula Studio PWA
 // Hanya cache shell statis — request API dan non-GET SELALU bypass langsung ke network
 
-const CACHE_NAME = 'kulastudio-v2';
+const CACHE_NAME = 'kulastudio-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

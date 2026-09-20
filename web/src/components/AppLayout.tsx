@@ -24,6 +24,7 @@ import { LogoutModal } from './LogoutModal'
 import { UserAvatar } from './UserAvatar'
 import { usePlatformSettings, formatBrandName } from '../lib/platformSettings'
 import { MobileBottomNav } from './MobileBottomNav'
+import { PwaInstallModal } from './PwaInstallModal'
 
 export interface AppLayoutContextValue {
   openEditProfile: () => void
@@ -31,6 +32,7 @@ export interface AppLayoutContextValue {
   openAdminUsers: () => void
   openAdminExercise: () => void
   openExportPdf: () => void
+  openPwaInstall: () => void
 }
 
 export const AppLayoutContext = React.createContext<AppLayoutContextValue>({
@@ -39,6 +41,7 @@ export const AppLayoutContext = React.createContext<AppLayoutContextValue>({
   openAdminUsers: () => {},
   openAdminExercise: () => {},
   openExportPdf: () => {},
+  openPwaInstall: () => {},
 })
 
 export function useAppLayout() {
@@ -103,6 +106,7 @@ export function AppLayout({
   const [isAdminExerciseOpen, setIsAdminExerciseOpen] = useState(false)
   const [isExportPdfOpen, setIsExportPdfOpen] = useState(false)
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
+  const [isPwaInstallOpen, setIsPwaInstallOpen] = useState(false)
   const platformSettings = usePlatformSettings()
 
   // Active status determinations
@@ -533,6 +537,7 @@ export function AppLayout({
       openAdminUsers: () => {},
       openAdminExercise: () => setIsAdminExerciseOpen(true),
       openExportPdf: () => setIsExportPdfOpen(true),
+      openPwaInstall: () => setIsPwaInstallOpen(true),
     }),
     []
   )
@@ -610,6 +615,7 @@ export function AppLayout({
           onAddStudioClick={onAddStudioClick}
           openExportPdf={() => setIsExportPdfOpen(true)}
           openEditProfile={() => setIsEditProfileOpen(true)}
+          openPwaInstall={() => setIsPwaInstallOpen(true)}
           handleLogout={handleLogout}
         />
 
@@ -639,6 +645,13 @@ export function AppLayout({
           onConfirm={executeLogout}
           userName={user.name}
           userRole={user.role}
+        />
+
+        {/* ── PWA Installation Suggestion Modal ── */}
+        <PwaInstallModal
+          isOpen={isPwaInstallOpen ? true : undefined}
+          onClose={() => setIsPwaInstallOpen(false)}
+          autoPrompt={true}
         />
       </div>
     </AppLayoutContext.Provider>

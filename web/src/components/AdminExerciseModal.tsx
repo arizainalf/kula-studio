@@ -29,6 +29,7 @@ export type ExerciseCategory = {
 export type LibraryExercise = {
   id: string
   pt_id?: string | null
+  pt_name?: string | null
   category_slug: string
   category_name?: string
   name: string
@@ -464,8 +465,9 @@ export function AdminExerciseModal({
                               ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
                               : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                           }`}
+                          title={ex.is_global ? 'Gerakan Global Studio' : `Gerakan Custom oleh ${ex.pt_name || 'PT'}`}
                         >
-                          {ex.is_global ? 'Global' : 'Custom PT'}
+                          {ex.is_global ? 'Global' : ex.pt_name ? `Custom (${ex.pt_name.split(' ')[0]})` : 'Custom PT'}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-right">

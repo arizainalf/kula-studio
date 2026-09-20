@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import {
   LayoutDashboard,
@@ -15,13 +15,14 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  UserPlus,
   UserCheck,
   UserCog,
+  Download,
 } from 'lucide-react'
 import { type User } from '../lib/api'
 import { useTheme } from './ThemeToggle'
 import { UserAvatar } from './UserAvatar'
+import { isRunningStandalone } from './PwaInstallModal'
 
 export interface MobileBottomNavProps {
   currentUser?: User
@@ -31,6 +32,7 @@ export interface MobileBottomNavProps {
   onAddStudioClick?: () => void
   openExportPdf?: () => void
   openEditProfile?: () => void
+  openPwaInstall?: () => void
   handleLogout?: () => void
 }
 
@@ -41,6 +43,7 @@ export function MobileBottomNav({
   onScheduleClick,
   openExportPdf,
   openEditProfile,
+  openPwaInstall,
   handleLogout,
 }: MobileBottomNavProps) {
   const location = useLocation()
@@ -51,6 +54,11 @@ export function MobileBottomNav({
   const role = currentUser?.role || 'pt'
   const isAdmin = role === 'admin'
   const isPT = role === 'pt'
+  const isClient = role === 'client'
+
+  if (isClient) {
+    return null
+  }
 
   // Route active states
   const isDashboard = pathname === '/'
@@ -68,8 +76,114 @@ export function MobileBottomNav({
   const showCatatSesi = isPT && isClientDetail && Boolean(clientId) && Boolean(canLogSession)
 
   const isSecondaryRouteActive =
-    (isAdmin && (isSchedule || isExercises || isSettings)) ||
+    (isAdmin && (isSchedule || isSettings)) ||
     (isPT && isExercises)
+
+  // ── Android Back Button, Edge Gesture & Popstate History Integration ──
+  const isMenuPushedRef = useRef(false)
+  const isMoreOpenRef = useRef(isMoreOpen)
+  isMoreOpenRef.current = isMoreOpen
+
+  // ── Pull-to-Dismiss / Swipe-Down Touch Gesture State ──
+  const [dragY, setDragY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const touchStartY = useRef(0)
+
+  const openMenu = () => {
+    setIsMoreOpen(true)
+    setDragY(0)
+    try {
+      window.history.pushState({ mobileMenuOpen: true }, '')
+      isMenuPushedRef.current = true
+    } catch {}
+  }
+
+  const closeMenu = () => {
+    setIsMoreOpen(false)
+    setDragY(0)
+    if (isMenuPushedRef.current) {
+      isMenuPushedRef.current = false
+      try {
+        window.history.back()
+      } catch {}
+    }
+  }
+
+  const toggleMenu = () => {
+    if (isMoreOpen) {
+      closeMenu()
+    } else {
+      openMenu()
+    }
+  }
+
+  const handleLinkClick = () => {
+    setIsMoreOpen(false)
+    setDragY(0)
+    if (isMenuPushedRef.current) {
+      isMenuPushedRef.current = false
+      try {
+        window.history.replaceState(null, '', window.location.href)
+      } catch {}
+    }
+  }
+
+  // Intercept Android hardware/software back button, edge swipe back gesture, & Escape key
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isMenuPushedRef.current) {
+        isMenuPushedRef.current = false
+        setIsMoreOpen(false)
+        setDragY(0)
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMoreOpenRef.current) {
+        closeMenu()
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('keydown', handleKeyDown)
+      if (isMenuPushedRef.current) {
+        isMenuPushedRef.current = false
+        try {
+          window.history.back()
+        } catch {}
+      }
+    }
+  }, [])
+
+  // Touch gesture handlers for dragging sheet header down to dismiss
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+    setIsDragging(true)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return
+    const currentY = e.touches[0].clientY
+    const deltaY = currentY - touchStartY.current
+    if (deltaY > 0) {
+      setDragY(deltaY)
+    } else {
+      setDragY(0)
+    }
+  }
+
+  const handleTouchEnd = () => {
+    setIsDragging(false)
+    if (dragY > 70) {
+      closeMenu()
+    } else {
+      setDragY(0)
+    }
+  }
 
   return (
     <>
@@ -85,7 +199,7 @@ export function MobileBottomNav({
               {/* Tab 1: Dashboard */}
               <Link
                 to="/"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={closeMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isDashboard ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                 }`}
@@ -98,7 +212,7 @@ export function MobileBottomNav({
               {/* Tab 2: Klien */}
               <Link
                 to="/clients"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={closeMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isClients ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                 }`}
@@ -108,25 +222,10 @@ export function MobileBottomNav({
                 {isClients && <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />}
               </Link>
 
-              {/* Tab 3: FAB Center Action (+ Klien Baru) */}
-              <div className="flex flex-col items-center -mt-6">
-                <Link
-                  to="/clients/new"
-                  onClick={() => setIsMoreOpen(false)}
-                  className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
-                  title="Daftarkan Klien Baru"
-                >
-                  <UserPlus className="w-6 h-6 stroke-[2.5]" />
-                </Link>
-                <span className="text-[9px] font-mono font-bold text-accent mt-1 tracking-tight">
-                  + Klien
-                </span>
-              </div>
-
-              {/* Tab 4: Kelola Akun Staf PT */}
+              {/* Tab 3: Kelola Akun Staf PT */}
               <Link
                 to="/users"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={closeMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isUsers ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                 }`}
@@ -136,10 +235,23 @@ export function MobileBottomNav({
                 {isUsers && <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />}
               </Link>
 
+              {/* Tab 4: Master Gerakan */}
+              <Link
+                to="/exercises"
+                onClick={closeMenu}
+                className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
+                  isExercises ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
+                }`}
+              >
+                <Dumbbell className="w-5 h-5 mb-1" />
+                <span className="text-[10px] tracking-tight leading-none">Gerakan</span>
+                {isExercises && <span className="w-1 h-1 rounded-full bg-accent mt-0.5 animate-pulse" />}
+              </Link>
+
               {/* Tab 5: Menu / Lainnya */}
               <button
                 type="button"
-                onClick={() => setIsMoreOpen((prev) => !prev)}
+                onClick={toggleMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isMoreOpen || isSecondaryRouteActive
                     ? 'text-accent font-bold scale-105'
@@ -161,7 +273,7 @@ export function MobileBottomNav({
               {/* Tab 1: Dashboard */}
               <Link
                 to="/"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={closeMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isDashboard ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                 }`}
@@ -174,7 +286,7 @@ export function MobileBottomNav({
               {/* Tab 2: Klien */}
               <Link
                 to="/clients"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={closeMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isClients ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                 }`}
@@ -190,7 +302,7 @@ export function MobileBottomNav({
                   <Link
                     to="/clients/$clientId/log"
                     params={{ clientId: clientId! }}
-                    onClick={() => setIsMoreOpen(false)}
+                    onClick={closeMenu}
                     className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
                     title="Catat Sesi Latihan"
                   >
@@ -199,7 +311,7 @@ export function MobileBottomNav({
                 ) : (
                   <Link
                     to="/clients/new"
-                    onClick={() => setIsMoreOpen(false)}
+                    onClick={closeMenu}
                     className="w-12 h-12 rounded-full bg-accent hover:bg-accent-hover text-[#141414] flex items-center justify-center shadow-[0_0_20px_rgba(226,232,0,0.45)] border-[3px] border-panel hover:scale-105 active:scale-95 transition-all btn-interactive"
                     title="Daftarkan Klien Baru"
                   >
@@ -216,7 +328,7 @@ export function MobileBottomNav({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsMoreOpen(false)
+                    closeMenu()
                     onScheduleClick()
                   }}
                   className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
@@ -231,7 +343,7 @@ export function MobileBottomNav({
               ) : (
                 <Link
                   to="/schedule"
-                  onClick={() => setIsMoreOpen(false)}
+                  onClick={closeMenu}
                   className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                     isSchedule ? 'text-accent font-bold scale-105' : 'text-dim hover:text-text'
                   }`}
@@ -245,7 +357,7 @@ export function MobileBottomNav({
               {/* Tab 5: Menu / Lainnya */}
               <button
                 type="button"
-                onClick={() => setIsMoreOpen((prev) => !prev)}
+                onClick={toggleMenu}
                 className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all btn-interactive min-w-[54px] ${
                   isMoreOpen || isSecondaryRouteActive
                     ? 'text-accent font-bold scale-105'
@@ -269,18 +381,32 @@ export function MobileBottomNav({
       {isMoreOpen && (
         <div
           className="fixed inset-0 z-50 md:hidden flex flex-col justify-end bg-black/75 backdrop-blur-sm animate-fade-in"
-          onClick={() => setIsMoreOpen(false)}
+          style={{
+            opacity: dragY > 0 ? Math.max(0.25, 1 - dragY / 300) : 1,
+            transition: isDragging ? 'none' : 'opacity 0.2s ease-out',
+          }}
+          onClick={closeMenu}
         >
           <div
             className="w-full bg-panel border-t border-line rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.8)] max-h-[85vh] flex flex-col overflow-hidden animate-slide-up"
+            style={{
+              transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+              transition: isDragging ? 'none' : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Sheet Handle & Header */}
-            <div className="pt-3 pb-2 px-5 border-b border-line/60 flex items-center justify-between">
-              <div className="w-12 h-1.5 rounded-full bg-line/80 mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
+            {/* Sheet Handle & Header with touch drag gesture */}
+            <div
+              className="pt-3 pb-2 px-5 border-b border-line/60 flex items-center justify-between touch-none select-none relative cursor-grab active:cursor-grabbing"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Drag Handle Indicator */}
+              <div className="w-12 h-1.5 rounded-full bg-line/80 mx-auto absolute left-1/2 -translate-x-1/2 top-3 pointer-events-none" />
 
               {currentUser ? (
-                <div className="flex items-center gap-3 min-w-0 flex-1 pt-2">
+                <div className="flex items-center gap-3 min-w-0 flex-1 pt-2 pointer-events-none">
                   <UserAvatar
                     name={currentUser.name}
                     avatarUrl={currentUser.avatar_url}
@@ -304,13 +430,13 @@ export function MobileBottomNav({
                   </div>
                 </div>
               ) : (
-                <div className="text-sm font-bold text-text pt-2">Menu &amp; Fitur Lengkap</div>
+                <div className="text-sm font-bold text-text pt-2 pointer-events-none">Menu &amp; Fitur Lengkap</div>
               )}
 
               <button
                 type="button"
-                onClick={() => setIsMoreOpen(false)}
-                className="p-1.5 rounded-xl text-dim hover:text-text hover:bg-panel-elevated transition-colors btn-interactive shrink-0 mt-2"
+                onClick={closeMenu}
+                className="p-1.5 rounded-xl text-dim hover:text-text hover:bg-panel-elevated transition-colors btn-interactive shrink-0 mt-2 z-10"
                 title="Tutup Menu"
               >
                 <X className="w-5 h-5" />
@@ -329,7 +455,7 @@ export function MobileBottomNav({
                   <>
                     <Link
                       to="/schedule"
-                      onClick={() => setIsMoreOpen(false)}
+                      onClick={handleLinkClick}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
                         isSchedule ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
                       }`}
@@ -348,7 +474,7 @@ export function MobileBottomNav({
 
                     <Link
                       to="/exercises"
-                      onClick={() => setIsMoreOpen(false)}
+                      onClick={handleLinkClick}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
                         isExercises ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
                       }`}
@@ -367,7 +493,7 @@ export function MobileBottomNav({
 
                     <Link
                       to="/settings"
-                      onClick={() => setIsMoreOpen(false)}
+                      onClick={handleLinkClick}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
                         isSettings ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
                       }`}
@@ -391,7 +517,7 @@ export function MobileBottomNav({
                 {isPT && (
                   <Link
                     to="/exercises"
-                    onClick={() => setIsMoreOpen(false)}
+                    onClick={handleLinkClick}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl bg-bg border transition-all btn-interactive ${
                       isExercises ? 'border-accent/60 bg-accent/5' : 'border-line/60 hover:border-accent/40'
                     }`}
@@ -413,7 +539,7 @@ export function MobileBottomNav({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsMoreOpen(false)
+                    closeMenu()
                     openExportPdf?.()
                   }}
                   className="w-full flex items-center justify-between p-3 rounded-2xl bg-bg border border-line/60 hover:border-accent/40 text-xs font-semibold text-text transition-all btn-interactive text-left"
@@ -437,9 +563,37 @@ export function MobileBottomNav({
                   Sistem &amp; Akun
                 </div>
 
+                {/* Install PWA Button (Hidden if already standalone PWA) */}
+                {!isRunningStandalone() && openPwaInstall && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu()
+                      openPwaInstall()
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-accent/10 border border-accent/30 hover:bg-accent/20 text-xs font-semibold text-text transition-all btn-interactive"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent shrink-0 shadow-[0_0_12px_rgba(226,232,0,0.2)]">
+                        <Download className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold text-xs text-text flex items-center gap-1.5">
+                          <span>Pasang Aplikasi Lubbe Fits</span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-accent text-[#141414] font-bold uppercase">
+                            PWA
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-dim">Install ke layar beranda HP untuk akses instan</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-accent" />
+                  </button>
+                )}
+
                 <a
                   href="/landing"
-                  onClick={() => setIsMoreOpen(false)}
+                  onClick={handleLinkClick}
                   className="w-full flex items-center justify-between p-3 rounded-2xl bg-bg border border-line/60 hover:border-line text-xs font-semibold text-text transition-all btn-interactive"
                 >
                   <div className="flex items-center gap-3">
@@ -484,7 +638,7 @@ export function MobileBottomNav({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsMoreOpen(false)
+                    closeMenu()
                     openEditProfile?.()
                   }}
                   className="w-full flex items-center justify-between p-3 rounded-2xl bg-bg border border-line/60 hover:border-accent/40 text-xs font-semibold text-text transition-all btn-interactive"
@@ -505,7 +659,7 @@ export function MobileBottomNav({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsMoreOpen(false)
+                    closeMenu()
                     handleLogout?.()
                   }}
                   className="w-full flex items-center justify-between p-3 rounded-2xl bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 text-xs font-semibold text-rose-300 transition-all btn-interactive"

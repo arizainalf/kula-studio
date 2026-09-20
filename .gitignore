@@ -6,3 +6,5 @@ dist/
 .env
 tsconfig.tsbuildinfo
 /worker/migrations/seed.sql
+*.doc
+*.docx

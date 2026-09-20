@@ -191,7 +191,9 @@ function ClientsDirectoryPage() {
                 setErrorMsg('')
                 setIsAddClientModalOpen(true)
               }}
-              className="btn-interactive self-start sm:self-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-[#141414] shadow-[0_2px_14px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_20px_rgba(226,232,0,0.4)] transition-all flex items-center justify-center gap-2"
+              className={`btn-interactive self-start sm:self-auto bg-accent hover:bg-accent/90 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-[#141414] shadow-[0_2px_14px_rgba(226,232,0,0.25)] hover:shadow-[0_4px_20px_rgba(226,232,0,0.4)] transition-all items-center justify-center gap-2 ${
+                currentUser.role === 'pt' ? 'hidden md:flex' : 'flex'
+              }`}
             >
               <UserPlus className="w-4 h-4 stroke-[2.5]" />
               <span>+ Tambah Klien Baru</span>

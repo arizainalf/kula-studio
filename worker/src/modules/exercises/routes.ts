@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { db } from '../../lib/db';
-import { requireAuth, requireRole, rejectGraceWrite } from '../../middleware/auth';
+import { requireAuth, optionalAuth, requireRole, rejectGraceWrite } from '../../middleware/auth';
 import type { Env } from '../../env';
 
 const exercises = new Hono<{ Bindings: Env }>();
@@ -99,7 +99,7 @@ exercises.delete('/categories/:slug', requireAuth, requireRole('admin'), rejectG
 // ── 2. EXERCISES LIBRARY ENDPOINTS ──
 
 // GET /api/exercises — Daftar gerakan di library
-exercises.get('/', async (c) => {
+exercises.get('/', optionalAuth, async (c) => {
   const sql = db(c);
   const category = c.req.query('category');
   const q = c.req.query('q');
@@ -121,9 +121,11 @@ exercises.get('/', async (c) => {
       l.*,
       c.name as category_name,
       c.icon as category_icon,
-      (case when l.pt_id is null then true else false end) as is_global
+      (case when l.pt_id is null then true else false end) as is_global,
+      u.name as pt_name
     from exercise_library l
     join exercise_categories c on c.slug = l.category_slug
+    left join users u on u.id = l.pt_id
     where (
       l.pt_id is null
       or l.pt_id = ${userId}

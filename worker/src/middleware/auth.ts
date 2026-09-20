@@ -34,6 +34,21 @@ export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
   c.set('user', payload.sub);
   await next();
 }
+
+export async function optionalAuth(c: Context<{ Bindings: Env }>, next: Next) {
+  const token =
+    getCookie(c, 'ks_session') ||
+    getCookie(c, 'kulastudio_session') ||
+    getCookie(c, 'tl_session') ||
+    c.req.header('Authorization')?.replace(/^Bearer\s+/i, '');
+  if (token) {
+    const payload = verifyToken<{ sub: SessionUser; exp: number }>(token, c.env.SESSION_SECRET);
+    if (payload && payload.exp >= Date.now()) {
+      c.set('user', payload.sub);
+    }
+  }
+  await next();
+}
 export type Role = SessionUser['role'];
 
 export function requireRole(...roles: Role[]) {

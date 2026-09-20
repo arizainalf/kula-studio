@@ -5,6 +5,7 @@ import { ThemeToggle, useTheme } from '../components/ThemeToggle'
 import { formatDateWithDay, formatTime } from '../lib/date'
 import { EditProfileModal } from '../components/EditProfileModal'
 import { LogoutModal } from '../components/LogoutModal'
+import { PwaInstallModal } from '../components/PwaInstallModal'
 import {
   Trophy,
   Dumbbell,
@@ -990,6 +991,9 @@ function ClientPortalPage() {
         userName={client.name}
         userRole="client"
       />
+
+      {/* ── PWA Installation Modal for Client ── */}
+      <PwaInstallModal autoPrompt={true} />
     </div>
   )
 }
